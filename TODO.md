@@ -11,6 +11,7 @@
 ### **Data Okuma:** 
 
 Gürkan hazırlayacak, DataLoader yapısı kullanılabilir
+- iCartoonFace: https://github.com/luxiangju-PersonAI/iCartoonFace
 
 ### **Network Oluşturma:** 
 
