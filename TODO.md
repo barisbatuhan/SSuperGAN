@@ -18,11 +18,13 @@ Gürkan bakacak, yararlı bazı çalışmalar:
 
 - [*Unsupervised Face Recognition*](https://arxiv.org/pdf/1803.01260.pdf)
 
-- [With clustering](https://openaccess.thecvf.com/content_ICCVW_2019/papers/LSR/Cheng_A_Graph_Based_Unsupervised_Feature_Aggregation_for_Face_Recognition_ICCVW_2019_paper.pdf)
+- [Graph Based Unsupervised Feature Aggregation](https://openaccess.thecvf.com/content_ICCVW_2019/papers/LSR/Cheng_A_Graph_Based_Unsupervised_Feature_Aggregation_for_Face_Recognition_ICCVW_2019_paper.pdf)
 
-- [Siamese](https://github.com/avillemin/One-Shot-Learning-for-Face-Recognition)
+- [One Shot Learning for Face Recognition](https://github.com/avillemin/One-Shot-Learning-for-Face-Recognition)
 
-- [Zero Shot](https://github.com/kosuke1701/ZACI-20-dataset)
+- [Danbooru 2020 Zero-shot Anime Character Identification Dataset](https://github.com/kosuke1701/ZACI-20-dataset)
+
+- [Measure Face Similarity Based on Deep Learning](http://www.diva-portal.se/smash/get/diva2:1361888/FULLTEXT01.pdf)
 
 ## LSTM Yapısı Oluşturma
 
