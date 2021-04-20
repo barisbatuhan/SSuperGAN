@@ -6,6 +6,7 @@ from collections import namedtuple
 class Config(Enum):
     FACE_RECOGNITION = 1
 
+
 def read_config(config: Config):
     if config == Config.FACE_RECOGNITION:
         path = r'../configs/face_recognition_config.yaml'
