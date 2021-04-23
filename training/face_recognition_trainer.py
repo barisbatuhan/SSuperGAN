@@ -9,7 +9,7 @@ import torch.optim as optim
 
 
 # TODO: convert this to be a CLASS and conform to ABSTRACT CLASS as a protocol
-
+# TODO: ADD BEST MODEL SAVER
 def train_epochs(model,
                  optimizer,
                  criterion,
