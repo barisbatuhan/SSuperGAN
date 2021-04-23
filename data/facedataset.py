@@ -28,7 +28,7 @@ class FaceDataset(Dataset):
     def __len__(self):
         return self.datasource.compute_length()
 
-
+# TODO: THROW ERROR IF THERE IS LESS THAN 2 CLASSES TO BE CONSUMED
 # Source: https://github.com/harveyslash/Facial-Similarity-with-Siamese-Networks-in-Pytorch/blob/master/Siamese-networks-medium.ipynb
 class PairedFaceDataset(Dataset):
     def __init__(self,
