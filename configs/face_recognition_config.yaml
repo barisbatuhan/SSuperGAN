@@ -1,5 +1,6 @@
 face_image_folder_path: /home/gsoykan20/Desktop/amazing-mysteries-gutter-comics/comics/data/raw_panel_images
-max_data_limit: 100000
-image_dim: 128
-batch_size: 3
-train_epochs: 10
+num_training_samples: 512
+num_test_samples: 512
+image_dim: 64
+batch_size: 256
+train_epochs: 2

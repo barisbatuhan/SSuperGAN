@@ -12,7 +12,7 @@ from collections import defaultdict
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
-
+from data.datasource_mode import DataSourceMode
 from utils import image_utils
 
 
@@ -25,8 +25,9 @@ class FaceDataItem:
 
 
 class FaceDatasource(ABC):
-    def __init__(self, config):
+    def __init__(self, config, mode: DataSourceMode):
         self.config = config
+        self.mode = mode
         self.data = None
         self.data_by_id = None
 
@@ -53,15 +54,16 @@ class FaceDatasource(ABC):
 
 
 class ICartoonFaceDatasource(FaceDatasource):
-    def __init__(self, config):
-        super().__init__(config)
+    def __init__(self, config, mode):
+        super().__init__(config, mode)
         self.data, self.data_by_id = self.load_data()
 
     def load_data(self):
         folder_path = self.config.face_image_folder_path
-        return self.read_face_images(ref_path=folder_path, limit=self.config.max_data_limit)
+        return self.read_face_images(ref_path=folder_path)
 
-    def read_face_images(self, ref_path: str, limit: int):
+    # TODO: TRAIN - TEST SPLIT LOGIC MIGHT BE MOVED TO SOMEWHERE ELSE
+    def read_face_images(self, ref_path: str):
         paths = Path(ref_path).glob('**/*.jpg')
         counter = 0
         face_data_items = []
@@ -69,8 +71,17 @@ class ICartoonFaceDatasource(FaceDatasource):
         face_data_items_by_id = defaultdict(lambda: [], face_data_items_by_id)
         for path in paths:
             counter += 1
-            if limit is not None and counter > limit:
+            train_limit = self.config.num_training_samples
+            test_limit = self.config.num_training_samples + self.config.num_test_samples
+
+            if self.mode is DataSourceMode.TRAIN and \
+                    train_limit is not None and counter > train_limit:
                 break
+            elif self.mode is DataSourceMode.TEST and counter < train_limit:
+                continue
+            elif self.mode is DataSourceMode.TEST and counter > test_limit:
+                break
+
             global_path = str(path)
             face_tag = str(path.parts[-2])
             face_data_item = FaceDataItem(global_path, face_id=face_tag)

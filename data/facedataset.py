@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 from data.facedatasource import FaceDatasource
@@ -36,6 +37,7 @@ class PairedFaceDataset(Dataset):
         if transformations is None:
             transformations = []
         transformations.insert(0, transforms.ToTensor())
+        transformations.append(transforms.Lambda(lambda x: x.to(device=ptu.device, dtype=torch.float32)))
         self.transforms = transforms.Compose(transformations)
         self.datasource = datasource
 
@@ -58,7 +60,7 @@ class PairedFaceDataset(Dataset):
                     break
         img0 = self.transforms(img0)
         img1 = self.transforms(img1)
-        label = ptu.ones(1) if should_get_same_class else ptu.zeros(1)
+        label = ptu.zeros(1) if should_get_same_class else ptu.ones(1)
         return img0, img1, label
 
     def __len__(self):
