@@ -43,8 +43,8 @@ def train_siamese():
                                              train_loader=train_dataloader,
                                              test_loader=test_dataloader,
                                              train_args=dict(epochs=config.train_epochs))
-    save_training_plot(train_losses,
-                       test_losses,
+    save_training_plot(train_losses['loss'],
+                       test_losses['loss'],
                        "Siamese Results",
                        f'results/siamese_train_plot.png')
 

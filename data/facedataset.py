@@ -29,6 +29,7 @@ class FaceDataset(Dataset):
         return self.datasource.compute_length()
 
 # TODO: THROW ERROR IF THERE IS LESS THAN 2 CLASSES TO BE CONSUMED
+# TODO: RANDOMIZED SELECTION PROCESS MIGHT BE IMPROVED TO NOT INCLUDE SAME ID SET
 # Source: https://github.com/harveyslash/Facial-Similarity-with-Siamese-Networks-in-Pytorch/blob/master/Siamese-networks-medium.ipynb
 class PairedFaceDataset(Dataset):
     def __init__(self,
