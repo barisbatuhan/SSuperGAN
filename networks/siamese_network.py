@@ -15,7 +15,7 @@ import torch.nn.functional as F
 from utils import pytorch_util as ptu
 from networks.mlp import MLP
 
-
+# TODO: Add backbone options
 class SiameseNetwork(nn.Module):
     def __init__(self, image_dim):
         super(SiameseNetwork, self).__init__()
