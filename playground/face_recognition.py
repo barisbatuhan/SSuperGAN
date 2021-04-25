@@ -12,6 +12,14 @@ from torch import optim
 from training.face_recognition_trainer import train_epochs
 from data.datasource_mode import DataSourceMode
 from utils.plot_utils import *
+from accuracy.measure_dissimilarity import * 
+
+def compare_test_set(model):
+    config = read_config(Config.FACE_RECOGNITION)
+    dataset = facedataset.PairedFaceDataset(
+    datasource=facedatasource.ICartoonFaceDatasource(config, DataSourceMode.TEST))
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
+    compare_image_pairs(iter(dataloader), model)
 
 def visualize_data():
     config = read_config(Config.FACE_RECOGNITION)
@@ -26,7 +34,6 @@ def visualize_data():
     print(ptu.get_numpy(example_batch[2]))
 
 
-# TODO: Implement ACCURACY METRIC
 def train_siamese():
     config = read_config(Config.FACE_RECOGNITION)
     train_dataset = facedataset.PairedFaceDataset(
@@ -48,6 +55,7 @@ def train_siamese():
                        test_losses['loss'],
                        "Siamese Results",
                        f'results/siamese_train_plot.png')
+    return net
 
 if __name__ == '__main__':
     ptu.set_gpu_mode(True)
