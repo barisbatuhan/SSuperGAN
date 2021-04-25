@@ -8,11 +8,11 @@ AnimeFace-GAN (AF-GAN) : Generating New Faces of the Same Character
 
 ```
 face_image_folder_train_path: /datasets/iCartoonFace2020/personai_icartoonface_rectrain/icartoonface_rectrain
-face_image_folder_test_path: /datasets/iCartoonFace2020/personai_icartoonface_rectest/icartoonface_rectest
-num_training_samples: 512
-num_test_samples: 512
+face_image_folder_test_path: /datasets/iCartoonFace2020/personai_icartoonface_rectrain/icartoonface_rectrain
+num_training_samples: 128
+test_samples_range: [1024 2048]
 image_dim: 64
-batch_size: 2
+batch_size: 128
 train_epochs: 2
 
 Comment: > 

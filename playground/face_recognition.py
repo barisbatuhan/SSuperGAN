@@ -35,7 +35,12 @@ def visualize_data():
     print(ptu.get_numpy(example_batch[2]))
 
 
-def train_siamese():
+def save_best_loss_model(model_name, model, best_loss):
+    print('current best loss: ' + str(best_loss))
+    torch.save(model, model_name + ".pth")
+    
+    
+def train_siamese(model_name='test_model'):
     config = read_config(Config.FACE_RECOGNITION)
     train_dataset = facedataset.PairedFaceDataset(
         datasource=facedatasource.ICartoonFaceDatasource(config, mode=DataSourceMode.TRAIN))
@@ -51,7 +56,8 @@ def train_siamese():
                                              criterion,
                                              train_loader=train_dataloader,
                                              test_loader=test_dataloader,
-                                             train_args=dict(epochs=config.train_epochs))
+                                             train_args=dict(epochs=config.train_epochs),
+                                            best_loss_action = lambda m, l: save_best_loss_model(model_name ,m, l))
     save_training_plot(train_losses['loss'],
                        test_losses['loss'],
                        "Siamese Results",

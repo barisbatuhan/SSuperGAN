@@ -9,17 +9,19 @@ import torch.optim as optim
 
 
 # TODO: convert this to be a CLASS and conform to ABSTRACT CLASS as a protocol
-# TODO: ADD BEST MODEL SAVER
 def train_epochs(model,
                  optimizer,
                  criterion,
                  train_loader,
                  test_loader,
                  train_args,
-                 quiet=False):
+                 quiet=False,
+                 best_loss_action=None):
     epochs = train_args['epochs']
     grad_clip = train_args.get('grad_clip', None)
-
+    
+    best_loss = 99
+    
     train_losses, test_losses = OrderedDict(), OrderedDict()
     for epoch in range(epochs):
         train_loss = train_recognition(model,
@@ -40,6 +42,12 @@ def train_epochs(model,
                 test_losses[k] = []
             train_losses[k].extend(train_loss[k])
             test_losses[k].append(test_loss[k])
+            current_test_loss = test_loss[k]
+            if current_test_loss < best_loss:
+                best_loss = current_test_loss
+                if best_loss_action != None:
+                    best_loss_action(model, best_loss)
+                
     return train_losses, test_losses
 
 
