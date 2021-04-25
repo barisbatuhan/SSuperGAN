@@ -64,10 +64,12 @@ class ICartoonFaceDatasource(FaceDatasource):
         self.data, self.data_by_id = self.load_data()
 
     def load_data(self):
-        folder_path = self.config.face_image_folder_path
+        if self.mode == DataSourceMode.TRAIN:
+            folder_path = self.config.face_image_folder_train_path
+        elif self.mode == DataSourceMode.TEST:
+            folder_path = self.config.face_image_folder_test_path
         return self.read_face_images(ref_path=folder_path)
 
-    # TODO: TRAIN - TEST SPLIT LOGIC MIGHT BE MOVED TO SOMEWHERE ELSE
     def read_face_images(self, ref_path: str):
         paths = Path(ref_path).glob('**/*.jpg')
         counter = 0
@@ -82,8 +84,6 @@ class ICartoonFaceDatasource(FaceDatasource):
             if self.mode is DataSourceMode.TRAIN and \
                     train_limit is not None and counter > train_limit:
                 break
-            elif self.mode is DataSourceMode.TEST and counter < train_limit:
-                continue
             elif self.mode is DataSourceMode.TEST and counter > test_limit:
                 break
 
