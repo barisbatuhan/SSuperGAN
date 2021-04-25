@@ -1,5 +1,6 @@
 from matplotlib import pyplot as plt
 import numpy as np
+from utils import pytorch_util as ptu
 
 
 def show_ndarray_as_image(array: np.ndarray):
@@ -8,7 +9,7 @@ def show_ndarray_as_image(array: np.ndarray):
 
 
 def imshow(img, text=None, should_save=False):
-    npimg = img.numpy()
+    npimg = ptu.get_numpy(img)
     plt.axis("off")
     if text:
         plt.text(75, 8, text, style='italic', fontweight='bold',

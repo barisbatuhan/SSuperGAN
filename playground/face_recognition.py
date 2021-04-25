@@ -15,6 +15,7 @@ from utils.plot_utils import *
 from accuracy.measure_dissimilarity import * 
 
 def compare_test_set(model):
+    model.eval()
     config = read_config(Config.FACE_RECOGNITION)
     dataset = facedataset.PairedFaceDataset(
     datasource=facedatasource.ICartoonFaceDatasource(config, DataSourceMode.TEST))
@@ -59,4 +60,8 @@ def train_siamese():
 
 if __name__ == '__main__':
     ptu.set_gpu_mode(True)
-    train_siamese()
+    # model = train_siamese()
+    #torch.save(model, "test_model.pth")
+    #model = torch.load("test_model.pth")
+    #compare_test_set(model)
+    visualize_data()

@@ -22,7 +22,6 @@ def train_epochs(model,
 
     train_losses, test_losses = OrderedDict(), OrderedDict()
     for epoch in range(epochs):
-        model.train()
         train_loss = train_recognition(model,
                                        train_loader,
                                        optimizer,
