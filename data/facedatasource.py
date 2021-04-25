@@ -80,14 +80,15 @@ class ICartoonFaceDatasource(FaceDatasource):
         for path in paths:
             counter += 1
             train_limit = self.config.num_training_samples
-            test_limit = self.config.test_samples_range[0] + self.config.test_samples_range[1]
+            test_min_limit = self.config.test_samples_range[0]
+            test_max_limit = self.config.test_samples_range[1]
 
             if self.mode is DataSourceMode.TRAIN and \
                     train_limit is not None and counter > train_limit:
                 break
-            elif self.mode is DataSourceMode.TEST and counter < self.config.test_samples_range[0]:
+            elif self.mode is DataSourceMode.TEST and counter < test_min_limit:
                 continue
-            elif self.mode is DataSourceMode.TEST and counter > test_limit:
+            elif self.mode is DataSourceMode.TEST and counter > test_max_limit:
                 break
 
             global_path = str(path)
