@@ -21,7 +21,8 @@ def visualize_data():
     dataiter = iter(dataloader)
     example_batch = next(dataiter)
     concatenated = torch.cat((example_batch[0], example_batch[1]), 0)
-    imshow(torchvision.utils.make_grid(concatenated, nrow=2))
+    # TODO: this can be shown better as top bottom row combo
+    imshow(torchvision.utils.make_grid(concatenated, nrow=4))
     print(ptu.get_numpy(example_batch[2]))
 
 

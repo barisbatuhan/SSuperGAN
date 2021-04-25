@@ -14,6 +14,7 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 from data.datasource_mode import DataSourceMode
 from utils import image_utils
+import random
 
 
 class FaceDataItem:
@@ -46,6 +47,10 @@ class FaceDatasource(ABC):
 
     @abstractmethod
     def get_item_id(self, index: int) -> str:
+        pass
+    
+    @abstractmethod
+    def get_item_not_belong_to_id(self, id: str) -> FaceDataItem:
         pass
 
     @abstractmethod
@@ -102,6 +107,10 @@ class ICartoonFaceDatasource(FaceDatasource):
     def get_item_id(self, index: int) -> str:
         face_data_item = self.data[index]
         return face_data_item.face_id
+    
+    def get_item_not_belong_to_id(self, id: str) -> FaceDataItem:
+        # TODO: implement
+        random.choice(self.datasource.data_by_id[img0_id])
 
     def compute_length(self):
         return len(self.data)

@@ -1,6 +1,9 @@
-face_image_folder_path: /home/gsoykan20/Desktop/amazing-mysteries-gutter-comics/comics/data/raw_panel_images
+face_image_folder_path: /datasets/iCartoonFace2020/personai_icartoonface_rectrain/icartoonface_rectrain
 num_training_samples: 512
 num_test_samples: 512
 image_dim: 64
-batch_size: 256
+batch_size: 64
 train_epochs: 2
+
+Comment: > 
+    face_image_folder_path: /home/gsoykan20/Desktop/amazing-mysteries-gutter-comics/comics/data/raw_panel_images
