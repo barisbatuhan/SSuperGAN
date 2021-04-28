@@ -27,7 +27,7 @@ class ContrastiveLoss(nn.Module):
                                       label * torch.pow(torch.clamp(self.margin - euclidean_distance, min=0.0), 2))
 
         pred = ptu.get_numpy(euclidean_distance).ravel() < acc_threshold
-        label = ptu.get_numpy(label) == 0
-        acc = np.mean(pred == label)
+        label = (ptu.get_numpy(label) == 0).ravel()
+        acc = sum(pred == label) / len(euclidean_distance)
 
         return OrderedDict(loss=loss_contrastive, acc=acc)
