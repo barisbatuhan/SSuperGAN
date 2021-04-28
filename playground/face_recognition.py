@@ -67,12 +67,11 @@ def train_siamese(model_name='test_model'):
     return net
 
 
-def compute_mean_acc(model_name='test_model', datasource_mode: DataSourceMode = DataSourceMode.TEST):
+def compute_mean_acc(model, datasource_mode: DataSourceMode = DataSourceMode.TEST):
     config = read_config(Config.FACE_RECOGNITION)
     dataset = facedataset.PairedFaceDataset(
         datasource=facedatasource.ICartoonFaceDatasource(config, mode=datasource_mode))
     dataloader = DataLoader(dataset, batch_size=config.batch_size, shuffle=False)
-    model = torch.load(model_name + ".pth")
     acc = compute_mean_accuracy(dataiterator=dataloader,
                                 model=model)
     print("Accuracy: " + str(acc))
