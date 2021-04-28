@@ -66,8 +66,8 @@ def train_siamese(model_name='test_model'):
 
 if __name__ == '__main__':
     ptu.set_gpu_mode(True)
-    # model = train_siamese()
-    #torch.save(model, "test_model.pth")
-    #model = torch.load("test_model.pth")
-    #compare_test_set(model)
-    visualize_data()
+    model = train_siamese()
+    # torch.save(model, "test_model.pth")
+    # model = torch.load("test_model.pth")
+    compare_test_set(model)
+    # visualize_data()
