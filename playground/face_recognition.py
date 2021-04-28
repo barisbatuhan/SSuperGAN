@@ -14,13 +14,13 @@ from data.datasource_mode import DataSourceMode
 from utils.plot_utils import *
 from accuracy.measure_dissimilarity import * 
 
-def compare_test_set(model):
+def compare_test_set(model, max_display=None):
     model.eval()
     config = read_config(Config.FACE_RECOGNITION)
     dataset = facedataset.PairedFaceDataset(
     datasource=facedatasource.ICartoonFaceDatasource(config, DataSourceMode.TEST))
     dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
-    compare_image_pairs(iter(dataloader), model)
+    compare_image_pairs(iter(dataloader), model, max_display=max_display)
 
 def visualize_data():
     config = read_config(Config.FACE_RECOGNITION)
