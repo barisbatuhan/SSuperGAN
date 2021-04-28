@@ -51,7 +51,7 @@ def train_epochs(model,
                         best_loss_action(model, best_loss)
 
         metric_recorder.update_metrics(train_losses, test_losses)
-    metric_recorder.save_recorder()
+        metric_recorder.save_recorder()
     return train_losses, test_losses
 
 
