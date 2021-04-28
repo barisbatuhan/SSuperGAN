@@ -1,6 +1,7 @@
 configs/face_recognition_config.yaml
 **/*.pth
 **/*.png
+**/*.obj
 
 ### PyCharm ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and WebStorm
