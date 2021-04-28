@@ -50,7 +50,7 @@ def train_siamese(model_name='test_model'):
     test_dataloader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=True)
     net = SiameseNetwork(image_dim=config.image_dim).to(ptu.device)
     criterion = ContrastiveLoss()
-    optimizer = optim.Adam(net.parameters(), lr=5e-4)
+    optimizer = optim.Adam(net.parameters(), lr=5e-3)
     train_losses, test_losses = train_epochs(net,
                                              optimizer,
                                              criterion,
