@@ -12,15 +12,17 @@ from torch import optim
 from training.face_recognition_trainer import train_epochs
 from data.datasource_mode import DataSourceMode
 from utils.plot_utils import *
-from accuracy.measure_dissimilarity import * 
+from accuracy.measure_dissimilarity import *
+
 
 def compare_test_set(model, max_display=None):
     model.eval()
     config = read_config(Config.FACE_RECOGNITION)
     dataset = facedataset.PairedFaceDataset(
-    datasource=facedatasource.ICartoonFaceDatasource(config, DataSourceMode.TEST))
+        datasource=facedatasource.ICartoonFaceDatasource(config, DataSourceMode.TEST))
     dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
     compare_image_pairs(iter(dataloader), model, max_display=max_display)
+
 
 def visualize_data():
     config = read_config(Config.FACE_RECOGNITION)
@@ -30,7 +32,7 @@ def visualize_data():
     dataiter = iter(dataloader)
     example_batch = next(dataiter)
     concatenated = torch.cat((example_batch[0], example_batch[1]), 0)
-    # TODO: this can be shown better as top bottom row combo
+    #  TODO: this can be shown better as top bottom row combo
     imshow(torchvision.utils.make_grid(concatenated, nrow=4))
     print(ptu.get_numpy(example_batch[2]))
 
@@ -38,8 +40,8 @@ def visualize_data():
 def save_best_loss_model(model_name, model, best_loss):
     print('current best loss: ' + str(best_loss))
     torch.save(model, model_name + ".pth")
-    
-    
+
+
 def train_siamese(model_name='test_model'):
     config = read_config(Config.FACE_RECOGNITION)
     train_dataset = facedataset.PairedFaceDataset(
@@ -50,24 +52,37 @@ def train_siamese(model_name='test_model'):
     test_dataloader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=True)
     net = SiameseNetwork(image_dim=config.image_dim).to(ptu.device)
     criterion = ContrastiveLoss()
-    optimizer = optim.Adam(net.parameters(), lr=5e-4)
+    optimizer = optim.Adam(net.parameters(), lr=5e-3)
     train_losses, test_losses = train_epochs(net,
                                              optimizer,
                                              criterion,
                                              train_loader=train_dataloader,
                                              test_loader=test_dataloader,
                                              train_args=dict(epochs=config.train_epochs),
-                                            best_loss_action = lambda m, l: save_best_loss_model(model_name ,m, l))
+                                             best_loss_action=lambda m, l: save_best_loss_model(model_name, m, l))
     save_training_plot(train_losses['loss'],
                        test_losses['loss'],
                        "Siamese Results",
                        f'results/siamese_train_plot.png')
     return net
 
+
+def compute_mean_acc(model_name='test_model', datasource_mode: DataSourceMode = DataSourceMode.TEST):
+    config = read_config(Config.FACE_RECOGNITION)
+    dataset = facedataset.PairedFaceDataset(
+        datasource=facedatasource.ICartoonFaceDatasource(config, mode=datasource_mode))
+    dataloader = DataLoader(dataset, batch_size=config.batch_size, shuffle=False)
+    model = torch.load(model_name + ".pth")
+    acc = compute_mean_accuracy(dataiterator=dataloader,
+                                model=model)
+    print("Accuracy: " + str(acc))
+
+
 if __name__ == '__main__':
     ptu.set_gpu_mode(True)
     model = train_siamese()
-    # torch.save(model, "test_model.pth")
+    torch.save(model, "test_model.pth")
     # model = torch.load("test_model.pth")
-    compare_test_set(model)
+    # compare_test_set(model)
     # visualize_data()
+    # compute_mean_acc(datasource_mode=DataSourceMode.TRAIN)
