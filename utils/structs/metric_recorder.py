@@ -25,7 +25,7 @@ class MetricRecorder:
         file_handler.close()
 
 
-def load_metric_recorder(experiment_name, save_dir):
+def load_metric_recorder(experiment_name, save_dir=None):
     save_dir = save_dir if save_dir is not None else ""
     filename = save_dir + experiment_name + "_metric_recorder.obj"
     file_handler = open(filename, 'rb')
