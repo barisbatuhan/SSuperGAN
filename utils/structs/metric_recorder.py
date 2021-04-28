@@ -17,7 +17,6 @@ class MetricRecorder:
         self.test_metrics = test
 
     def save_recorder(self):
-        return
         save_dir = self.save_dir if self.save_dir is not None else ""
         file_path = save_dir + self.experiment_name + "_metric_recorder.obj"
         # FIX: no such file or directory problem

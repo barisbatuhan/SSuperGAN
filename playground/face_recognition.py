@@ -13,6 +13,7 @@ from training.face_recognition_trainer import train_epochs
 from data.datasource_mode import DataSourceMode
 from utils.plot_utils import *
 from accuracy.measure_dissimilarity import *
+from utils.datetime_utils import get_dt_string
 
 
 def compare_test_set(model, max_display=None):
@@ -79,7 +80,7 @@ def compute_mean_acc(model, datasource_mode: DataSourceMode = DataSourceMode.TES
 
 if __name__ == '__main__':
     ptu.set_gpu_mode(True)
-    model = train_siamese()
+    model = train_siamese(get_dt_string() + "_model")
     torch.save(model, "test_model.pth")
     # model = torch.load("test_model.pth")
     # compare_test_set(model)
