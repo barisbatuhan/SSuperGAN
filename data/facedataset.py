@@ -14,7 +14,10 @@ class FaceDataset(Dataset):
                  transformations: transforms = None):
         if transformations is None:
             transformations = []
-        transformations.insert(0, transforms.ToTensor())
+        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                         std=[0.229, 0.224, 0.225])
+        common_transforms = transforms.Compose([transforms.ToTensor(), normalize])
+        transformations.insert(0, common_transforms)
         transformations.append(transforms.Lambda(lambda x: x.to(ptu.device)))
         self.transforms = transforms.Compose(transformations)
         self.datasource = datasource
@@ -27,6 +30,7 @@ class FaceDataset(Dataset):
 
     def __len__(self):
         return self.datasource.compute_length()
+
 
 # TODO: THROW ERROR IF THERE IS LESS THAN 2 CLASSES TO BE CONSUMED
 # Source: https://github.com/harveyslash/Facial-Similarity-with-Siamese-Networks-in-Pytorch/blob/master/Siamese-networks-medium.ipynb

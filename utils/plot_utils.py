@@ -31,6 +31,8 @@ def save_training_plot(train_losses, test_losses, title, fname):
     plt.ylabel('NLL')
     savefig(fname)
 
+# TODO: impl save accuracy plot
+
 
 def save_scatter_2d(data, title, fname):
     plt.figure()

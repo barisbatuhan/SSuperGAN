@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import torch.utils.data as data
 import torch.optim as optim
-
+from utils.structs.metric_recorder import *
 
 # TODO: convert this to be a CLASS and conform to ABSTRACT CLASS as a protocol
 def train_epochs(model,
@@ -17,11 +17,12 @@ def train_epochs(model,
                  train_args,
                  quiet=False,
                  best_loss_action=None):
+    metric_recorder = MetricRecorder()
     epochs = train_args['epochs']
     grad_clip = train_args.get('grad_clip', None)
-    
+
     best_loss = 99
-    
+
     train_losses, test_losses = OrderedDict(), OrderedDict()
     for epoch in range(epochs):
         train_loss = train_recognition(model,
@@ -42,12 +43,15 @@ def train_epochs(model,
                 test_losses[k] = []
             train_losses[k].extend(train_loss[k])
             test_losses[k].append(test_loss[k])
-            current_test_loss = test_loss[k]
-            if current_test_loss < best_loss:
-                best_loss = current_test_loss
-                if best_loss_action != None:
-                    best_loss_action(model, best_loss)
-                
+            if k == "loss":
+                current_test_loss = test_loss[k]
+                if current_test_loss < best_loss:
+                    best_loss = current_test_loss
+                    if best_loss_action != None:
+                        best_loss_action(model, best_loss)
+
+        metric_recorder.update_metrics(train_losses, test_losses)
+    metric_recorder.save_recorder()
     return train_losses, test_losses
 
 
@@ -67,7 +71,6 @@ def eval_loss(model,
                 total_losses[k] = total_losses.get(k, 0) + v.item() * batch[0].shape[0]
             else:
                 total_losses[k] = total_losses.get(k, 0) + v.item() * batch.shape[0]
-
 
     desc = 'Test '
     for k in total_losses.keys():
@@ -103,8 +106,8 @@ def train_recognition(model: nn.Module,
             if k not in losses:
                 losses[k] = []
             losses[k].append(v.item())
-            avg_loss = np.mean(losses[k][-50:])
-            desc += f', {k} {avg_loss:.4f}'
+            avg = np.mean(losses[k][-50:])
+            desc += f', {k} {avg:.4f}'
 
         if not quiet:
             pbar.set_description(desc)
