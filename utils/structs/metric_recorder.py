@@ -2,14 +2,13 @@ from collections import OrderedDict
 import pickle
 from datetime import datetime
 import os
+from utils.datetime_utils import get_dt_string
 
 class MetricRecorder:
     def __init__(self, experiment_name=None, save_dir=None):
         self.train_metrics = OrderedDict()
         self.test_metrics = OrderedDict()
-        now = datetime.now()
-        # dd/mm/YY-H:M:S
-        dt_string = now.strftime("%d/%m/%Y-%H:%M:%S")
+        dt_string = get_dt_string()
         self.experiment_name = experiment_name if experiment_name is not None else dt_string
         self.save_dir = save_dir
 
