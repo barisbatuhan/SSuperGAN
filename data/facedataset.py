@@ -12,6 +12,7 @@ class FaceDataset(Dataset):
     def __init__(self,
                  datasource: FaceDatasource,
                  transformations: transforms = None):
+        random.seed(10)
         if transformations is None:
             transformations = []
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -38,6 +39,7 @@ class PairedFaceDataset(Dataset):
     def __init__(self,
                  datasource: FaceDatasource,
                  transformations: transforms = None):
+        random.seed(10)
         if transformations is None:
             transformations = []
         transformations.insert(0, transforms.ToTensor())

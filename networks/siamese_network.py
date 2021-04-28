@@ -52,6 +52,7 @@ class SiameseNetwork(nn.Module):
             fc_input_size = 8 * image_dim * image_dim
         elif backbone is SiameseBackbone.RESNET_18:
             self.cnn1 = nn.Sequential(*(list(resnet18().children())[0:8]))
+            # this might be dependant on the input dim
             fc_input_size = 2048
         else:
             raise NotImplementedError
