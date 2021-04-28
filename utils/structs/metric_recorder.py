@@ -1,10 +1,10 @@
 from collections import OrderedDict
 import pickle
 from datetime import datetime
-
+import os
 
 class MetricRecorder:
-    def __init__(self, experiment_name=None, save_dir="./"):
+    def __init__(self, experiment_name=None, save_dir=None):
         self.train_metrics = OrderedDict()
         self.test_metrics = OrderedDict()
         now = datetime.now()
@@ -18,8 +18,11 @@ class MetricRecorder:
         self.test_metrics = test
 
     def save_recorder(self):
+        return
         save_dir = self.save_dir if self.save_dir is not None else ""
-        file_handler = open(save_dir + self.experiment_name + "_metric_recorder.obj", 'wb+')
+        file_path = save_dir + self.experiment_name + "_metric_recorder.obj"
+        # FIX: no such file or directory problem
+        file_handler = open(file_path, 'wb')
         pickle.dump(self, file_handler)
         file_handler.close()
 
