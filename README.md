@@ -4,7 +4,7 @@ AnimeFace-GAN (AF-GAN) : Generating New Faces of the Same Character
 # Face Recognition Module
 
 - In order to run the module 'face_recognition_config.yaml' file should be created under configs.
-- Exmple Config:
+- Example Config:
 
 ```
 face_image_folder_train_path: /datasets/iCartoonFace2020/personai_icartoonface_rectrain/icartoonface_rectrain
@@ -26,3 +26,5 @@ Comment: >
         - 20480
         - 22528
 ```
+### Project Based Configuration
+One should check and update 'configs/base_config' for global config parameters such base project directory.
