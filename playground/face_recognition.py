@@ -14,6 +14,7 @@ from data.datasource_mode import DataSourceMode
 from utils.plot_utils import *
 from accuracy.measure_dissimilarity import *
 from utils.datetime_utils import get_dt_string
+from configs.base_config import *
 
 
 def compare_test_set(model, max_display=None):
@@ -40,7 +41,7 @@ def visualize_data():
 
 def save_best_loss_model(model_name, model, best_loss):
     print('current best loss: ' + str(best_loss))
-    torch.save(model, model_name + ".pth")
+    torch.save(model, base_dir + 'playground/results/' + model_name + ".pth")
 
 
 def train_siamese(model_name='test_model'):
@@ -64,7 +65,7 @@ def train_siamese(model_name='test_model'):
     save_training_plot(train_losses['loss'],
                        test_losses['loss'],
                        "Siamese Results",
-                       f'results/siamese_train_plot.png')
+                       base_dir + 'playground/' + f'results/siamese_train_plot.png')
     return net
 
 
@@ -81,7 +82,7 @@ def compute_mean_acc(model, datasource_mode: DataSourceMode = DataSourceMode.TES
 if __name__ == '__main__':
     ptu.set_gpu_mode(True)
     model = train_siamese(get_dt_string() + "_model")
-    torch.save(model, "test_model.pth")
+    torch.save(model, base_dir + 'playground/results/' + "test_model.pth")
     # model = torch.load("test_model.pth")
     # compare_test_set(model)
     # visualize_data()

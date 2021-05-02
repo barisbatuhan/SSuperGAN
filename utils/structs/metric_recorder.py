@@ -3,9 +3,11 @@ import pickle
 from datetime import datetime
 import os
 from utils.datetime_utils import get_dt_string
+from configs.base_config import *
+
 
 class MetricRecorder:
-    def __init__(self, experiment_name=None, save_dir=None):
+    def __init__(self, experiment_name=None, save_dir=base_dir + 'playground/results/'):
         self.train_metrics = OrderedDict()
         self.test_metrics = OrderedDict()
         dt_string = get_dt_string()
@@ -19,7 +21,6 @@ class MetricRecorder:
     def save_recorder(self):
         save_dir = self.save_dir if self.save_dir is not None else ""
         file_path = save_dir + self.experiment_name + "_metric_recorder.obj"
-        # FIX: no such file or directory problem
         file_handler = open(file_path, 'wb')
         pickle.dump(self, file_handler)
         file_handler.close()

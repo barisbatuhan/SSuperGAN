@@ -9,7 +9,7 @@ class Environment(enum.Enum):
     B_LOCAL = 3
     C_LOCAL = 4
 
-
+# TODO: write code for determining environment directly
 def determine_base_dir(env: Environment) -> str:
     if env is Environment.CLUSTER:
         return "/kuacc/users/gsoykan20/projects/AF-GAN/"
