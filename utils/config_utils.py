@@ -1,7 +1,8 @@
 import yaml
 from enum import Enum
 from collections import namedtuple
-from configs import base_config
+from configs.base_config import *
+
 
 class Config(Enum):
     FACE_RECOGNITION = 1
