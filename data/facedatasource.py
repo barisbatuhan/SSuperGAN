@@ -104,9 +104,11 @@ class ICartoonFaceDatasource(FaceDatasource):
 
     def data_item_to_actual_data(self, data_item: FaceDataItem):
         image = io.imread(data_item.path).astype('uint8')
-        _, _, channels = image.shape
-        if channels > 3:
-            image = rgba2rgb(image)
+        shape_len = len(image.shape) 
+        if shape_len < 3:
+              image = gray2rgb(image)
+        elif shape_len > 3:
+              image = rgba2rgb(image)            
         im_dim = self.config.image_dim
         image = transform.resize(image=image, output_shape=(im_dim, im_dim))
         return image, data_item.face_id
