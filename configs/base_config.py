@@ -1,0 +1,1 @@
+base_dir = "/kuacc/users/gsoykan20/projects/AF-GAN/"
