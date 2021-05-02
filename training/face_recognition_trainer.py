@@ -7,6 +7,8 @@ from torch.utils.data import DataLoader
 import torch.utils.data as data
 import torch.optim as optim
 from utils.structs.metric_recorder import *
+from utils.logging_utils import *
+
 
 # TODO: convert this to be a CLASS and conform to ABSTRACT CLASS as a protocol
 def train_epochs(model,
@@ -25,6 +27,7 @@ def train_epochs(model,
 
     train_losses, test_losses = OrderedDict(), OrderedDict()
     for epoch in range(epochs):
+        logging.info("epoch start: " + str(epoch))
         train_loss = train_recognition(model,
                                        train_loader,
                                        optimizer,
@@ -78,6 +81,7 @@ def eval_loss(model,
         desc += f', {k} {total_losses[k]:.4f}'
     if not quiet:
         print(desc)
+        logging.info(desc)
     return total_losses
 
 

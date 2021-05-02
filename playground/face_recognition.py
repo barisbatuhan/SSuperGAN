@@ -1,20 +1,24 @@
 import torchvision.transforms
 
-from data import facedataset, facedatasource
+
 from utils.config_utils import read_config, Config
 from utils.image_utils import imshow
-from torch.utils.data import Dataset, DataLoader
+from utils.logging_utils import *
+from utils.datetime_utils import get_dt_string
+from utils.plot_utils import *
 from utils import pytorch_util as ptu
+
+from data import facedataset, facedatasource
+from torch.utils.data import Dataset, DataLoader
 import torch
 from networks.siamese_network import SiameseNetwork
 from losses.contrastive_loss import ContrastiveLoss
 from torch import optim
 from training.face_recognition_trainer import train_epochs
 from data.datasource_mode import DataSourceMode
-from utils.plot_utils import *
 from accuracy.measure_dissimilarity import *
-from utils.datetime_utils import get_dt_string
 from configs.base_config import *
+
 
 
 def compare_test_set(model, max_display=None):
@@ -41,10 +45,12 @@ def visualize_data():
 
 def save_best_loss_model(model_name, model, best_loss):
     print('current best loss: ' + str(best_loss))
+    logging.info('current best loss: ' + str(best_loss))
     torch.save(model, base_dir + 'playground/results/' + model_name + ".pth")
 
 
 def train_siamese(model_name='test_model'):
+    logging.info("initiate training")
     config = read_config(Config.FACE_RECOGNITION)
     train_dataset = facedataset.PairedFaceDataset(
         datasource=facedatasource.ICartoonFaceDatasource(config, mode=DataSourceMode.TRAIN))
@@ -62,6 +68,7 @@ def train_siamese(model_name='test_model'):
                                              test_loader=test_dataloader,
                                              train_args=dict(epochs=config.train_epochs),
                                              best_loss_action=lambda m, l: save_best_loss_model(model_name, m, l))
+    logging.info("completed training")
     save_training_plot(train_losses['loss'],
                        test_losses['loss'],
                        "Siamese Results",

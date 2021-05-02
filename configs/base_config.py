@@ -19,5 +19,5 @@ def determine_base_dir(env: Environment) -> str:
         raise NotImplementedError
 
 
-environment = Environment.G_LOCAL
+environment = Environment.CLUSTER
 base_dir = determine_base_dir(environment)
