@@ -9,13 +9,13 @@ class SequentialEncoder(nn.Module):
         super(SequentialEncoder, self).__init__()
         
         defaults = {
-            "lstm_hidden": 1024, 
-            "embed": -1, 
-            "cnn_embed": 1000, 
-            "fc_hiddens": [],
-            "lstm_dropout": 0.2,
-            "fc_dropout": 0.2,
-            "num_lstm_layers": 1
+            "lstm_hidden": 256, # hidden size of LSTM module
+            "embed": 512, # last size for mean and std outputs
+            "cnn_embed": 2048, # the output dim retrieved from CNN embedding module
+            "fc_hiddens": [], # sizes of FC layers after LSTM output, if there are any
+            "lstm_dropout": 0, # set to 0 if num_lstm_layers is 1, otherwise set to [0, 0.5]
+            "fc_dropout": 0.2, # dropout ratio of FC layers if there are any
+            "num_lstm_layers": 1 # number of stacked LSTM layers
         }
         
         if args is not None:
@@ -29,9 +29,11 @@ class SequentialEncoder(nn.Module):
         self.hidden_size = args["lstm_hidden"]
         self.num_lstm_layers = args["num_lstm_layers"]
         
-        # CNN based panel iamge embedder method
+        # CNN based panel image embedder method
         if pretrained_cnn is None:
-            self.backbone =  models.resnet50(pretrained=True)  
+            # all layers except the lst FC
+            self.backbone =  torch.nn.Sequential(
+                *(list(models.resnet50(pretrained=True).children())[:-1]))  
         else:
             self.backbone = pretrained_cnn                           
         
@@ -42,7 +44,7 @@ class SequentialEncoder(nn.Module):
         )
         
         # Additional FC layers to further process the LSTM output
-        if self.embed_size > 0:
+        if len(args["fc_hiddens"]) > 0:
             fc_hidden_sizes = [self.hidden_size, *args["fc_hiddens"]]
             fc_layers = []
             for i in range(len(fc_hidden_sizes) - 1):
@@ -52,7 +54,6 @@ class SequentialEncoder(nn.Module):
             self.fc_projector = nn.Sequential(*fc_layers)
         
         else:
-            self.embed_size = self.hidden_size
             self.fc_projector = None
         
         # Mean and Variance Calculator
@@ -75,8 +76,8 @@ class SequentialEncoder(nn.Module):
         outs, _ = self.lstm(
             outs, 
             (
-                torch.zeros(self.num_lstm_layers, S, self.hidden_size).to(device), #h0
-                torch.zeros(self.num_lstm_layers, S, self.hidden_size).to(device)  #c0
+                torch.zeros(self.num_lstm_layers, S, self.hidden_size).to(device), # h0
+                torch.zeros(self.num_lstm_layers, S, self.hidden_size).to(device)  # c0
             ) 
         )
         outs = outs[:,-1,:]
