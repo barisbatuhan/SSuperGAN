@@ -1,21 +1,6 @@
 import enum
-
-import torchvision
-import torchvision.datasets as dset
-import torchvision.transforms as transforms
 from torchvision.models import *
-from torch.utils.data import DataLoader, Dataset
-import matplotlib.pyplot as plt
-import torchvision.utils
-import numpy as np
-import random
-from PIL import Image
-import torch
-from torch.autograd import Variable
-import PIL.ImageOps
 import torch.nn as nn
-import torch.nn.functional as F
-from utils import pytorch_util as ptu
 from networks.mlp import MLP
 
 
