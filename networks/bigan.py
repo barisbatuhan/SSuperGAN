@@ -34,6 +34,8 @@ class Reshape(nn.Module):
     def forward(self, x):
         return x.view(self.shape)
 
+# Alternative Implementation: https://github.com/eriklindernoren/Keras-GAN/blob/master/bigan/bigan.py
+# DUL Course Implementation:https://github.com/rll/deepul/blob/master/homeworks/solutions/hw4_solutions.ipynb
 
 class BiGAN(BaseGAN):
     def __init__(self,
