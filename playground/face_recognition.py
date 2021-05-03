@@ -1,3 +1,7 @@
+import torch
+from torch import optim
+from torch.utils.data import Dataset, DataLoader
+
 import torchvision.transforms
 
 
@@ -9,14 +13,11 @@ from utils.plot_utils import *
 from utils import pytorch_util as ptu
 
 from data import facedataset, facedatasource
-from torch.utils.data import Dataset, DataLoader
-import torch
-from networks.siamese_network import SiameseNetwork
-from losses.contrastive_loss import ContrastiveLoss
-from torch import optim
-from training.face_recognition_trainer import train_epochs
 from data.datasource_mode import DataSourceMode
-from accuracy.measure_dissimilarity import *
+from networks.siamese_network import SiameseNetwork
+from functional.losses.contrastive_loss import ContrastiveLoss
+from functional.metrics.dissimilarity import *
+from training.face_recognition_trainer import train_epochs
 from configs.base_config import *
 
 
