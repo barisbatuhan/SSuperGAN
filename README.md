@@ -8,11 +8,11 @@ This repository is not fully completed!
 
 ## Model Architecture
 
-![gmodel](./images/readme_imgs/Model.JPG)
+![gmodel](./images/readme_images/Model.JPG)
 
 ## Results
 
-![WIP](./images/readme_imgs/work_in_progress.JPG)
+![WIP](./images/readme_images/work_in_progress.JPG)
 
 
 ## Modules
