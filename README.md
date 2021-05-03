@@ -1,7 +1,23 @@
-# AF-GAN
-AnimeFace-GAN (AF-GAN) : Generating New Faces of the Same Character
+# Self-Supervised Face Generation using Panel Context Information (SSuperGAN)
 
-# Face Recognition Module
+Using [Golden Age Comics](https://digitalcomicmuseum.com/) data, this model tries to generate masked faces of the characters given the previous sequential frames. 
+
+## Notes:
+
+This repository is not fully completed!
+
+## Model Architecture
+
+![gmodel](./images/readme_imgs/Model.JPG)
+
+## Results
+
+![WIP](./images/readme_imgs/work_in_progress.JPG)
+
+
+## Modules
+
+### Face Recognition Module
 
 - In order to run the module 'face_recognition_config.yaml' file should be created under configs.
 - Example Config:
@@ -27,4 +43,5 @@ Comment: >
         - 22528
 ```
 ### Project Based Configuration
+
 One should check and update 'configs/base_config' for global config parameters such base project directory.
