@@ -50,6 +50,8 @@ class GoldenAgeFaceDatasource(BaseDatasource):
                                               output_shape=(self.config.image_dim, self.config.image_dim))
                     face_data[added_image_counter, :, :, :] = cropped_face
                     added_image_counter += 1
+                    if added_image_counter >= total_image_count:
+                        return face_data
 
         return face_data
 
