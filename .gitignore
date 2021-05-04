@@ -17,7 +17,7 @@ logs/**/*
 
 # Generated files
 .idea/**/contentModel.xml
-
+.idea
 .idea/**/*.xml
 
 # Sensitive or high-churn files

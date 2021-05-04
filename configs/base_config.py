@@ -10,7 +10,7 @@ class Environment(enum.Enum):
     C_LOCAL = 3
     G_CLUSTER = 4
     B_CLUSTER = 5
-    C_CLUSTER = 5
+    C_CLUSTER = 6
 
 
 def determine_env() -> Environment:
@@ -19,6 +19,8 @@ def determine_env() -> Environment:
         return Environment.G_LOCAL
     elif "/kuacc/users/gsoykan20/" in cwd:
         return Environment.G_CLUSTER
+    elif "/kuacc/users/baristopal20/" in cwd:
+        return Environment.B_CLUSTER
     else:
         raise NotImplementedError
 
@@ -28,6 +30,8 @@ def determine_base_dir(env: Environment) -> str:
         return "/kuacc/users/gsoykan20/projects/AF-GAN/"
     elif env is Environment.G_LOCAL:
         return "/home/gsoykan20/Desktop/AF-GAN/"
+    elif env is Environment.B_CLUSTER:
+        return "/kuacc/users/baristopal20/SSuperGAN/"
     else:
         raise NotImplementedError
 
