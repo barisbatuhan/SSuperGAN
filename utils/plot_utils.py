@@ -6,6 +6,7 @@ import pickle
 import torch
 import torch.nn.functional as F
 from torchvision.utils import make_grid
+from torchvision.utils import save_image
 
 
 def savefig(fname, show_figure=True):

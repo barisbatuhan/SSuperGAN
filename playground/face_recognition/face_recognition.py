@@ -1,25 +1,21 @@
-import torch
 from torch import optim
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 
 import torchvision.transforms
 
-
 from utils.config_utils import read_config, Config
-from utils.image_utils import imshow
 from utils.logging_utils import *
 from utils.datetime_utils import get_dt_string
 from utils.plot_utils import *
-from utils import pytorch_util as ptu
 
-from data import facedataset, facedatasource
-from data.datasource_mode import DataSourceMode
+from data.datasets import facedataset
+from data.datasources import facedatasource
+from data.datasources.datasource_mode import DataSourceMode
 from networks.siamese_network import SiameseNetwork
 from functional.losses.contrastive_loss import ContrastiveLoss
 from functional.metrics.dissimilarity import *
 from training.face_recognition_trainer import train_epochs
 from configs.base_config import *
-
 
 
 def compare_test_set(model, max_display=None):
@@ -47,7 +43,7 @@ def visualize_data():
 def save_best_loss_model(model_name, model, best_loss):
     print('current best loss: ' + str(best_loss))
     logging.info('current best loss: ' + str(best_loss))
-    torch.save(model, base_dir + 'playground/results/' + model_name + ".pth")
+    torch.save(model, base_dir + 'playground/face_recognition/results/' + model_name + ".pth")
 
 
 def train_siamese(model_name='test_model'):
@@ -73,7 +69,7 @@ def train_siamese(model_name='test_model'):
     save_training_plot(train_losses['loss'],
                        test_losses['loss'],
                        "Siamese Results",
-                       base_dir + 'playground/' + f'results/siamese_train_plot.png')
+                       base_dir + 'playground/face_recognition/' + f'results/siamese_train_plot.png')
     return net
 
 
@@ -90,7 +86,7 @@ def compute_mean_acc(model, datasource_mode: DataSourceMode = DataSourceMode.TES
 if __name__ == '__main__':
     ptu.set_gpu_mode(True)
     model = train_siamese(get_dt_string() + "_model")
-    torch.save(model, base_dir + 'playground/results/' + "test_model.pth")
+    torch.save(model, base_dir + 'playground/face_recognition/results/' + "test_model.pth")
     # model = torch.load("test_model.pth")
     # compare_test_set(model)
     # visualize_data()
