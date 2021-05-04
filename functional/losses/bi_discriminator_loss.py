@@ -40,7 +40,7 @@ class BidirectionalDiscriminatorLoss(nn.Module):
             disc_real_output = bigan.discriminator.forward(real_input)
 
             d_loss = - 0.5 * disc_real_output.log().mean() - 0.5 * (1 - disc_fake_output).log().mean()
-            return d_loss
+            return OrderedDict(loss=d_loss)
         elif self.loss_type == BidirectionalDiscriminatorLossType.WASSERSTEIN:
             raise NotImplementedError
         else:
