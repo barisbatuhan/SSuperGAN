@@ -80,6 +80,18 @@ generator_beta_1: 0.5
 generator_beta_2: 0.999
 ```
 
+### USING GOLDEN AGE FACE DATA
+- In order to run the module 'golden_age_face_config.yaml' file should be created under configs.
+- Example Config:
+```
+annotations_folder_path: /home/gsoykan20/Desktop/amazing-mysteries-gutter-comics/golden_annot
+panel_folder_path: /home/gsoykan20/Desktop/amazing-mysteries-gutter-comics/comics/data/raw_panel_images
+min_original_face_dim: 64
+num_training_samples: 30000
+num_test_samples: 1024
+image_dim: 64
+```
+
 ### Face Recognition Module
 
 - In order to run the module 'face_recognition_config.yaml' file should be created under configs.
