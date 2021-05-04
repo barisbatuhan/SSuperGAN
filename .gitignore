@@ -1,4 +1,4 @@
-configs/face_recognition_config.yaml
+configs/*.yaml
 **/*.pth
 **/*.png
 **/*.obj
