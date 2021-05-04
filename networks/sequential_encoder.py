@@ -11,7 +11,7 @@ class SequentialEncoder(nn.Module):
 
         defaults = {
             "lstm_hidden": 256, # hidden size of LSTM module
-            "embed": 512, # last size for mean and std outputs
+            "embed": 256, # last size for mean and std outputs
             "cnn_embed": 2048, # the output dim retrieved from CNN embedding module
             "fc_hiddens": [], # sizes of FC layers after LSTM output, if there are any
             "lstm_dropout": 0, # set to 0 if num_lstm_layers is 1, otherwise set to [0, 0.5]
@@ -67,10 +67,7 @@ class SequentialEncoder(nn.Module):
         device = x.get_device()
 
         # Retrieved the embeddings for each of the panels
-        outs = []
-        for s in range(S):
-            outs.append(self.backbone(x[:, s, :, :, :]).unsqueeze(1))
-        outs = torch.cat(outs, dim=1)
+        outs = self.backbone(x.reshape(-1, C, H, W)).reshape(B, S, -1)
 
         # Embedding outputs are passed to the lstm
         outs, _ = self.lstm(
