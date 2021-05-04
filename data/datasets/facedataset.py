@@ -1,9 +1,7 @@
-import numpy as np
 import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
-from data.facedatasource import FaceDatasource
-from utils.pytorch_util import from_numpy
+from data.datasources.facedatasource import FaceDatasource
 import random
 from utils import pytorch_util as ptu
 

@@ -1,21 +1,11 @@
-import numpy as np
-from skimage import io, transform
-from PIL import Image
-from pathlib import Path
 from abc import ABC, abstractmethod
-from typing import List, Tuple
-from types import SimpleNamespace
-from skimage.color import rgba2rgb, gray2rgb
-#  source: https://codeolives.com/2020/01/10/python-reference-module-in-parent-directory/
-import sys, os, inspect
 from collections import defaultdict
-
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0, parentdir)
-from data.datasource_mode import DataSourceMode
-from utils import image_utils
+from pathlib import Path
+from typing import List, Tuple
+from utils.image_utils import read_image_from_path
+from data.datasources.datasource_mode import DataSourceMode
 import random
+import numpy as np
 
 
 class FaceDataItem:
@@ -103,16 +93,7 @@ class ICartoonFaceDatasource(FaceDatasource):
         return self.data_item_to_actual_data(face_data_item)
 
     def data_item_to_actual_data(self, data_item: FaceDataItem):
-        image = io.imread(data_item.path).astype('uint8')
-        shape_len = len(image.shape) 
-        if shape_len < 3:
-              image = gray2rgb(image)  
-        elif shape_len == 3:
-                _, _, channels = image.shape
-                if channels > 3:
-                    image = rgba2rgb(image)     
-        im_dim = self.config.image_dim
-        image = transform.resize(image=image, output_shape=(im_dim, im_dim))
+        image = read_image_from_path(data_item.path, self.config.image_dim)
         return image, data_item.face_id
 
     def get_item_id(self, index: int) -> str:
