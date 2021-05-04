@@ -34,18 +34,21 @@ class Reshape(nn.Module):
     def forward(self, x):
         return x.view(self.shape)
 
+
 # Alternative Implementation: https://github.com/eriklindernoren/Keras-GAN/blob/master/bigan/bigan.py
 # DUL Course Implementation:https://github.com/rll/deepul/blob/master/homeworks/solutions/hw4_solutions.ipynb
 
 class BiGAN(BaseGAN):
     def __init__(self,
                  image_dim,
-                 latent_dim=50,
+                 image_channel=3,
+                 latent_dim=100,
                  g_hidden_size=1024,
                  d_hidden_size=1024,
                  e_hidden_size=1024,
                  ):
         super(BiGAN, self).__init__()
+        self.image_channel = image_channel
         self.image_dim = image_dim
         self.latent_dim = latent_dim
         self.g_hidden_size = g_hidden_size
@@ -64,7 +67,8 @@ class BiGAN(BaseGAN):
         hidden_size = self.e_hidden_size
         latent_dim = self.latent_dim
         encoder = nn.Sequential(
-            nn.Linear(image_dim ** 2, hidden_size),
+            nn.Flatten(),
+            nn.Linear(self.image_channel * (image_dim ** 2), hidden_size),
             nn.LeakyReLU(0.2),
             nn.Linear(hidden_size, hidden_size),
             nn.BatchNorm1d(hidden_size, affine=False),
@@ -83,14 +87,14 @@ class BiGAN(BaseGAN):
             nn.Linear(g_hidden_size, g_hidden_size),
             nn.BatchNorm1d(g_hidden_size, affine=False),
             nn.ReLU(),
-            nn.Linear(g_hidden_size, output_dim ** 2),
+            nn.Linear(g_hidden_size, self.image_channel * (output_dim ** 2)),
             nn.Tanh(),
-            Reshape(-1, 1, output_dim, output_dim)
+            Reshape(-1, self.image_channel, output_dim, output_dim)
         )
         return generator
 
     def create_discriminator(self, **kwargs) -> nn.Module:
-        d_input_dim = self.image_dim ** 2 + self.latent_dim
+        d_input_dim = self.image_channel * (self.image_dim ** 2) + self.latent_dim
         d_hidden_size = self.d_hidden_size
         discriminator = nn.Sequential(
             nn.Linear(d_input_dim, d_hidden_size),
@@ -115,7 +119,7 @@ class BiGAN(BaseGAN):
     def reconstruct(self, x: Tensor) -> Tensor:
         self.generator.eval()
         self.encoder.eval()
-        x = x.view(-1, 1, self.image_dim, self.image_dim)
+        x = x.view(-1, self.image_channel, self.image_dim, self.image_dim)
         z = self.encoder.forward(x)
         reconstruction = self.generator.forward(z)
         return reconstruction
@@ -126,7 +130,7 @@ class BiGAN(BaseGAN):
         latents = self.sample_latent(batchsize)
         return self.sample_fake_with_latent(latents)
 
-    # TODO: This migth be improved
+    # TODO: This might be improved
     @torch.no_grad()
     def interpolate_sample_generator(self, batchsize: int) -> Tensor:
         intervals = torch.linspace(-1, 1, batchsize).to(ptu.device)

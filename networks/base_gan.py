@@ -1,8 +1,8 @@
 import torch.nn as nn
 from torch import Tensor
 from abc import abstractmethod
-
-
+import torch
+from torchvision.utils import save_image
 class BaseGAN(nn.Module):
     def __init__(self) -> None:
         super(BaseGAN, self).__init__()
@@ -25,3 +25,9 @@ class BaseGAN(nn.Module):
     @abstractmethod
     def interpolate_sample_generator(self, batchsize: int) -> Tensor:
         pass
+
+    @abstractmethod
+    @torch.no_grad()
+    def save_samples(self, n, filename):
+        samples = self.random_sample_generator(batchsize=n)
+        save_image(samples, filename, nrow=10, normalize=True)
