@@ -32,7 +32,7 @@ class BaseGAN(nn.Module):
     def sample_latent(self, batchsize: int) -> Tensor:
         raise NotImplementedError
 
-    def sample(self, batchsize: int) -> Tensor:
+    def sample(self, size: int) -> Tensor:
         raise NotImplementedError
 
     @abstractmethod
@@ -42,5 +42,5 @@ class BaseGAN(nn.Module):
     @abstractmethod
     @torch.no_grad()
     def save_samples(self, n, filename):
-        samples = self.sample(batchsize=n)
+        samples = self.sample(size=n)
         save_image(samples, filename, nrow=10, normalize=True)
