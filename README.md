@@ -42,6 +42,32 @@ Comment: >
         - 20480
         - 22528
 ```
+
+### BiGAN Module
+
+- In order to run the module 'bigan_config.yaml' file should be created under configs.
+- Example Config:
+```
+face_image_folder_train_path: /home/gsoykan20/Desktop/ffhq_thumbnails/thumbnails128x128/
+face_image_folder_test_path: /home/gsoykan20/Desktop/ffhq_thumbnails/thumbnails128x128/
+num_training_samples: 10240
+test_samples_range:
+    - 10240
+    - 10640
+image_dim: 32
+batch_size: 32
+train_epochs: 10
+discriminator_lr: 0.0002
+discriminator_weight_decay: 0.000025
+discriminator_beta_1: 0.5
+discriminator_beta_2: 0.999
+generator_lr: 0.0002
+generator_weight_decay: 0.000025
+generator_beta_1: 0.5
+generator_beta_2: 0.999
+```
+
+
 ### Project Based Configuration
 
 One should check and update 'configs/base_config' for global config parameters such base project directory.
