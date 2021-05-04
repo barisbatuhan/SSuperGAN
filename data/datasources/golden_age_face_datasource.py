@@ -49,6 +49,9 @@ class GoldenAgeFaceDatasource(BaseDatasource):
                                               crop_region=(y1, x1, y2, x2),
                                               output_shape=(self.config.image_dim, self.config.image_dim))
                     face_data[added_image_counter, :, :, :] = cropped_face
+
+                    if added_image_counter % 512 == 0:
+                        print("reading image: " + str(added_image_counter))
                     added_image_counter += 1
                     if added_image_counter >= total_image_count:
                         return face_data
