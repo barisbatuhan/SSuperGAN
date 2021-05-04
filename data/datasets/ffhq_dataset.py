@@ -1,16 +1,14 @@
 import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
-from data.datasources.facedatasource import FaceDatasource
+from data.datasources.base_datasource import BaseDatasource
 import random
-
-from data.datasources.ffhq_datasource import FFHQDatasource
 from utils import pytorch_util as ptu
 
 
 class FFHQDataset(Dataset):
     def __init__(self,
-                 datasource: FFHQDatasource,
+                 datasource: BaseDatasource,
                  transformations: transforms = None):
         random.seed(10)
         if transformations is None:
