@@ -24,12 +24,21 @@ class FFHQDatasource(BaseDatasource):
     def read_face_images(self, ref_path: str):
         paths = Path(ref_path).glob('**/*.png')
         counter = 0
-        face_data = np.empty((0, self.config.image_dim, self.config.image_dim, 3))
+        added_image_counter = 0
+
+        train_limit = self.config.num_training_samples
+        test_min_limit = self.config.test_samples_range[0]
+        test_max_limit = self.config.test_samples_range[1]
+
+        if self.mode is DataSourceMode.TRAIN:
+            total_image_count = train_limit
+        elif self.mode is DataSourceMode.TEST and counter < test_min_limit:
+            total_image_count = test_max_limit - test_min_limit
+
+        face_data = np.empty((total_image_count, self.config.image_dim, self.config.image_dim, 3))
+
         for path in paths:
             counter += 1
-            train_limit = self.config.num_training_samples
-            test_min_limit = self.config.test_samples_range[0]
-            test_max_limit = self.config.test_samples_range[1]
 
             if self.mode is DataSourceMode.TRAIN and \
                     train_limit is not None and counter > train_limit:
@@ -41,11 +50,16 @@ class FFHQDatasource(BaseDatasource):
 
             global_path = str(path)
             image = read_image_from_path(global_path, self.config.image_dim)
-            # TODO: get rid of concat
-            face_data = np.concatenate((face_data, np.expand_dims(image, axis=0)), axis=0)
 
-            if face_data.shape[0] % 512 == 0:
-                print("reading image: " + str(face_data.shape[0]))
+            if self.mode is DataSourceMode.TRAIN:
+                face_data[counter - 1, :, :, :] = image
+            elif self.mode is DataSourceMode.TEST:
+                face_data[counter - 1 - test_min_limit, :, :, :] = image
+
+            added_image_counter += 1
+
+            if added_image_counter % 512 == 0:
+                print("reading image: " + str(added_image_counter))
 
         return face_data
 
