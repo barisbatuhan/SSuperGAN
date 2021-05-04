@@ -41,7 +41,11 @@ class FFHQDatasource(BaseDatasource):
 
             global_path = str(path)
             image = read_image_from_path(global_path, self.config.image_dim)
+            # TODO: get rid of concat
             face_data = np.concatenate((face_data, np.expand_dims(image, axis=0)), axis=0)
+
+            if face_data.shape[0] % 512 == 0:
+                print("reading image: " + str(face_data.shape[0]))
 
         return face_data
 
