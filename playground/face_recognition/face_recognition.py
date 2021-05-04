@@ -1,18 +1,16 @@
-import torch
 from torch import optim
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 
 import torchvision.transforms
 
 from utils.config_utils import read_config, Config
-from utils.image_utils import imshow
 from utils.logging_utils import *
 from utils.datetime_utils import get_dt_string
 from utils.plot_utils import *
-from utils import pytorch_util as ptu
 
-from data import facedataset, facedatasource
-from data.datasource_mode import DataSourceMode
+from data.datasets import facedataset
+from data.datasources import facedatasource
+from data.datasources.datasource_mode import DataSourceMode
 from networks.siamese_network import SiameseNetwork
 from functional.losses.contrastive_loss import ContrastiveLoss
 from functional.metrics.dissimilarity import *
