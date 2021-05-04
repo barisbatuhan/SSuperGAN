@@ -7,6 +7,7 @@ from configs.base_config import *
 class Config(Enum):
     FACE_RECOGNITION = 1
     BiGAN = 2
+    GOLDEN_AGE_FACE = 3
 
 
 def read_config(config: Config):
@@ -14,6 +15,8 @@ def read_config(config: Config):
         path = base_dir + 'configs/face_recognition_config.yaml'
     elif config == Config.BiGAN:
         path = base_dir + 'configs/bigan_config.yaml'
+    elif config == Config.GOLDEN_AGE_FACE:
+        path = base_dir + 'configs/golden_age_face_config.yaml'
     else:
         raise NotImplementedError
     with open(path) as file:
