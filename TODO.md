@@ -29,7 +29,7 @@ Gürkan bakacak, yararlı bazı çalışmalar:
 
 ## LSTM Yapısı Oluşturma
 
-Sonra yapılacak.
+LSTM yapısı oluşturuldu ve CNN yapısıyla bağlandı. Reconstruction ve KL için de loss fonksiyonları eklendi.
 
 ### NEW TASKS 1-9.05.2021
 
@@ -38,5 +38,5 @@ Sonra yapılacak.
 	- [] Yüz keserken minimum edge 32 olsun, daha küçük olunca yok olmuş olacak
 	- [] DataLoader yapılıcak.
 	- [] Average Aspect Ratio bulucaz dataset içinde daha sonra image kesmeyi buna göre yapabiliriz. ve bunu center crop yaparak daha sonra image larda kullanıcaz. 
-- [] CNN LSTM networku kurma
-- [] Latent alındığı zaman generator discriminator yapısını oluşturma
+- [+] CNN LSTM networku kurma
+- [+] Latent alındığı zaman generator discriminator yapısını oluşturma

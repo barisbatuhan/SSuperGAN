@@ -10,13 +10,13 @@ class SequentialEncoder(nn.Module):
         super(SequentialEncoder, self).__init__()
 
         defaults = {
-            "lstm_hidden": 256, # hidden size of LSTM module
-            "embed": 256, # last size for mean and std outputs
-            "cnn_embed": 2048, # the output dim retrieved from CNN embedding module
-            "fc_hiddens": [], # sizes of FC layers after LSTM output, if there are any
-            "lstm_dropout": 0, # set to 0 if num_lstm_layers is 1, otherwise set to [0, 0.5]
-            "fc_dropout": 0.2, # dropout ratio of FC layers if there are any
-            "num_lstm_layers": 1 # number of stacked LSTM layers
+            "lstm_hidden": 256,    # hidden size of LSTM module
+            "embed": 256,          # last size for mean and std outputs
+            "cnn_embed": 2048,     # the output dim retrieved from CNN embedding module
+            "fc_hiddens": [],      # sizes of FC layers after LSTM output, if there are any
+            "lstm_dropout": 0,     # set to 0 if num_lstm_layers is 1, otherwise set to [0, 0.5]
+            "fc_dropout": 0,       # dropout ratio of FC layers if there are any
+            "num_lstm_layers": 1   # number of stacked LSTM layers
         }
 
         if args is not None:

@@ -106,14 +106,27 @@ class BiGAN(BaseGAN):
             nn.Sigmoid()
         )
         return discriminator
-
-    def sample_latent(self, batchsize: int) -> Tensor:
+    
+    # Next 3 functions will be the same for all the GAN networks implemented
+    # -----------------------------------------------------------------------
+    
+    def generate(self, latents: Tensor) -> Tensor:
+        return self.generator(latents)
+    
+    def encode(self, image: Tensor) -> Tensor:
+        return self.encoder(image)
+    
+    def discriminate(self, image: Tensor, latent: Tensor) -> Tensor:
+        batchsize = image.shape[0]
+        input_tensor = torch.cat((latent, image.view(batchsize, -1)), dim=1)
+        return self.discriminator(input_tensor)
+    
+    # -----------------------------------------------------------------------
+    
+    def sample_latent(self, size: int) -> Tensor:
         return self.latent_dist \
-            .sample(sample_shape=(batchsize, self.latent_dim)) \
+            .sample(sample_shape=(size, self.latent_dim)) \
             .squeeze()
-
-    def sample_fake_with_latent(self, latents: Tensor) -> Tensor:
-        return self.generator.forward(latents)
 
     @torch.no_grad()
     def reconstruct(self, x: Tensor) -> Tensor:
@@ -125,14 +138,14 @@ class BiGAN(BaseGAN):
         return reconstruction
 
     @torch.no_grad()
-    def random_sample_generator(self, batchsize: int) -> Tensor:
+    def sample(self, size: int) -> Tensor:
         self.generator.eval()
-        latents = self.sample_latent(batchsize)
-        return self.sample_fake_with_latent(latents)
+        latents = self.sample_latent(size)
+        return self.generate(latents)
 
     # TODO: This might be improved
     @torch.no_grad()
-    def interpolate_sample_generator(self, batchsize: int) -> Tensor:
+    def interpolate(self, batchsize: int) -> Tensor:
         intervals = torch.linspace(-1, 1, batchsize).to(ptu.device)
         latents = torch.repeat_interleave(intervals, self.latent_dim)
-        return self.sample_fake_with_latent(latents.view(batchsize, -1))
+        return self.generate(latents.view(batchsize, -1))
