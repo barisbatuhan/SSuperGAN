@@ -1,10 +1,22 @@
 # Self-Supervised Face Generation using Panel Context Information (SSuperGAN)
 
-Using [Golden Age Comics](https://digitalcomicmuseum.com/) data, this model tries to generate masked faces of the characters given the previous sequential frames. 
+This model tries to generate masked faces of the characters given the previous sequential frames. 
 
 ## Notes:
 
 This repository is not fully completed!
+
+## Datasets:
+
+- [**Golden Age Comics**](https://digitalcomicmuseum.com/): Includes US comics between 1938 to 1956. The extracted panel images are used, which are retrieved through the study [The Amazing Mysteries of the Gutter](https://arxiv.org/abs/1611.05118).
+
+The whole panel data is processed by a cartoon Face Detector model (which can be found in [here](https://github.com/barisbatuhan/FaceDetector)) by using `mixed_r50` weights and by setting `confidence threshold` to 0.55 and `nms threshold` to 0.2. The following statistics are retrieved from the outputs of the detector model.
+
+- **Total files:** 684885
+- **Total faces:** 1063804
+- **Faces above 64px:** 309079 / 521089 `(min(width, height) >= 64 / max(width, height) >= 64)`
+- **Faces above 128px:** 75111 / 158988 `(min(width, height) >= 128 / max(width, height) >= 128)`
+- **Faces above 256px:** 13214 / 27471 `(min(width, height) >= 256 / max(width, height) >= 256)`
 
 ## Model Architecture
 
