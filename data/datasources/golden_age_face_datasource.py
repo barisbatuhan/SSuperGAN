@@ -55,8 +55,60 @@ class GoldenAgeFaceDatasource(BaseDatasource):
                     added_image_counter += 1
                     if added_image_counter >= total_image_count:
                         return face_data
+        print("total image count: " + str(added_image_counter))
+        return face_data[:added_image_counter, :, :, :]
 
-        return face_data
+    def get_additional_data(self,
+                            annot_path: str,
+                            from_image_count: int,
+                            additional_image_count: int):
+        if self.mode is DataSourceMode.TRAIN:
+            annotation_paths = Path(annot_path).glob('**/*.txt')
+        elif self.mode is DataSourceMode.TEST:
+            annotation_paths = reversed(list(Path(annot_path).glob('**/*.txt')))
+        else:
+            raise NotImplementedError
+
+        total_image_count = additional_image_count
+
+        added_image_counter = 0
+        total_valid_image_iteration = 0
+
+        face_data = np.empty((total_image_count, self.config.image_dim, self.config.image_dim, 3))
+
+        for annot_path in annotation_paths:
+            annot_path_str = str(annot_path)
+            with open(annot_path_str) as fp:
+                for line in fp:
+                    image_location, y1, x1, y2, x2, confidence = line.strip().split()
+                    y1, x1, y2, x2 = list(map(lambda x: int(x), [y1, x1, y2, x2]))
+                    y_dim = abs(y1 - y2)
+                    x_dim = abs(x1 - x2)
+                    min_dim = min(x_dim, y_dim)
+                    if min_dim < self.config.min_original_face_dim:
+                        continue
+                    image_location = self.config.panel_folder_path + '/' + image_location
+
+                    total_valid_image_iteration += 1
+
+                    if total_valid_image_iteration <= from_image_count:
+                        if total_valid_image_iteration % 512 == 0:
+                            print("skipping image: " + str(total_valid_image_iteration))
+                        continue
+
+                    whole_image = read_image_from_path(image_location, im_dim=None)
+                    cropped_face = crop_image(whole_image,
+                                              crop_region=(y1, x1, y2, x2),
+                                              output_shape=(self.config.image_dim, self.config.image_dim))
+                    face_data[added_image_counter, :, :, :] = cropped_face
+
+                    if added_image_counter % 512 == 0:
+                        print("reading image: " + str(added_image_counter))
+                    added_image_counter += 1
+                    if added_image_counter >= total_image_count:
+                        return face_data
+        print("total image count: " + str(added_image_counter))
+        return face_data[:added_image_counter, :, :, :]
 
     def compute_length(self) -> int:
         return self.data.shape[0]
