@@ -3,6 +3,7 @@ import torch.nn as nn
 import torchvision
 import torchvision.models as models
 
+from utils import pytorch_util as ptu
 
 class SequentialEncoder(nn.Module):
 
@@ -64,7 +65,6 @@ class SequentialEncoder(nn.Module):
 
     def forward(self, x):
         B, S, C, H, W = x.shape
-        device = x.get_device()
 
         # Retrieved the embeddings for each of the panels
         outs = self.backbone(x.reshape(-1, C, H, W)).reshape(B, S, -1)
@@ -73,8 +73,8 @@ class SequentialEncoder(nn.Module):
         outs, _ = self.lstm(
             outs,
             (
-                torch.zeros(self.num_lstm_layers, S, self.hidden_size).to(device), # h0
-                torch.zeros(self.num_lstm_layers, S, self.hidden_size).to(device)  # c0
+                torch.zeros(self.num_lstm_layers, S, self.hidden_size).to(ptu.device), # h0
+                torch.zeros(self.num_lstm_layers, S, self.hidden_size).to(ptu.device)  # c0
             ) 
         )
         outs = outs[:, -1, :]

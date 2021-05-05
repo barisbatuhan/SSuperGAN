@@ -50,25 +50,64 @@ class SSuperGAN(nn.Module):
     def encode(self, image: Tensor) -> Tensor:
         return self.gan.encode(image)
     
-    # Passes 
+    
     def forward(self, x: Tensor, y: Tensor=None) -> Tensor:
         # Sequential part
         mu, std = self.seq_encoder(x)
         z = torch.distributions.Normal(mu, std).rsample()
         # GAN part
         y_recon = self.gan.generate(z)
+        z_recon = self.gan.encode(y)
+        return y_recon, z_recon, (z, mu, std)
+
+    
+    def get_seq_encoder_loss(self, y, y_recon, stats):
+        loss_kl = kl_loss(*stats)
+        loss_recon = reconstruction_loss(y, y_recon, self.log_scale)
+        return loss_kl + loss_recon
+    
+    def get_discriminator_loss(self, y, y_recon, z, z_recon, mu, std):
+        # New random generation
+        z_normal = torch.distributions.Normal(
+                torch.zeros_like(mu), torch.ones_like(std)).rsample()
+        y_normal_recon = self.gan.generate(z_normal)
+        # Discriminator passes
+        disc_normal_fake = self.gan.discriminate(y_normal_recon, z_normal)
+        disc_real = self.gan.discriminate(y, z)
+        disc_fake = self.gan.discriminate(y_recon, z_recon)
+        # Calculation of the discrimination loss
+        return discrimination_loss(disc_real, disc_fake, disc_normal_fake)
         
-        if y is None:
-            # only the generation task is applicable
-            return y_recon
-        else:
-            # loss calculation
-            z_recon = self.gan.encode(y)
-            disc_real = self.gan.discriminate(y, z)
-            disc_fake = self.gan.discriminate(y_recon, z_recon)
+    
+    def get_generator_loss(self, y, y_recon, z, z_recon, mu, std):
+        loss_recon = reconstruction_loss(y, y_recon, self.log_scale)
+        loss_disc = self.get_discriminator_loss(y, y_recon, z, z_recon, mu, std)
+        return loss_recon - loss_disc
+        
+        
+#     # Passes 
+#     def forward(self, x: Tensor, y: Tensor=None) -> Tensor:
+#         # Sequential part
+#         mu, std = self.seq_encoder(x)
+#         z = torch.distributions.Normal(mu, std).rsample()
+#         # GAN part
+#         y_recon = self.gan.generate(z)
+        
+#         if y is None:
+#             # only the generation task is applicable
+#             return y_recon
+#         else:
+#             z_normal = torch.distributions.Normal(
+#                 torch.zeros_like(mu), torch.ones_like(std)).rsample()
+#             y_normal_recon = self.gan.generate(z_normal)
+#             # loss calculation
+#             z_recon = self.gan.encode(y)
+#             disc_real = self.gan.discriminate(y, z)
+#             disc_fake = self.gan.discriminate(y_recon, z_recon)
+#             disc_normal_fake = self.gan.discriminate(y_normal_recon, z_normal)
             
-            loss_kl = kl_loss(z, mu, std)
-            loss_recon = reconstruction_loss(y, y_recon, self.log_scale)
-            loss_disc = discrimination_loss(disc_real, disc_fake)
+#             loss_kl = kl_loss(z, mu, std)
+#             loss_recon = reconstruction_loss(y, y_recon, self.log_scale)
+#             loss_disc = discrimination_loss(disc_real, disc_fake, disc_normal_fake)
         
-            return loss_kl, loss_recon, loss_disc
+#             return loss_kl, loss_recon, loss_disc
