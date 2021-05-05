@@ -55,7 +55,7 @@ def train_bigan(model_name='test_model'):
         datasource=FFHQDatasource(config, mode=DataSourceMode.TRAIN))
     train_dataloader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
     net = BiGAN(image_dim=config.image_dim).to(ptu.device)
-    criterion = BidirectionalDiscriminatorLoss(loss_type=BidirectionalDiscriminatorLossType.VANILLA)
+    criterion = BidirectionalDiscriminatorLoss(loss_type=BidirectionalDiscriminatorLossType.VANILLA_LOG_MEAN)
 
     d_optimizer = torch.optim.Adam(net.discriminator.parameters(),
                                    lr=config.discriminator_lr,
@@ -100,7 +100,7 @@ def train_golden_age_face_bigan(model_name='test_model'):
         datasource=GoldenAgeFaceDatasource(golden_age_config, mode=DataSourceMode.TRAIN))
     train_dataloader = DataLoader(train_dataset, batch_size=train_config.batch_size, shuffle=True)
     net = BiGAN(image_dim=golden_age_config.image_dim).to(ptu.device)
-    criterion = BidirectionalDiscriminatorLoss(loss_type=BidirectionalDiscriminatorLossType.VANILLA)
+    criterion = BidirectionalDiscriminatorLoss(loss_type=BidirectionalDiscriminatorLossType.VANILLA_LOG_MEAN)
 
     d_optimizer = torch.optim.Adam(net.discriminator.parameters(),
                                    lr=train_config.discriminator_lr,
