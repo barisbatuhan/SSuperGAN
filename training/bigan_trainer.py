@@ -8,16 +8,18 @@ import torch.utils.data as data
 import torch.optim as optim
 
 from functional.losses.bi_discriminator_loss import BidirectionalDiscriminatorLoss
+from networks.base_gan import BaseGAN
 from networks.bigan import BiGAN
 from utils.structs.metric_recorder import *
 from utils.logging_utils import *
 from utils import pytorch_util as ptu
 from configs.base_config import *
+from typing import Tuple
 
 
 class BiGANTrainer(object):
     def __init__(self,
-                 model: BiGAN,
+                 model: BaseGAN,
                  criterion: BidirectionalDiscriminatorLoss,
                  train_loader,
                  test_loader,
@@ -28,7 +30,10 @@ class BiGANTrainer(object):
                  scheduler_gen=None,
                  quiet: bool = False,
                  grad_clip=None,
-                 best_loss_action=None
+                 best_loss_action=None,
+                 generator_update_round=1,
+                 # Possible Value: (-0.01, 0.01)
+                 disc_weight_clipping: Tuple[float, float] = None
                  ):
         self.model = model
         self.train_loader = train_loader
@@ -42,6 +47,8 @@ class BiGANTrainer(object):
         self.scheduler_disc = scheduler_disc
         self.scheduler_gen = scheduler_gen
         self.grad_clip = grad_clip
+        self.disc_weight_clipping = disc_weight_clipping
+        self.generator_update_round = generator_update_round
 
     # TODO: if we were to add global & local discriminator dataloader needs to be updated
     # along with the model and basically two disc heads needs to be
@@ -55,23 +62,31 @@ class BiGANTrainer(object):
             self.model.train()
             if not self.quiet:
                 pbar = tqdm(total=len(self.train_loader.dataset))
-            for batch in self.train_loader:
+            for count, batch in enumerate(self.train_loader):
                 batch = batch.to(ptu.device).float()
 
                 # do a minibatch update
                 self.optimizer_discriminator.zero_grad()
                 d_out = self.criterion.forward(self.model, batch)
                 d_out['loss'].backward()
+
+                # Weight Clipping For Wesserstein Loss
+                if self.disc_weight_clipping is not None:
+                    for p in self.model.discriminator.parameters():
+                        p.data.clamp_(self.disc_weight_clipping[0], self.disc_weight_clipping[0])
+
                 d_out['discriminator_loss'] = d_out.pop('loss')
                 self.optimizer_discriminator.step()
 
+                g_out = {}
                 # generator and encoder update
-                self.optimizer_generator.zero_grad()
-                g_out = self.criterion.forward(self.model, batch)
-                g_out['loss'] = -1 * g_out['loss']
-                g_out['loss'].backward()
-                g_out['generator_loss'] = g_out.pop('loss')
-                self.optimizer_generator.step()
+                if count % self.generator_update_round == 0:
+                    self.optimizer_generator.zero_grad()
+                    g_out = self.criterion.forward(self.model, batch)
+                    g_out['loss'] = -1 * g_out['loss']
+                    g_out['loss'].backward()
+                    g_out['generator_loss'] = g_out.pop('loss')
+                    self.optimizer_generator.step()
 
                 desc = f'Epoch {epoch}'
                 for out in [d_out, g_out]:
@@ -108,6 +123,4 @@ class BiGANTrainer(object):
             # creating and saving images after each epoch
             self.model.save_samples(10, base_dir + 'playground/bigan/results/ + 'f'epoch{epoch}_samples.png')
 
-
         return losses
-
