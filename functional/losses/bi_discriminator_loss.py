@@ -12,11 +12,13 @@ import numpy as np
 
 # TODO: implement Wasserstein Loss
 class BidirectionalDiscriminatorLossType(enum.Enum):
-    VANILLA = 1
+    VANILLA_LOG_MEAN = 1
     # This can be used as a source: https://wiseodd.github.io/techblog/2017/02/04/wasserstein-gan/
     WASSERSTEIN = 2
+    VANILLA_MEAN_LOG = 3
 
 
+# TODO: @Gurkan🐈‍⬛ kanka log().mean() yerine mean().log() denemeyi unutma bak ben öyle yapmıştım ödevi :D
 class BidirectionalDiscriminatorLoss(nn.Module):
     def __init__(self, loss_type: BidirectionalDiscriminatorLossType):
         super(BidirectionalDiscriminatorLoss, self).__init__()
@@ -26,7 +28,8 @@ class BidirectionalDiscriminatorLoss(nn.Module):
                 bigan: BiGAN,
                 batch):
         batchsize = batch.shape[0]
-        if self.loss_type == BidirectionalDiscriminatorLossType.VANILLA:
+        if self.loss_type == BidirectionalDiscriminatorLossType.VANILLA_LOG_MEAN \
+                or self.loss_type == BidirectionalDiscriminatorLossType.VANILLA_MEAN_LOG:
             z_fake = bigan.sample_latent(batchsize)
             z_real = bigan.encoder.forward(batch)
 
@@ -39,7 +42,13 @@ class BidirectionalDiscriminatorLoss(nn.Module):
             disc_fake_output = bigan.discriminator.forward(fake_input)
             disc_real_output = bigan.discriminator.forward(real_input)
 
-            d_loss = - 0.5 * disc_real_output.log().mean() - 0.5 * (1 - disc_fake_output).log().mean()
+            if self.loss_type == BidirectionalDiscriminatorLossType.VANILLA_LOG_MEAN:
+                d_loss = - 0.5 * disc_real_output.log().mean() - 0.5 * (1 - disc_fake_output).log().mean()
+            elif self.loss_type == BidirectionalDiscriminatorLossType.VANILLA_MEAN_LOG:
+                d_loss = - 0.5 * disc_real_output.mean().log() - 0.5 * (1 - disc_fake_output).mean().log()
+            else:
+                raise NotImplementedError
+
             return OrderedDict(loss=d_loss)
         elif self.loss_type == BidirectionalDiscriminatorLossType.WASSERSTEIN:
             raise NotImplementedError
