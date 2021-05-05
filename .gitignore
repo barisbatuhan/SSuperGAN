@@ -199,3 +199,10 @@ ENV/
 
 # other
 .vscode
+
+
+# Preprocess related pickle files
+utils/preprocess_pickle/
+
+# Annotation 
+utils/golden_annot
