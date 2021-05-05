@@ -21,8 +21,8 @@ def determine_env() -> Environment:
         return Environment.G_CLUSTER
     elif "/kuacc/users/baristopal20/" in cwd:
         return Environment.B_CLUSTER
-    elif "/kuacc/users/ckoksal20" in cew:
-	return Environment.C.CLUSTER
+    elif "/kuacc/users/ckoksal20" in cwd:
+        return Environment.C.CLUSTER
     else:
         raise NotImplementedError
 
@@ -35,7 +35,7 @@ def determine_base_dir(env: Environment) -> str:
     elif env is Environment.B_CLUSTER:
         return "/kuacc/users/baristopal20/SSuperGAN/"
     elif env is Environment.C_CLUSTER:
-	return "kuacc/users/ckoksal20/AF-GAN"
+        return "kuacc/users/ckoksal20/AF-GAN"
     else:
         raise NotImplementedError
 
