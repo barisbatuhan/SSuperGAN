@@ -40,3 +40,12 @@ LSTM yapısı oluşturuldu ve CNN yapısıyla bağlandı. Reconstruction ve KL i
 	- [] Average Aspect Ratio bulucaz dataset içinde daha sonra image kesmeyi buna göre yapabiliriz. ve bunu center crop yaparak daha sonra image larda kullanıcaz. 
 - [+] CNN LSTM networku kurma
 - [+] Latent alındığı zaman generator discriminator yapısını oluşturma
+
+### NEW ROADMAP and MODELS
+
+1. AutoEncoder Like Structure 
+2. VAE Like Structure ( with/out LSTM or Simple Concating )
+3. VAE Like Structure With a GAN
+4. VAE like Structure With a BiGAN or GAN and a separete enconding of face 
+5. Inpainting Baseline
+6. Possible Combo of All of these

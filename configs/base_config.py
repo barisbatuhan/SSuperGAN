@@ -19,7 +19,7 @@ def determine_env() -> Environment:
         return Environment.G_LOCAL
     elif "/kuacc/users/gsoykan20/" in cwd:
         return Environment.G_CLUSTER
-    elif "/kuacc/users/baristopal20/" in cwd:
+    elif "/users/baristopal20/" in cwd:
         return Environment.B_CLUSTER
     elif "/kuacc/users/ckoksal20" in cwd:
         return Environment.C.CLUSTER
