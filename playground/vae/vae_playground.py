@@ -28,20 +28,21 @@ def save_best_loss_model(model_name, model, best_loss):
 def train(model_name='test_model'):
     # loading config
     logging.info("initiate training")
+
     config = read_config(Config.VAE)
 
     # loading datasets
+    golden_age_config = read_config(Config.GOLDEN_AGE_FACE)
     train_dataset = FFHQDataset(
-        datasource=FFHQDatasource(config, mode=DataSourceMode.TRAIN))
+        datasource=GoldenAgeFaceDatasource(golden_age_config, mode=DataSourceMode.TRAIN))
     train_dataloader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
 
-    # loading datasets
     test_dataset = FFHQDataset(
-        datasource=FFHQDatasource(config, mode=DataSourceMode.TEST))
+        datasource=GoldenAgeFaceDatasource(golden_age_config, mode=DataSourceMode.TEST))
     test_dataloader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
 
     # creating model and training details
-    net = IntroVAE(image_size=config.image_dim,
+    net = IntroVAE(image_size=golden_age_config.image_dim,
                    channels=config.channels,
                    hdim=config.latent_dim_z).to(ptu.device)
 
@@ -81,6 +82,6 @@ if __name__ == '__main__':
     ptu.set_gpu_mode(True)
     model = train(get_dt_string() + "_model")
     # model = train_golden_age_face_bigan(get_dt_string() + "_model")
-    torch.save(model, base_dir + 'playground/bigan/results/' + "test_model.pth")
+    torch.save(model, base_dir + 'playground/vae/results/' + "test_model.pth")
     # model = torch.load("test_model.pth")
     # TODO: add visualizations of reconstruction and sampling from model
