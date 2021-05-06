@@ -36,7 +36,10 @@ class GoldenAgeFaceDatasource(BaseDatasource):
             annot_path_str = str(annot_path)
             with open(annot_path_str) as fp:
                 for line in fp:
-                    image_location, y1, x1, y2, x2, confidence = line.strip().split()
+                    try:
+                        image_location, y1, x1, y2, x2, confidence = line.strip().split()
+                    except:
+                        continue
                     y1, x1, y2, x2 = list(map(lambda x: int(x), [y1, x1, y2, x2]))
                     y_dim = abs(y1 - y2)
                     x_dim = abs(x1 - x2)
