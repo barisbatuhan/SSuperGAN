@@ -17,7 +17,8 @@ The whole panel data is processed by a cartoon Face Detector model (which can be
 - **Faces above 64px:** 309079 / 521089 `(min(width, height) >= 64 / max(width, height) >= 64)`
 - **Faces above 128px:** 75111 / 158988 `(min(width, height) >= 128 / max(width, height) >= 128)`
 - **Faces above 256px:** 13214 / 27471 `(min(width, height) >= 256 / max(width, height) >= 256)`
-
+- **Mean of Panel Height : 510.03280164337576,  Median of Height 475.0, Mode of Height : 445 Num Samples 1229664
+- **Mean of Panel Widths  : 508.494401722747,   Median of Height 460.0, Mode of Height : 460 Num Samples 1229664 
 ## Model Architecture
 
 ![gmodel](./images/readme_images/Model.JPG)
