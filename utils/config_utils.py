@@ -9,6 +9,7 @@ class Config(Enum):
     BiGAN = 2
     GOLDEN_AGE_FACE = 3
     SSUPERGAN = 4
+    VAE = 5
 
 
 def read_config(config: Config):
@@ -20,6 +21,8 @@ def read_config(config: Config):
         path = base_dir + 'configs/ssupergan_config.yaml'
     elif config == Config.GOLDEN_AGE_FACE:
         path = base_dir + 'configs/golden_age_face_config.yaml'
+    elif config == Config.VAE:
+        path = base_dir + 'configs/vae_config.yaml'
     else:
         raise NotImplementedError
     with open(path) as file:
