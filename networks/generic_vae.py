@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from networks.base_vae import BaseVAE
+from networks.base.base_vae import BaseVAE
 from utils import pytorch_util as ptu
 from typing import List, Callable, Union, Any, TypeVar, Tuple
 from torch import Tensor
@@ -55,17 +55,11 @@ class GenericVAE(BaseVAE):
         return z, inputs, mu_z, mu_x, logstd_z
 
     @torch.no_grad()
-    def sample(self, size: int, current_device: int, **kwargs) -> Tensor:
+    def sample(self, size: int, **kwargs) -> Tensor:
         self.eval()
         z = self.latent_dist.rsample((size, self.latent_dim)).squeeze()
         samples = self.decode(z)
         return samples
-
-    @torch.no_grad()
-    def generate(self, x: Tensor, **kwargs) -> Tensor:
-        self.eval()
-        z, inputs, mu_z, mu_x, logstd_z = self.forward(x)
-        return mu_x
 
     @torch.no_grad()
     def interpolations(self, base_images_as_numpy, steps=10):

@@ -4,7 +4,7 @@ from torch import Tensor
 import torchvision
 
 # Models
-from networks.sequential_encoder import SequentialEncoder
+from networks.panel_encoder.lstm_sequential_encoder import LSTMSequentialEncoder
 from networks.bigan import BiGAN
 
 # Losses
@@ -12,7 +12,7 @@ from functional.losses.kl_loss import kl_loss
 from functional.losses.reconstruction_loss import reconstruction_loss
 from functional.losses.discrimination_loss import discrimination_loss
 
-class SSuperGAN(nn.Module):
+class LSTMSSuperBiGAN(nn.Module):
     
     def __init__(self, 
                  encoder_args, 
@@ -25,9 +25,9 @@ class SSuperGAN(nn.Module):
                  gan_type="bigan", 
                  custom_embedder=None):
         
-        super(SSuperGAN, self).__init__()
+        super(LSTMSSuperBiGAN, self).__init__()
         
-        self.seq_encoder = SequentialEncoder(args=encoder_args, pretrained_cnn=custom_embedder)
+        self.seq_encoder = LSTMSequentialEncoder(args=encoder_args, pretrained_cnn=custom_embedder)
         self.log_scale = nn.Parameter(torch.Tensor([0.0]))
         
         if gan_type == "bigan":

@@ -10,6 +10,7 @@ class Config(Enum):
     GOLDEN_AGE_FACE = 3
     SSUPERGAN = 4
     VAE = 5
+    PLAIN_SSUPERVAE = 6
 
 
 def read_config(config: Config):
@@ -19,6 +20,8 @@ def read_config(config: Config):
         path = base_dir + 'configs/bigan_config.yaml'
     elif config == Config.SSUPERGAN:
         path = base_dir + 'configs/ssupergan_config.yaml'
+    elif config == Config.PLAIN_SSUPERVAE:
+        path = base_dir + 'configs/plain_ssupervae_config.yaml'
     elif config == Config.GOLDEN_AGE_FACE:
         path = base_dir + 'configs/golden_age_face_config.yaml'
     elif config == Config.VAE:

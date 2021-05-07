@@ -5,7 +5,7 @@ import torchvision.models as models
 
 from utils import pytorch_util as ptu
 
-class SequentialEncoder(nn.Module):
+class LSTMSequentialEncoder(nn.Module):
 
     def __init__(self, args=None, pretrained_cnn=None):
         super(SequentialEncoder, self).__init__()

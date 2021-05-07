@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from networks.ssupergan import SSuperGAN
+from networks.lstm_ssuperbigan import LSTMSSuperBiGAN
 from utils import pytorch_util as ptu
 from utils.structs.metric_recorder import *
 from utils.logging_utils import *
@@ -14,9 +14,9 @@ from configs.base_config import *
 # RuntimeError: one of the variables needed for gradient computation has been modified by an inplace operation: [torch.FloatTensor [256, 256]], which is output 0 of TBackward, is at version 2; expected version 1 instead. Hint: enable anomaly detection to find the operation that failed to compute its gradient, with torch.autograd.set_detect_anomaly(True).
 
 
-class SSuperGANTrainer:
+class LSTMSSuperBiGANTrainer:
     def __init__(self,
-                 model: SSuperGAN,
+                 model: LSTMSSuperBiGAN,
                  data_loader,
                  epochs: int,
                  optimizer_disc,

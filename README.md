@@ -29,6 +29,36 @@ The whole panel data is processed by a cartoon Face Detector model (which can be
 
 ## Modules
 
+### Plain SSuperVAE module
+
+- To train the PlainSSuperVAE network, you have to specify the following parameters in the `plain_ssupervae_config.yaml` file under the *configs* folder.
+
+```yaml
+# Encoder Parameters
+backbone: "efficientnet-b5"
+seq_size: 3
+embed_dim: 256
+
+# Decoder Parameters
+latent_dim: 256 
+decoder_channels:
+    - 64
+    - 128
+    - 256
+    - 512
+image_dim: 64
+
+# Training Parameters
+batch_size: 8
+train_epochs: 100
+lr: 0.0002
+weight_decay: 0.000025
+beta_1: 0.5
+beta_2: 0.999
+g_clip: 100
+```
+
+
 ### SSuperGAN Module
 
 - An example code piece to run a forward pass with SStyleGAN model:

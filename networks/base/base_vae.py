@@ -18,10 +18,11 @@ class BaseVAE(nn.Module):
     def decode(self, input: Tensor) -> Any:
         raise NotImplementedError
 
-    def sample(self, size: int, current_device: int, **kwargs) -> Tensor:
+    def sample(self, size: int) -> Tensor:
         raise RuntimeWarning()
-
-    def generate(self, x: Tensor, **kwargs) -> Tensor:
+        
+    @torch.no_grad()
+    def reconstruct(self, x: Tensor, **kwargs) -> Tensor:
         raise NotImplementedError
 
     @abstractmethod
