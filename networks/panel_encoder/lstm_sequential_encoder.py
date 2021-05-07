@@ -8,7 +8,7 @@ from utils import pytorch_util as ptu
 class LSTMSequentialEncoder(nn.Module):
 
     def __init__(self, args=None, pretrained_cnn=None):
-        super(SequentialEncoder, self).__init__()
+        super(LSTMSequentialEncoder, self).__init__()
 
         defaults = {
             "lstm_hidden": 256,    # hidden size of LSTM module
