@@ -10,7 +10,7 @@ from data.augment import read_image
 
 class GoldenFacesDataset(Dataset):
     
-    def __init__(self, folder_path :str, face_dim :int, shuffle :bool=True, augment :bool=True):
+    def __init__(self, folder_path :str, face_dim :int, shuffle :bool=True, augment :bool=True, limit_size :int=-1):
         self.dim = face_dim
         self.augment = augment
         self.files = []
@@ -21,6 +21,9 @@ class GoldenFacesDataset(Dataset):
         
         if shuffle:
             random.shuffle(self.files)    
+        
+        if limit_size > 0:
+            self.files = self.files[:limit_size]
         
     def __len__(self):
         return len(self.files)

@@ -1,9 +1,15 @@
+import os
+import sys
+os.path.dirname(sys.executable)
+sys.path.append("/kuacc/users/baristopal20/SSuperGAN/")
+
 from torch import optim
 from torch.utils.data import DataLoader
 
 from data.datasets.ffhq_dataset import FFHQDataset
 from data.datasources.ffhq_datasource import FFHQDatasource
-from data.datasources.golden_age_face_datasource import GoldenAgeFaceDatasource
+from data.datasets.golden_faces import GoldenFacesDataset
+
 from networks.intro_vae import IntroVAE
 from training.vae_trainer import VAETrainer
 from utils.config_utils import read_config, Config
@@ -21,30 +27,27 @@ from functional.losses.elbo import elbo
 
 def save_best_loss_model(model_name, model, best_loss):
     # print('current best loss: ' + str(best_loss))
-    logging.info('current best loss: ' + str(best_loss))
+    logging.info('Current best loss: ' + str(best_loss))
     torch.save(model, base_dir + 'playground/vae/results/' + model_name + ".pth")
 
 
 def train(model_name='test_model'):
     # loading config
-    logging.info("initiate training")
-
+    logging.info("Initiating training...")
     config = read_config(Config.VAE)
+    golden_age_config = read_config(Config.GOLDEN_AGE)
 
     # loading datasets
-    golden_age_config = read_config(Config.GOLDEN_AGE_FACE)
-    train_dataset = FFHQDataset(
-        datasource=GoldenAgeFaceDatasource(golden_age_config, mode=DataSourceMode.TRAIN))
+    train_dataset = GoldenFacesDataset(
+        golden_age_config.faces_path, config.image_dim, limit_size=config.num_training_samples, augment=False)
     train_dataloader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
-
-    test_dataset = FFHQDataset(
-        datasource=GoldenAgeFaceDatasource(golden_age_config, mode=DataSourceMode.TEST))
+    
+    test_dataset = GoldenFacesDataset(
+        golden_age_config.faces_path, config.image_dim, limit_size=config.num_test_samples, augment=False)
     test_dataloader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
 
     # creating model and training details
-    net = IntroVAE(image_size=golden_age_config.image_dim,
-                   channels=config.channels,
-                   hdim=config.latent_dim_z).to(ptu.device)
+    net = IntroVAE(image_size=config.image_dim, channels=config.channels, hdim=config.latent_dim_z).to(ptu.device)
 
     criterion = elbo
 
@@ -68,20 +71,21 @@ def train(model_name='test_model'):
                          scheduler=scheduler,
                          grad_clip=config.g_clip,
                          best_loss_action=lambda m, l: save_best_loss_model(model_name, m, l))
+    
     train_losses, test_losses = trainer.train_epochs()
 
-    logging.info("completed training")
+    logging.info("Completing training...")
+    
     save_training_plot(train_losses['loss'],
                        test_losses['loss'],
-                       "BiGAN Losses",
-                       base_dir + 'playground/bigan/' + f'results/bigan_plot.png')
+                       "VAE Losses",
+                       base_dir + 'playground/vae/' + f'results/vae_plot.png')
     return net
 
 
 if __name__ == '__main__':
     ptu.set_gpu_mode(True)
     model = train(get_dt_string() + "_model")
-    # model = train_golden_age_face_bigan(get_dt_string() + "_model")
     torch.save(model, base_dir + 'playground/vae/results/' + "test_model.pth")
     # model = torch.load("test_model.pth")
     # TODO: add visualizations of reconstruction and sampling from model

@@ -7,6 +7,7 @@ from torch import optim
 from torch.utils.data import DataLoader
 
 from data.datasets.random_dataset import RandomDataset
+from data.datasets.ssupergan_dataset import SSGANDataset
 from networks.plain_ssupervae import PlainSSuperVAE
 from training.vae_trainer import VAETrainer
 from utils.config_utils import read_config, Config
@@ -22,7 +23,7 @@ from functional.losses.elbo import elbo
 
 def save_best_loss_model(model_name, model, best_loss):
     # print('current best loss: ' + str(best_loss))
-    logging.info('current best loss: ' + str(best_loss))
+    logging.info('Current best loss: ' + str(best_loss))
     torch.save(model, base_dir + 'playground/vae/weights/' + model_name + ".pth")
 
 
@@ -65,8 +66,8 @@ def train(data_loader, config, model_name='plain_ssupervae'):
     
     save_training_plot(train_losses['loss'],
                        test_losses['loss'],
-                       "BiGAN Losses",
-                       base_dir + 'playground/vae/' + f'results/vae_plot.png'
+                       "Plain_SSuperVAE Losses",
+                       base_dir + 'playground/vae/' + f'results/ssupervae_plot.png'
                       )
     return net
 
@@ -74,7 +75,11 @@ def train(data_loader, config, model_name='plain_ssupervae'):
 if __name__ == '__main__':
     ptu.set_gpu_mode(True)
     config = read_config(Config.PLAIN_SSUPERVAE)
+    golden_age_config = read_config(Config.GOLDEN_AGE)
+    
     data = RandomDataset((3, 3, 360, 360), (3, config.image_dim, config.image_dim))
+    # data = SSGANDataset()
     data_loader = DataLoader(data, batch_size=config.batch_size)
+    
     model = train(data_loader, config, get_dt_string() + "_model")
-    torch.save(model, base_dir + 'playground/vae/results/' + "test_model.pth")
+    torch.save(model, base_dir + 'playground/vae/results/' + "ssuper_vae_model.pth")

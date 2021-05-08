@@ -209,8 +209,6 @@ def read_face_detection_annotations(golden_annotations_path, face_size = (32,32)
     
     face_annotations = {}
     face_annotation_series_list = os.listdir(golden_annotations_path)
-    face_annotation_series_list.remove('no_person_frames.txt')
-    face_annotation_series_list.remove(".ipynb_checkpoints")
     
     annotations_all = {}
     

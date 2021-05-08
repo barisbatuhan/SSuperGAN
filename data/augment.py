@@ -50,6 +50,8 @@ def resize(img, resize_len):
     img = TF.resize(img, (resize_len[1], resize_len[0]))
     return img
 
+def crop(img, x1, y1, w, h):
+    return TF.crop(img, x1, y1, w, h)
 
 def random_crop(img):
     W, H = img.size
