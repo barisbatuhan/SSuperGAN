@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 os.path.dirname(sys.executable)
 sys.path.append("/kuacc/users/baristopal20/SSuperGAN/")
 
@@ -8,6 +9,9 @@ from torch.utils.data import DataLoader
 
 from data.datasets.random_dataset import RandomDataset
 from data.datasets.ssupergan_dataset import SSGANDataset
+from data.datasets.ssupergan_preprocess import *
+from data.datasets.ssupergan_dataset import *
+
 from networks.plain_ssupervae import PlainSSuperVAE
 from training.vae_trainer import VAETrainer
 from utils.config_utils import read_config, Config
@@ -24,7 +28,7 @@ from functional.losses.elbo import elbo
 def save_best_loss_model(model_name, model, best_loss):
     # print('current best loss: ' + str(best_loss))
     logging.info('Current best loss: ' + str(best_loss))
-    torch.save(model, base_dir + 'playground/vae/weights/' + model_name + ".pth")
+    torch.save(model, base_dir + 'playground/ssupervae/weights/' + model_name + ".pth")
 
 
 def train(data_loader, config, model_name='plain_ssupervae'):
@@ -53,12 +57,13 @@ def train(data_loader, config, model_name='plain_ssupervae'):
                          model_name=model_name,
                          criterion=criterion,
                          train_loader=data_loader,
-                         test_loader=data_loader,
+                         test_loader=None,
                          epochs=config.train_epochs,
                          optimizer=optimizer,
                          scheduler=scheduler,
                          grad_clip=config.g_clip,
-                         best_loss_action=lambda m, l: save_best_loss_model(model_name, m, l)
+                         best_loss_action=lambda m, l: save_best_loss_model(model_name, m, l),
+                         save_dir='playground/ssupervae/'
                         )
     train_losses, test_losses = trainer.train_epochs()
 
@@ -77,9 +82,20 @@ if __name__ == '__main__':
     config = read_config(Config.PLAIN_SSUPERVAE)
     golden_age_config = read_config(Config.GOLDEN_AGE)
     
-    data = RandomDataset((3, 3, 360, 360), (3, config.image_dim, config.image_dim))
-    # data = SSGANDataset()
-    data_loader = DataLoader(data, batch_size=config.batch_size)
+    # data = RandomDataset((3, 3, 360, 360), (3, config.image_dim, config.image_dim))
+    face_annots, _ = read_face_detection_annotations(golden_age_config.annot_path)
+    
+    folder_structure = return_folder_structure()
+    face_annots, _ = read_face_detection_annotations(golden_age_config.annot_path)
+    
+    all_possible_panel_sequence_face_detection = return_all_possible_panel_seq_face_detection(face_annots)
+    valid_sequences = valid_sequence_creator_from_face_annotations(all_possible_panel_sequence_face_detection, folder_structure)
+    
+    annotations = create_annotation_file(valid_sequences)[:5000]
+
+    data = create_dataset_SSGAN(
+        annotations, face_annots, resize_dimension=golden_age_config.panel_dim, face_resize=(config.image_dim, config.image_dim))
+    data_loader = DataLoader(data, batch_size=config.batch_size, shuffle=True, num_workers=4)
     
     model = train(data_loader, config, get_dt_string() + "_model")
-    torch.save(model, base_dir + 'playground/vae/results/' + "ssuper_vae_model.pth")
+    torch.save(model, base_dir + 'playground/ssupervae/results/' + "ssuper_vae_model.pth")

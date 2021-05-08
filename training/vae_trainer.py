@@ -51,7 +51,10 @@ class VAETrainer(object):
         for epoch in range(self.epochs):
             logging.info("epoch start: " + str(epoch))
             train_loss = self.train_vae(epoch)
-            test_loss = self.eval_loss(self.test_loader)
+            if self.test_loader is not None:
+                test_loss = self.eval_loss(self.test_loader)
+            else:
+                test_loss = {"loss": 0, "kl_loss": 0, "reconstruction_loss": 0}
 
             for k in train_loss.keys():
                 if k not in train_losses:

@@ -44,8 +44,8 @@ class PlainSSuperVAE(BaseVAE):
     def forward(self, x):
         mu, lg_std = self.encode(x)
         z = torch.distributions.Normal(mu, lg_std.exp()).rsample()
-        mu_x = self.decode(z)
-        return z, None, mu, mu_x, lg_std
+        x_recon = self.decode(z)
+        return z, None, mu, x_recon, lg_std
     
     def encode(self, x):
         return self.encoder(x)
