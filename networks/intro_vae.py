@@ -124,7 +124,7 @@ class Decoder(nn.Module):
         self.main.add_module('predict', nn.Conv2d(cc, cdim, 5, 1, 2))
 
     def forward(self, z):
-        z = z.view(z.size(0), -1)
+        z = z.view(z.size(0), -1) # converts to (B, embed_size) for linear layer
         y = self.fc(z)
         y = y.view(z.size(0), -1, 4, 4)
         y = self.main(y)

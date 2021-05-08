@@ -24,6 +24,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
+from data.augment import read_image
 
 def sorted_nicely(l): 
     # Alphanumerical sort
@@ -128,7 +129,7 @@ def read_images(file_names, folder_path):
     """
     paths = [os.path.join(folder_path,file) for file in file_names ]
     
-    return [Image.open(path) for path in paths]
+    return [read_image(path, augment=False, resize_len=[-1, -1]) for path in paths]
 
 
 

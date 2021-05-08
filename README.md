@@ -42,7 +42,9 @@ panel_path: /datasets/COMICS/raw_panel_images/
 sequence_path: /userfiles/comics_grp/golden_age/golden_panel_annots.json
 annot_path: /userfiles/comics_grp/golden_age/face_annots/
 faces_path: /userfiles/comics_grp/golden_age/faces_128/
-panel_dim: 300
+panel_dim: 
+    - 300
+    - 300
 ```
 
 

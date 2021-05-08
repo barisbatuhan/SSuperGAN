@@ -47,7 +47,8 @@ def horizontal_flip(img):
 
 
 def resize(img, resize_len):
-    img = TF.resize(img, (resize_len[1], resize_len[0]))
+    if resize_len[0] != -1:
+        img = TF.resize(img, (resize_len[1], resize_len[0]))
     return img
 
 def crop(img, x1, y1, w, h):

@@ -146,8 +146,7 @@ class SSGANDataset(Dataset):
 
         
         
-        sample = {'image':torch.cat(result,dim=0) , "target": face}
-        return sample
+        return torch.cat(result,dim=0), face
         
         #return last_image,face_annotation, last_image_2,face_annotation_2,last_panel_face_annotations
         

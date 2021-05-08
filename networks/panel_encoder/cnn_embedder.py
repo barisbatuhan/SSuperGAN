@@ -13,7 +13,7 @@ class CNNEmbedder(nn.Module):
     def __init__(self, backbone, embed_dim=256):
         super(CNNEmbedder, self).__init__()
         
-        self.embed_dim = 256
+        self.embed_dim = embed_dim
  
         if backbone == "resnet50":
             self.model = torch.nn.Sequential(
