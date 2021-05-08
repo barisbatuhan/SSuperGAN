@@ -1,17 +1,56 @@
 
 # TO DO
 
-## GAN Eğitme
+### ROADMAP and MODELS
 
-- **StyleGAN2:** Barış çalıştırıyor iCartoonFace için
-- **ALAE:** Çağhan çalıştıracak iCartoonFace için
+- [+] AutoEncoder Like Structure 
+- VAE Like Structure ( with/out LSTM or Simple Concating )
+- VAE Like Structure With a GAN
+- VAE like Structure With a BiGAN or GAN and a separete enconding of face 
+- Inpainting Baseline
+- Possible Combo of All of these
 
-## Siamese
+## CNN Backbone Yapısı Eğitimi
 
-### **Data Okuma:** [+]
+- **[Barış]** Binary person classifier eğitme yapılabilir EfficientNet kullanarak.
+- **[Gürkan]** DINO / BYOL gibi 
+- **[Gürkan]** Inpainting yapısı ile pretrain yapmak.
 
-Gürkan hazırlayacak, DataLoader yapısı kullanılabilir 
-- iCartoonFace: https://github.com/luxiangju-PersonAI/iCartoonFace
+## Golden Dataset Üzerine Geliştirmeler
+
+- **[Barış]** Bir preprocess ile şu yapı çıkartılacak: 
+
+```python
+{
+    ["img1.jpg", "img2.jpg", "img3.jpg", "..."]: {
+        "panel_coords": ["<img1_panel_coords>", "<img2_panel_coords>", "<img3_panel_coords>", "..."],
+        "face_coords": ["<img1_face_coords>", "<img2_face_coords>", "<img3_face_coords>", "..."]
+    }
+}
+```
+
+- **[Barış]** Daha sade ve sadece crop & augment olan bir dataset çıkartılacak.
+
+## Model Geliştirmeleri
+
+- **[Çağhan]** GAN yapısı oluşturup (DCGAN gibi ve daha da advanced 1 tane - [In-Domain Inversion](https://github.com/genforce/idinvert_pytorch)) yüz datasıyla eğitme.
+- Global discriminator yapısı ekleme ve onunla modeli eğitme.
+- **[Gürkan]** Weight save ettikten sonra o saved weight ile training sürecine devam ettirmek.
+- **[İleri Seviye]** LSTM oluşturma.
+
+
+### NEW TASKS 1-9.05.2021
+
+- [+] Dataset teki sequential panelleri bulalım - hard data processing 
+- [+] Data Okuma => DataLoader yapıcaz => X: [B, P(panel sayısı), 3, W, H], Y: Masklenmiş yüz, [B, 1 (single face), 3, W, H], (Yüzleri keserken square kesicez yüzü içeren ve 64 * 64 e resize edicez), y resize edilmiş image olarak verilecek. 
+	- [+] Yüz keserken minimum edge 32 olsun, daha küçük olunca yok olmuş olacak
+	- [+] DataLoader yapılıcak.
+	- [] Average Aspect Ratio bulucaz dataset içinde daha sonra image kesmeyi buna göre yapabiliriz. ve bunu center crop yaparak daha sonra image larda kullanıcaz. 
+- [+] CNN LSTM networku kurma
+- [+] Latent alındığı zaman generator discriminator yapısını oluşturma
+
+
+
 
 ### **Network Oluşturma:**  [+]
 
@@ -27,25 +66,10 @@ Gürkan bakacak, yararlı bazı çalışmalar:
 
 - [Measure Face Similarity Based on Deep Learning](http://www.diva-portal.se/smash/get/diva2:1361888/FULLTEXT01.pdf)
 
-## LSTM Yapısı Oluşturma
 
-LSTM yapısı oluşturuldu ve CNN yapısıyla bağlandı. Reconstruction ve KL için de loss fonksiyonları eklendi.
+## Siamese
 
-### NEW TASKS 1-9.05.2021
+### **Data Okuma:** [+]
 
-- [] dataset teki sequential panelleri bulalım - hard data processing 
-- [] Data Okuma => DataLoader yapıcaz => X: [B, P(panel sayısı), 3, W, H], Y: Masklenmiş yüz, [B, 1 (single face), 3, W, H], (Yüzleri keserken square kesicez yüzü içeren ve 64 * 64 e resize edicez), y resize edilmiş image olarak verilecek. 
-	- [] Yüz keserken minimum edge 32 olsun, daha küçük olunca yok olmuş olacak
-	- [] DataLoader yapılıcak.
-	- [] Average Aspect Ratio bulucaz dataset içinde daha sonra image kesmeyi buna göre yapabiliriz. ve bunu center crop yaparak daha sonra image larda kullanıcaz. 
-- [+] CNN LSTM networku kurma
-- [+] Latent alındığı zaman generator discriminator yapısını oluşturma
-
-### NEW ROADMAP and MODELS
-
-1. AutoEncoder Like Structure 
-2. VAE Like Structure ( with/out LSTM or Simple Concating )
-3. VAE Like Structure With a GAN
-4. VAE like Structure With a BiGAN or GAN and a separete enconding of face 
-5. Inpainting Baseline
-6. Possible Combo of All of these
+Gürkan hazırlayacak, DataLoader yapısı kullanılabilir 
+- iCartoonFace: https://github.com/luxiangju-PersonAI/iCartoonFace

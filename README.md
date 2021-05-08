@@ -17,8 +17,8 @@ The whole panel data is processed by a cartoon Face Detector model (which can be
 - **Faces above 64px:** 309079 / 521089 `(min(width, height) >= 64 / max(width, height) >= 64)`
 - **Faces above 128px:** 75111 / 158988 `(min(width, height) >= 128 / max(width, height) >= 128)`
 - **Faces above 256px:** 13214 / 27471 `(min(width, height) >= 256 / max(width, height) >= 256)`
-- **Mean of Panel Height:** 510.0328, Median of Height: 475.0, Mode of Height: 445, Num Samples: 1229664
-- **Mean of Panel Widths:** 508.4944, Median of Height: 460.0, Mode of Height: 460, Num Samples: 1229664 
+- **Mean of Panel Height:** 510.0328, Median of Height: 475, Mode of Height: 445, Num Samples: 1229664
+- **Mean of Panel Widths:** 508.4944, Median of Height: 460, Mode of Height: 460, Num Samples: 1229664 
 
 ## Model Architecture
 
@@ -40,6 +40,7 @@ panel_path: /datasets/COMICS/raw_panel_images/
 sequence_path: /userfiles/comics_grp/golden_age/golden_panel_annots.json
 annot_path: /userfiles/comics_grp/golden_age/face_annots/
 faces_path: /userfiles/comics_grp/golden_age/faces_128/
+face_confidence: 0.9
 panel_dim: 
     - 300
     - 300
