@@ -86,6 +86,7 @@ def train(model_name='test_model'):
 if __name__ == '__main__':
     ptu.set_gpu_mode(True)
     model = train(get_dt_string() + "_model")
-    torch.save(model, base_dir + 'playground/vae/results/' + "test_model.pth")
-    # model = torch.load("test_model.pth")
+    # torch.save(model, base_dir + 'playground/vae/results/' + "test_model.pth")
+    # model = torch.load(base_dir + 'playground/vae/results/' + "test_model.pth")
+    # model.save_samples(200, base_dir + 'playground/vae/results/end_samples.png' )
     # TODO: add visualizations of reconstruction and sampling from model
