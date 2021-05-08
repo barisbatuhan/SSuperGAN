@@ -16,7 +16,7 @@ import PIL.ImageOps
 import torch.nn as nn
 import torch.nn.functional as F
 
-from networks.base_gan import BaseGAN
+from networks.base.base_gan import BaseGAN
 from networks.generic_vae import GenericVAE
 from utils import pytorch_util as ptu
 from networks.mlp import MLP

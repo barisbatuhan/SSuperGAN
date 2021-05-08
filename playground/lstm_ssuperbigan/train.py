@@ -7,8 +7,8 @@ os.path.dirname(sys.executable)
 sys.path.append("/kuacc/users/baristopal20/SSuperGAN/")
 
 from data.datasets.random_dataset import RandomDataset
-from training.ssupergan_trainer import SSuperGANTrainer
-from networks.ssupergan import SSuperGAN
+from training.lstm_ssuperbigan_trainer import LSTMSSuperBiGANTrainer
+from networks.lstm_ssuperbigan import LSTMSSuperBiGAN
 from utils.config_utils import read_config, Config
 from utils import pytorch_util as ptu
 from utils.logging_utils import *
@@ -29,7 +29,7 @@ def train_model(config, data_loader, save_dir=None):
         "num_lstm_layers": config.num_lstm_layers
     }
     
-    net = SSuperGAN( 
+    net = LSTMSSuperBiGAN( 
         seq_enc_args,
         image_dim=config.image_dim,
         latent_dim=config.latent_dim,
@@ -66,7 +66,7 @@ def train_model(config, data_loader, save_dir=None):
                                                           lambda epoch: (config.train_epochs - epoch) / config.train_epochs,
                                                           last_epoch=-1)
     
-    trainer = SSuperGANTrainer(net,
+    trainer = LSTMSSuperBiGANTrainer(net,
                                data_loader,
                                config.train_epochs,
                                d_optimizer,

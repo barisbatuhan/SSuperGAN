@@ -2,16 +2,16 @@ import os
 import sys
 
 
-import os
-import sys
 
 os.path.dirname(sys.executable)
 sys.path.append("/scratch/users/ckoksal20/COMP547Project/AF-GAN/")
+
 
 from data.datasets.ssupergan_preprocess import *
 from data.datasets.ssupergan_dataset import *
 
 dataset_path = "/datasets/COMICS"
+
 golden_annotations_path="/kuacc/users/ckoksal20/COMP547Project/golden_annot"
 
 
