@@ -20,6 +20,8 @@ The whole panel data is processed by a cartoon Face Detector model (which can be
 - **Mean of Panel Height : 510.03280164337576,  Median of Height 475.0, Mode of Height : 445 Num Samples 1229664
 - **Mean of Panel Widths  : 508.494401722747,   Median of Height 460.0, Mode of Height : 460 Num Samples 1229664 
 
+
+
 ## Model Architecture
 
 ![gmodel](./images/readme_images/Model.JPG)

@@ -39,6 +39,8 @@ def return_folder_structure(dataset_path =  "/datasets/COMICS"):
     Output : Dictionary that stores folders as key and images as value
     Reason : To have datastructure to check whether given file_name in the folder or not
     """
+    print("Creating Folder Structure")
+
     cur_path = os.path.join(dataset_path, "raw_panel_images")    
     folder_structure = {}
     for folder in tqdm(sorted_nicely(os.listdir(cur_path))):
@@ -54,7 +56,9 @@ def count_heights_widths(dataset_path):
     
     Usage: #height_width_counts = count_heights_widths(dataset_path)
     """ 
+
     #calculate height and width
+    print("Counting and storing width and height information of panels")
     all_panels_info = {}
     for serie in tqdm(os.listdir(os.path.join(dataset_path, "raw_panel_images"))):
         serie_path = os.path.join(os.path.join(dataset_path, "raw_panel_images",serie))
@@ -81,6 +85,8 @@ def create_annotation_file(valid_sequences):
     FOLDER_PATH = os.path.join(dataset_path,"raw_panel_images")
     data = []
     index = 0
+
+    print("Annotation File is being created return DataFrame")
     for (folder, sequences) in tqdm(valid_sequences.items()):
         # Folder "0" , "1" etc.
         for seq in sequences:
@@ -88,17 +94,22 @@ def create_annotation_file(valid_sequences):
             #List of Annotations 
             #face_annotations["folder"][seq]
             
-            data_point = {"index" :index , "folder" : {folder}, "sequence":seq, "path": os.path.join(FOLDER_PATH, folder) }
+
+            data_point = {"index" :index , "folder" : folder, "sequence":seq, "path": os.path.join(FOLDER_PATH, folder) }
             index +=1
             data.append(data_point)
             
-    return data
+    return pd.DataFrame(data)
+
             
 
     
  #TODO Find the correct statistics
 def count_statistics_height_width(height_widths):
     """ Counts widths Heights of the Panel """ 
+
+    print(" Height and Width Statistics of Panels are being created.")
+
     #width_stats, height_stats = count_statistics_height_width(height_width_counts)
     width_stats = [ round(element["widht"]/5)*5 for k,v in height_widths.items()  for element in v]
     height_stats = [ round(element["height"]/5)*5 for k,v in height_widths.items()  for element in v]
@@ -164,6 +175,8 @@ def find_sequential_panels(panels, window_size):
 
             
 def find_possible_sequnces_all(dataset_path, window_size=3):
+
+
     raw_panel_path = os.path.join(dataset_path, "raw_panel_images")
     series = sorted_nicely(os.listdir(raw_panel_path))
     
@@ -183,6 +196,7 @@ def show_sequence(data, serie_id=0, index_sequence=10):
     images = read_images(serie["sequential_panels"][index_sequence], serie["serie_path"] )
     display_images(images)
     
+
 def calculate_annotation_area(annotation):
     x_min, y_min, x_max, y_max = annotation
     
@@ -203,12 +217,14 @@ def read_face_detection_annotations(golden_annotations_path, face_size = (32,32)
     face_annotations,num_small_faces = read_face_detection_annotations(golden_annotations_path)
     
     """
-    
+
+    print("Face Annotations are being readed.")
     ideal_face_size = face_size[0]* face_size[1]
     num_small_faces  = 0
     
     face_annotations = {}
     face_annotation_series_list = os.listdir(golden_annotations_path)
+
     
     annotations_all = {}
     
@@ -236,7 +252,10 @@ def read_face_detection_annotations(golden_annotations_path, face_size = (32,32)
             _, _, ann_area = calculate_annotation_area([xmin, ymin, xmax, ymax])
             
             #
-            if ann_area > ideal_face_size :
+
+            if (ann_area > ideal_face_size)  :#and (float(confidence) > 0.90) :
+
+            
             
                 if serie_id not in face_annotations.keys():
                     face_annotations[serie_id] = {}
@@ -284,6 +303,10 @@ def return_all_possible_panel_seq_face_detection(face_annotations,window_size=3)
       ['4_0.jpg', '4_1.jpg', '4_2.jpg'],
       ['4_1.jpg', '4_2.jpg', '5_0.jpg']...]}
     """
+
+    
+    print("Creating all possible panels annotations according to face annotations that came from Face Detector")
+
     panel_list_face_detection = {}
     for key,folder in tqdm(face_annotations.items()): #dict_keys(['1159', '1955', '2653', '406', '2836', '1289', '1141', 
         #Folder is also dictionary
@@ -320,6 +343,9 @@ def  valid_sequence_creator_from_face_annotations(all_possible_panel_sequence_fa
     valid_sequences = valid_sequence_creator_from_face_annotations(all_possible_panel_sequence_face_detection, folder_structure)
     
     """
+
+    print("Valid Sequences that are being extracted from all_possible_panel_sequence annotations")
+    
     valid_sequences = {}
     
     for i,panel in tqdm(all_possible_panel_sequence_face_detection.items()):
@@ -517,7 +543,7 @@ def crop_face_v2(original_image, face_annotation):
                     
                     disari_tasan = abs(xmin-needed_space_to_left)
                     
-                    
+
                     left_border = 0
                     face = copy.deepcopy(original_image)[ymin:ymax , left_border : W ,:] 
                     

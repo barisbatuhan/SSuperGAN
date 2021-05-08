@@ -33,11 +33,15 @@ def read_images(file_names, folder_path):
 
 class SSGANDataset(Dataset):
     """ SSGAN Dataset """
-    def __init__(self, annotation_file, face_annotations, root_dir, transform, face_transforms):
+
+    def __init__(self, annotations, face_annotations, root_dir, transform, face_transforms):
         """
         Input Annotation File --> [index, ]
         """
-        self.annotations = pd.read_json(annotation_file)
+        #self.annotations = pd.read_json(annotation_file)
+        #print("CWD Dataset", os.getcwd())
+        self.annotations = annotations
+
         self.face_annotations = face_annotations
         self.root_dir = root_dir
         self.transform = transform
@@ -49,12 +53,16 @@ class SSGANDataset(Dataset):
     def __getitem__(self,idx):
         #print("İndex ",idx)
         # Returns Folder of the sequence
-        folder = self.annotations.iloc[idx].folder[0]
+
+        folder = self.annotations.iloc[idx].folder
         # List of Sequences
         sequences = self.annotations.iloc[idx].sequence
         
-        #print("Folder", folder, "Sequence ",sequences)
+        
+        
         sequence_path = os.path.join(self.root_dir,folder)
+        #print("Folder", folder, "Sequence ",sequences, "Sequence path ",sequence_path)
+
         #PILLOW 
         images = read_images(sequences, sequence_path)
     
@@ -144,14 +152,11 @@ class SSGANDataset(Dataset):
         #return last_image,face_annotation, last_image_2,face_annotation_2,last_panel_face_annotations
         
 
-        
 
-
-
-    
             
     
-def create_dataset_SSGAN(face_annotations, center_crop_dimension = (400,400), resize_dimension = (300,300), face_resize = (64,64), FOLDER_PATH = "/datasets/COMICS/raw_panel_images", annotation_file = "annotations2.json"):
+def create_dataset_SSGAN(sequence_annotations, face_annotations, center_crop_dimension = (400,400), resize_dimension = (300,300), face_resize = (64,64), FOLDER_PATH = "/datasets/COMICS/raw_panel_images", annotation_file = "annotations2.json"):
+
     
     
     panel_transforms = transforms.Compose(
@@ -169,7 +174,9 @@ def create_dataset_SSGAN(face_annotations, center_crop_dimension = (400,400), re
         ]
     )
     
-    dataset = SSGANDataset(annotation_file, face_annotations, FOLDER_PATH, panel_transforms,face_transforms)
+
+    dataset = SSGANDataset(sequence_annotations, face_annotations, FOLDER_PATH, panel_transforms,face_transforms)
+
     
     return dataset
 
