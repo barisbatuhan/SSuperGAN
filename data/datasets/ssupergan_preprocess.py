@@ -243,26 +243,22 @@ def read_face_detection_annotations(golden_annotations_path, face_size = (32,32)
             xmax = max(int(xmax),0)
             ymax = max(int(ymax),0)
             
-            #TODO MAX HEIGHT AND WIDTH     
+            # TODO MAX HEIGHT AND WIDTH     
                 
             serie_id, panel = serie_panel.split("/")
             
-            #Create_annotation object
-            #annotation = Annotation(xmin,ymin,xmax,ymax, confidence, serie_id, panel)
+            # Create_annotation object
+            # annotation = Annotation(xmin,ymin,xmax,ymax, confidence, serie_id, panel)
             
             _, _, ann_area = calculate_annotation_area([xmin, ymin, xmax, ymax])
-            
-            #
 
-            if (ann_area > ideal_face_size)  :#and (float(confidence) > 0.90) :
+            if (ann_area > ideal_face_size) and (float(confidence) > 0.90):
 
-            
-            
                 if serie_id not in face_annotations.keys():
                     face_annotations[serie_id] = {}
                     face_annotations[serie_id][panel] = []
                     face_annotations[serie_id][panel].append(torch.tensor([xmin,ymin,xmax,ymax]))
-                #Serie_id in face_annotations
+                # Serie_id in face_annotations
                 else:
                     if panel not in face_annotations[serie_id].keys():
                         face_annotations[serie_id][panel] = []
@@ -270,7 +266,7 @@ def read_face_detection_annotations(golden_annotations_path, face_size = (32,32)
                     else:
                         face_annotations[serie_id][panel].append(torch.tensor([xmin,ymin,xmax,ymax]))
             else:
-                #print("Ann area : ",ann_area, "ideal face size : ",ideal_face_size)
+                # print("Ann area : ", ann_area, "ideal face size : ", ideal_face_size)
                 num_small_faces +=1
 
     return face_annotations,num_small_faces

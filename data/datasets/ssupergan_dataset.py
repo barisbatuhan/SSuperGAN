@@ -115,7 +115,7 @@ class SSGANDataset(Dataset):
         x_min_face, y_min_face, x_max_face, y_max_face  = face_annotation_2
         
 
-        last_image_2[int(y_min_face) :int(y_max_face), int(x_min_face): int(x_max_face),:] = 0
+        last_image_2[int(y_min_face) :int(y_max_face), int(x_min_face): int(x_max_face),:] = 255
         
         #print("YYey")
     
