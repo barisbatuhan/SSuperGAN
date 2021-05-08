@@ -1,3 +1,6 @@
+# Cluster
+*.sh
+
 configs/*.yaml
 **/*.pth
 **/*.png

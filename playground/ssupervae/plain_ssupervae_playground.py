@@ -72,7 +72,7 @@ def train(data_loader, config, model_name='plain_ssupervae'):
     save_training_plot(train_losses['loss'],
                        test_losses['loss'],
                        "Plain_SSuperVAE Losses",
-                       base_dir + 'playground/vae/' + f'results/ssupervae_plot.png'
+                       base_dir + 'playground/supervae/' + f'results/ssupervae_plot.png'
                       )
     return net
 
@@ -86,12 +86,12 @@ if __name__ == '__main__':
     face_annots, _ = read_face_detection_annotations(golden_age_config.annot_path)
     
     folder_structure = return_folder_structure()
-    face_annots, _ = read_face_detection_annotations(golden_age_config.annot_path)
+    face_annots, _ = read_face_detection_annotations(golden_age_config.annot_path, conf_thold=golden_age_config.face_confidence)
     
     all_possible_panel_sequence_face_detection = return_all_possible_panel_seq_face_detection(face_annots)
     valid_sequences = valid_sequence_creator_from_face_annotations(all_possible_panel_sequence_face_detection, folder_structure)
     
-    annotations = create_annotation_file(valid_sequences)[:5000]
+    annotations = create_annotation_file(valid_sequences)[:18800] # 18909
 
     data = create_dataset_SSGAN(
         annotations, face_annots, resize_dimension=golden_age_config.panel_dim, face_resize=(config.image_dim, config.image_dim))

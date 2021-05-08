@@ -208,7 +208,7 @@ def calculate_annotation_area(annotation):
 
 
 
-def read_face_detection_annotations(golden_annotations_path, face_size = (32,32)):
+def read_face_detection_annotations(golden_annotations_path, face_size = (32,32), conf_thold=0.9):
     
     """
     Reads Golden Comic Face Annotations and filters Faces with size > (32,32)
@@ -252,7 +252,7 @@ def read_face_detection_annotations(golden_annotations_path, face_size = (32,32)
             
             _, _, ann_area = calculate_annotation_area([xmin, ymin, xmax, ymax])
 
-            if (ann_area > ideal_face_size) and (float(confidence) > 0.90):
+            if (ann_area > ideal_face_size) and (float(confidence) >= conf_thold):
 
                 if serie_id not in face_annotations.keys():
                     face_annotations[serie_id] = {}
