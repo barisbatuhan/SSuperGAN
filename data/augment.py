@@ -69,8 +69,12 @@ def random_crop(img):
     return img
 
 
-def get_PIL_image(img_tensor):
+def get_PIL_image(img_tensor,
+                 means = torch.Tensor([[[0.485]], [[0.456]], [[0.406]]]),
+                 stds = torch.Tensor([[[0.229]], [[0.224]], [[0.225]]])):
     img = img_tensor.to("cpu")
-    means = torch.Tensor([[[0.485]], [[0.456]], [[0.406]]])
-    stds = torch.Tensor([[[0.229]], [[0.224]], [[0.225]]])
-    return transforms.ToPILImage()(img * stds + means)
+    
+    if means is None or stds is None:
+        return transforms.ToPILImage()(img)
+    else:
+        return transforms.ToPILImage()(img * stds + means)
