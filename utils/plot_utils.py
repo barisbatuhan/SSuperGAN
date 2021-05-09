@@ -8,6 +8,8 @@ import torch.nn.functional as F
 from torchvision.utils import make_grid
 from torchvision.utils import save_image
 
+from data.augment import get_PIL_image
+
 
 def savefig(fname, show_figure=True):
     if not exists(dirname(fname)):
@@ -82,3 +84,34 @@ def show_samples(samples, fname=None, nrow=10, title='Samples'):
         savefig(fname)
     else:
         plt.show()
+        
+
+def plot_panels_and_faces(panels_tensor, face_tensor, recon_face_tensor):
+    
+    y_recon = get_PIL_image(recon_face_tensor[0,:,:,:], means=None, stds=None)
+    y = get_PIL_image(face_tensor[0,:,:,:], means=None, stds=None)
+    
+    panels = []
+    for i in range(panels_tensor.shape[1]):
+        panels.append(get_PIL_image(panels_tensor[0,i,:,:,:], means=None, stds=None))
+    
+    w, h = panels[0].size
+    wsize, hsize = panels_tensor.shape[1] + 2, 1
+    w = (w + 100) * wsize
+    h = (h + 50) * hsize
+    
+    px = 1/plt.rcParams['figure.dpi']
+    f, ax = plt.subplots(hsize, wsize)
+    f.set_size_inches(w*px, h*px)
+    
+    ax[0].imshow(y)
+    ax[0].title.set_text("Original")
+    
+    ax[1].imshow(y_recon)
+    ax[1].title.set_text("Recon")
+    
+    for i in range(len(panels)):
+        ax[i+2].imshow(panels[i])
+        ax[i+2].title.set_text("Panel" + str(i+1))
+    
+    plt.show()
