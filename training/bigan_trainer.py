@@ -8,7 +8,7 @@ import torch.utils.data as data
 import torch.optim as optim
 
 from functional.losses.bi_discriminator_loss import BidirectionalDiscriminatorLoss
-from networks.base_gan import BaseGAN
+from networks.base.base_gan import BaseGAN
 from networks.bigan import BiGAN
 from utils.structs.metric_recorder import *
 from utils.logging_utils import *

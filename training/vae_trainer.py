@@ -9,12 +9,13 @@ import torch.optim as optim
 
 from networks.base.base_vae import BaseVAE
 from networks.generic_vae import GenericVAE
+from training.base_trainer import BaseTrainer
 from utils.structs.metric_recorder import *
 from utils.logging_utils import *
 from utils import pytorch_util as ptu
 
 
-class VAETrainer(object):
+class VAETrainer(BaseTrainer):
     def __init__(self,
                  model: BaseVAE,
                  model_name: str,
@@ -24,31 +25,40 @@ class VAETrainer(object):
                  epochs: int,
                  optimizer,
                  scheduler=None,
-                 quiet: bool=False,
+                 quiet: bool = False,
                  grad_clip=None,
                  best_loss_action=None,
-                 save_dir='playground/vae/'
-                 ):
-        self.model = model
-        self.model_name = model_name
+                 save_dir=base_dir + 'playground/vae/',
+                 checkpoint_every_epoch=False):
+        super().__init__(model,
+                         model_name,
+                         criterion,
+                         epochs,
+                         save_dir,
+                         {"optimizer": optimizer},
+                         {"scheduler": scheduler},
+                         quiet,
+                         grad_clip,
+                         best_loss_action,
+                         checkpoint_every_epoch)
         self.train_loader = train_loader
         self.test_loader = test_loader
-        self.quiet = quiet
-        self.epochs = epochs
-        self.best_loss_action = best_loss_action
-        self.criterion = criterion
         self.optimizer = optimizer
         self.scheduler = scheduler
-        self.grad_clip = grad_clip
-        self.save_dir = save_dir
 
-    def train_epochs(self):
+    def train_epochs(self, starting_epoch=None, losses={}):
         metric_recorder = MetricRecorder(experiment_name=self.model_name,
-                                         save_dir=base_dir + self.save_dir + '/results/')
+                                         save_dir=self.save_dir + '/results/')
+        # TODO: becareful about best loss here this might override the actual best loss
+        #  in case of continuation of training
         best_loss = 99999999
 
-        train_losses, test_losses = OrderedDict(), OrderedDict()
+        train_losses = losses.get("train_losses", OrderedDict())
+        test_losses = losses.get("test_losses", OrderedDict())
+
         for epoch in range(self.epochs):
+            if starting_epoch is not None and starting_epoch >= epoch:
+                continue
             logging.info("epoch start: " + str(epoch))
             train_loss = self.train_vae(epoch)
             if self.test_loader is not None:
@@ -69,6 +79,12 @@ class VAETrainer(object):
                         if self.best_loss_action != None:
                             self.best_loss_action(self.model, best_loss)
 
+            if self.checkpoint_every_epoch:
+                self.save_checkpoint(current_loss={
+                    "train_losses": train_losses,
+                    "test_losses": test_losses
+                },
+                    current_epoch=epoch)
             metric_recorder.update_metrics(train_losses, test_losses)
             metric_recorder.save_recorder()
         return train_losses, test_losses
@@ -82,12 +98,12 @@ class VAETrainer(object):
             if type(batch) == list and len(batch) == 2:
                 x, y = batch[0].to(ptu.device), batch[1].to(ptu.device)
             else:
-                x, y = batch.to(ptu.device), None 
-                
+                x, y = batch.to(ptu.device), None
+
             z, _, mu_z, mu_x, logstd_z = self.model(x)
             target = x if y is None else y
             out = self.criterion(z, target, mu_z, mu_x, logstd_z)
-            
+
             for k, v in out.items():
                 total_losses[k] = total_losses.get(k, 0) + v.item() * x.shape[0]
 
@@ -107,19 +123,19 @@ class VAETrainer(object):
         losses = OrderedDict()
         for batch in self.train_loader:
             batch = batch
-            
+
             if type(batch) == list and len(batch) == 2:
                 x, y = batch[0].to(ptu.device), batch[1].to(ptu.device)
             else:
-                x, y = batch.to(ptu.device), None 
-            
+                x, y = batch.to(ptu.device), None
+
             self.optimizer.zero_grad()
             z, _, mu_z, mu_x, logstd_z = self.model(x)
             target = x if y is None else y
-            
+
             out = self.criterion(z, target, mu_z, mu_x, logstd_z)
             out['loss'].backward()
-            
+
             if self.grad_clip:
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.grad_clip)
             self.optimizer.step()
@@ -135,9 +151,9 @@ class VAETrainer(object):
             if not self.quiet:
                 pbar.set_description(desc)
                 pbar.update(x.shape[0])
-        
+
         self.scheduler.step()
-        self.model.save_samples(10, base_dir + self.save_dir + '/results/ + 'f'epoch{epoch}_samples.png')
+        self.model.save_samples(10, self.save_dir + '/results/ + 'f'epoch{epoch}_samples.png')
         if not self.quiet:
             pbar.close()
         return losses
