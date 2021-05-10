@@ -1,8 +1,3 @@
-import os
-import sys
-os.path.dirname(sys.executable)
-sys.path.append("/kuacc/users/baristopal20/SSuperGAN/")
-
 from torch import optim
 from torch.utils.data import DataLoader
 
@@ -31,20 +26,25 @@ def save_best_loss_model(model_name, model, best_loss):
     torch.save(model, base_dir + 'playground/vae/results/' + model_name + ".pth")
 
 
-def train(model_name='test_model'):
+def train(model_name='test_model', train_golden_face=True):
     # loading config
     logging.info("Initiating training...")
     config = read_config(Config.VAE)
-    golden_age_config = read_config(Config.GOLDEN_AGE)
 
     # loading datasets
-    train_dataset = GoldenFacesDataset(
-        golden_age_config.faces_path, config.image_dim, limit_size=config.num_training_samples, augment=False)
-    train_dataloader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
-    
-    test_dataset = GoldenFacesDataset(
-        golden_age_config.faces_path, config.image_dim, limit_size=config.num_test_samples, augment=False)
-    test_dataloader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
+    if train_golden_face:
+        golden_age_config = read_config(Config.GOLDEN_AGE)
+        train_dataset = GoldenFacesDataset(
+            golden_age_config.faces_path, config.image_dim, limit_size=config.num_training_samples, augment=False)
+        train_dataloader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
+        test_dataset = GoldenFacesDataset(
+            golden_age_config.faces_path, config.image_dim, limit_size=config.num_test_samples, augment=False)
+        test_dataloader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
+    else:
+        train_dataset = FFHQDataset(datasource=FFHQDatasource(config, DataSourceMode.TRAIN))
+        train_dataloader = DataLoader(train_dataset)
+        test_dataset = FFHQDataset(datasource=FFHQDatasource(config, DataSourceMode.TEST))
+        test_dataloader = DataLoader(test_dataset)
 
     # creating model and training details
     net = IntroVAE(image_size=config.image_dim, channels=config.channels, hdim=config.latent_dim_z).to(ptu.device)
@@ -71,11 +71,11 @@ def train(model_name='test_model'):
                          scheduler=scheduler,
                          grad_clip=config.g_clip,
                          best_loss_action=lambda m, l: save_best_loss_model(model_name, m, l))
-    
+
     train_losses, test_losses = trainer.train_epochs()
 
     logging.info("Completing training...")
-    
+
     save_training_plot(train_losses['loss'],
                        test_losses['loss'],
                        "VAE Losses",
@@ -85,7 +85,7 @@ def train(model_name='test_model'):
 
 if __name__ == '__main__':
     ptu.set_gpu_mode(True)
-    model = train(get_dt_string() + "_model")
+    model = train(get_dt_string() + "_model", train_golden_face=False)
     # torch.save(model, base_dir + 'playground/vae/results/' + "test_model.pth")
     # model = torch.load(base_dir + 'playground/vae/results/' + "test_model.pth")
     # model.save_samples(200, base_dir + 'playground/vae/results/end_samples.png' )
