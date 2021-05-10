@@ -42,9 +42,9 @@ def train(model_name='test_model', train_golden_face=True):
         test_dataloader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
     else:
         train_dataset = FFHQDataset(datasource=FFHQDatasource(config, DataSourceMode.TRAIN))
-        train_dataloader = DataLoader(train_dataset)
+        train_dataloader = DataLoader(train_dataset, batch_size=config.batch_size)
         test_dataset = FFHQDataset(datasource=FFHQDatasource(config, DataSourceMode.TEST))
-        test_dataloader = DataLoader(test_dataset)
+        test_dataloader = DataLoader(test_dataset, batch_size=config.batch_size)
 
     # creating model and training details
     net = IntroVAE(image_size=config.image_dim, channels=config.channels, hdim=config.latent_dim_z).to(ptu.device)
