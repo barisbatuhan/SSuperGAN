@@ -28,6 +28,9 @@ The whole panel data is processed by a cartoon Face Detector model (which can be
 
 ![WIP](./images/readme_images/work_in_progress.JPG)
 
+## Pretrained Models
+
+- Face detection(siamese) on iCartoonDataface (~%86 test acc) [link](https://drive.google.com/file/d/1ey896AyT-uqQ5YlHSp4880da40-Ju1pS/view?usp=sharing)
 
 ## Modules
 
