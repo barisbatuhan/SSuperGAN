@@ -1,39 +1,31 @@
 import os
 import sys
 import json
-os.path.dirname(sys.executable)
-sys.path.append("/kuacc/users/baristopal20/SSuperGAN/")
 
 from torch import optim
 from torch.utils.data import DataLoader
 
 from data.datasets.random_dataset import RandomDataset
-from data.datasets.ssupergan_dataset import SSGANDataset
-from data.datasets.ssupergan_preprocess import *
-from data.datasets.ssupergan_dataset import *
+from data.datasets.golden_panels import GoldenPanelsDataset
 
 from networks.plain_ssupervae import PlainSSuperVAE
 from training.vae_trainer import VAETrainer
 from utils.config_utils import read_config, Config
-from utils.logging_utils import *
 from utils.plot_utils import *
+from utils.logging_utils import *
 from utils import pytorch_util as ptu
 
-from functional.metrics.dissimilarity import *
-from training.face_recognition_trainer import train_epochs
 from configs.base_config import *
 from functional.losses.elbo import elbo
 
 
 def save_best_loss_model(model_name, model, best_loss):
-    # print('current best loss: ' + str(best_loss))
-    logging.info('Current best loss: ' + str(best_loss))
+    print('[INFO] Current best loss: ' + str(best_loss))
     torch.save(model, base_dir + 'playground/ssupervae/weights/' + model_name + ".pth")
-
 
 def train(data_loader, config, model_name='plain_ssupervae'):
     # loading config
-    logging.info("[INFO] Initiate training...")
+    print("[INFO] Initiate training...")
 
     # creating model and training details
     net = PlainSSuperVAE(config.backbone, 
@@ -63,11 +55,12 @@ def train(data_loader, config, model_name='plain_ssupervae'):
                          scheduler=scheduler,
                          grad_clip=config.g_clip,
                          best_loss_action=lambda m, l: save_best_loss_model(model_name, m, l),
-                         save_dir='playground/ssupervae/'
+                         save_dir='playground/ssupervae/',
+                         checkpoint_every_epoch=True
                         )
     train_losses, test_losses = trainer.train_epochs()
 
-    logging.info("[INFO] Completed training!")
+    print("[INFO] Completed training!")
     
     save_training_plot(train_losses['loss'],
                        test_losses['loss'],
@@ -83,18 +76,14 @@ if __name__ == '__main__':
     golden_age_config = read_config(Config.GOLDEN_AGE)
     
     # data = RandomDataset((3, 3, 360, 360), (3, config.image_dim, config.image_dim))
-    face_annots, _ = read_face_detection_annotations(golden_age_config.annot_path)
-    
-    folder_structure = return_folder_structure()
-    face_annots, _ = read_face_detection_annotations(golden_age_config.annot_path, conf_thold=golden_age_config.face_confidence)
-    
-    all_possible_panel_sequence_face_detection = return_all_possible_panel_seq_face_detection(face_annots)
-    valid_sequences = valid_sequence_creator_from_face_annotations(all_possible_panel_sequence_face_detection, folder_structure)
-    
-    annotations = create_annotation_file(valid_sequences)[:18800] # 18909
-
-    data = create_dataset_SSGAN(
-        annotations, face_annots, resize_dimension=golden_age_config.panel_dim, face_resize=(config.image_dim, config.image_dim))
+    data = GoldenPanelsDataset(golden_age_config.panel_path,
+                               golden_age_config.sequence_path, 
+                               golden_age_config.panel_dim,
+                               config.image_dim, 
+                               augment=False, 
+                               mask_val=1,
+                               mask_all=False,
+                               limit_size=-1)
     data_loader = DataLoader(data, batch_size=config.batch_size, shuffle=True, num_workers=4)
     
     model = train(data_loader, config, get_dt_string() + "_model")

@@ -85,6 +85,7 @@ class VAETrainer(BaseTrainer):
                     "test_losses": test_losses
                 },
                     current_epoch=epoch)
+            
             metric_recorder.update_metrics(train_losses, test_losses)
             metric_recorder.save_recorder()
         return train_losses, test_losses

@@ -41,7 +41,7 @@ The whole panel data is processed by a cartoon Face Detector model (which can be
 
 ```yaml
 panel_path: /datasets/COMICS/raw_panel_images/
-sequence_path: /userfiles/comics_grp/golden_age/golden_panel_annots.json
+sequence_path: /userfiles/comics_grp/golden_age/panel_face_areas.json
 annot_path: /userfiles/comics_grp/golden_age/face_annots/
 faces_path: /userfiles/comics_grp/golden_age/faces_128/
 face_confidence: 0.9

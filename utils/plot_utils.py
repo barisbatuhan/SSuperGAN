@@ -88,12 +88,12 @@ def show_samples(samples, fname=None, nrow=10, title='Samples'):
 
 def plot_panels_and_faces(panels_tensor, face_tensor, recon_face_tensor):
     
-    y_recon = get_PIL_image(recon_face_tensor[0,:,:,:], means=None, stds=None)
-    y = get_PIL_image(face_tensor[0,:,:,:], means=None, stds=None)
+    y_recon = get_PIL_image(recon_face_tensor[0,:,:,:])
+    y = get_PIL_image(face_tensor[0,:,:,:])
     
     panels = []
     for i in range(panels_tensor.shape[1]):
-        panels.append(get_PIL_image(panels_tensor[0,i,:,:,:], means=None, stds=None))
+        panels.append(get_PIL_image(panels_tensor[0,i,:,:,:]))
     
     w, h = panels[0].size
     wsize, hsize = panels_tensor.shape[1] + 2, 1
