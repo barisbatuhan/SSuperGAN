@@ -1,8 +1,8 @@
 import torch
 import torch.nn.functional as F
 
-def kl_loss(z, mu, std):
 
+def kl_loss(z, mu, std):
     p = torch.distributions.Normal(torch.zeros_like(mu), torch.ones_like(std))
     q = torch.distributions.Normal(mu, std)
 

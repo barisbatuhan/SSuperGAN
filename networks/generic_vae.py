@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from networks.base.base_vae import BaseVAE
 from utils import pytorch_util as ptu
-from typing import List, Callable, Union, Any, TypeVar, Tuple
+from typing import Any
 from torch import Tensor
 from torch.distributions.normal import Normal
 
@@ -81,15 +81,3 @@ class GenericVAE(BaseVAE):
         x = interpolations.permute(0, 2, 3, 1)
         x = ptu.get_numpy(x)
         return x
-
-    """
-        def loss(self, inputs: Any, **kwargs) -> Any:
-            x = inputs
-            z, x, mu_z, mu_x, logstd_z = self.forward(x)
-            kl_loss = kl_divergence(z, mu_z, logstd_z)
-            reconstruction_loss = -1 * reconstruction_likelihood(mu_x, x)
-            loss = reconstruction_loss + self.kld_loss_weight * kl_loss
-            return {VAELossType.ELBO: loss.mean(),
-                    VAELossType.RECONSTRUCTION: reconstruction_loss.mean(),
-                    VAELossType.KLD: kl_loss.mean()}
-    """
