@@ -13,9 +13,9 @@ import torchvision.utils as vutils
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+from utils import pytorch_util as ptu
 
-
-from base.base_gan import BaseGAN
+from networks.base.base_gan import BaseGAN
 from data.datasets.golden_faces import *
 
 # Set random seed for reproducibility
@@ -24,47 +24,6 @@ manualSeed = 999
 print("Random Seed: ", manualSeed)
 random.seed(manualSeed)
 torch.manual_seed(manualSeed)
-
-
-
-# Root directory for dataset
-dataroot = "data/celeba"
-
-# Number of workers for dataloader
-workers = 2
-
-# Batch size during training
-batch_size = 128
-
-# Spatial size of training images. All images will be resized to this
-#   size using a transformer.
-image_size = 64
-
-# Number of channels in the training images. For color images this is 3
-nc = 3
-
-# Size of z latent vector (i.e. size of generator input)
-nz = 100
-
-# Size of feature maps in generator
-ngf = 64
-
-# Size of feature maps in discriminator
-ndf = 64
-
-# Number of training epochs
-num_epochs = 5
-
-# Learning rate for optimizers
-lr = 0.0002
-
-# Beta1 hyperparam for Adam optimizers
-beta1 = 0.5
-
-# Number of GPUs available. Use 0 for CPU mode.
-ngpu = 1
-
-
 
 
 class DCGAN(BaseGAN):
@@ -77,7 +36,7 @@ class DCGAN(BaseGAN):
         self.ngf = ngf # Size of feature maps in generator
         self.ndf = ndf # Size of feature maps in discriminator
         self.generator = self.create_generator()
-        self.disciminator = self.create_discriminator()
+        self.discriminator = self.create_discriminator()
         self.criterion = nn.BCELoss()
 
         # Apply the weights_init function to randomly initialize all weights
@@ -90,7 +49,7 @@ class DCGAN(BaseGAN):
 
     def create_generator(self):
         generator = nn.Sequential(
-            nn.ConvTranspose2d(nz, out_channels=self.ngf*8, kernel_size = 4, stride = 1, padding =0, bias=False),
+            nn.ConvTranspose2d(self.nz, out_channels=self.ngf*8, kernel_size = 4, stride = 1, padding =0, bias=False),
             nn.BatchNorm2d(self.ngf*8),
             nn.ReLU(True),
             # state size. (ngf*8) x 4 x 4
@@ -146,6 +105,18 @@ class DCGAN(BaseGAN):
         elif classname.find("BatchNorm") != -1:
             nn.init.normal_(m.weight.data, 1.0, 0.02)
             nn.init.constant_(m.bias.data, 0)
+
+
+    def sample(self, size=10):
+        with torch.no_grad():
+        # Check how the generator is doing by saving G's output on fixed_noise
+            noise = torch.randn(size, self.nz, 1, 1, device=ptu.device)
+            fake_gen = self.generator(noise).detach().cpu()
+            # -0.5 0.5
+            #fake = (fake/2) + 0.5
+
+        return fake_gen
+
 
         
 
