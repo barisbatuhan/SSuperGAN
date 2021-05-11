@@ -36,11 +36,11 @@ class GoldenPanelsDataset(Dataset):
         self.return_mask = return_mask
         
         with open(annot_path, "r") as f:
-            annots = json.load(f) 
-        
+            annots = json.load(f)
+
         self.data = []
         for k in annots.keys():
-            if limit_size > 0 and k > limit_size:
+            if 0 < limit_size < int(k):
                 break
             else:
                 self.data.append(annots[k])
