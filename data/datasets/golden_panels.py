@@ -76,7 +76,7 @@ class GoldenPanelsDataset(Dataset):
             
             panel = Image.open(file).convert('RGB')
             if self.augment:
-                panel = distort_color(img)
+                panel = distort_color(panel)
             
             panel = TF.crop(panel, p_area[1], p_area[0], p_area[3]-p_area[1], p_area[2]-p_area[0])
             panel = transforms.ToTensor()(panel).unsqueeze(0)
