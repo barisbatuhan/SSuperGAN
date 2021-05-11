@@ -8,7 +8,9 @@ from torch.utils.data import DataLoader
 from data.datasets.random_dataset import RandomDataset
 from data.datasets.golden_panels import GoldenPanelsDataset
 
-from networks.ssupervae import SSuperVAE
+from networks.plain_ssupervae import PlainSSuperVAE
+from networks.ssupervae_contextual_attentional import SSuperVAEContextualAttentional
+from training.ssupervae_contextual_attn_trainer import SSuperVAEContextualAttentionalTrainer
 from training.vae_trainer import VAETrainer
 from utils.config_utils import read_config, Config
 from utils.plot_utils import *
@@ -24,24 +26,23 @@ def save_best_loss_model(model_name, model, best_loss):
     torch.save(model, base_dir + 'playground/ssupervae/weights/' + model_name + ".pth")
 
 
-def train(data_loader, config, model_name='plain_ssupervae', cont_epoch=-1, cont_model=None):
+def train(data_loader,
+          config,
+          panel_dim,
+          model_name='plain_ssupervae',
+          cont_epoch=-1,
+          cont_model=None):
     # loading config
     print("[INFO] Initiate training...")
 
     # creating model and training details
-    net = SSuperVAE(config.backbone,
-                    latent_dim=config.latent_dim,
-                    embed_dim=config.embed_dim,
-                    use_lstm=config.use_lstm,
-                    seq_size=config.seq_size,
-                    decoder_channels=config.decoder_channels,
-                    gen_img_size=config.image_dim,
-                    lstm_hidden=config.lstm_hidden,
-                    lstm_dropout=config.lstm_dropout,
-                    fc_hidden_dims=config.fc_hidden_dims,
-                    fc_dropout=config.fc_dropout,
-                    num_lstm_layers=config.num_lstm_layers,
-                    masked_first=config.masked_first).to(ptu.device)
+    net = SSuperVAEContextualAttentional(config.backbone,
+                                         panel_img_size=panel_dim,
+                                         latent_dim=config.latent_dim,
+                                         embed_dim=config.embed_dim,
+                                         seq_size=config.seq_size,
+                                         decoder_channels=config.decoder_channels,
+                                         gen_img_size=config.image_dim).to(ptu.device)
 
     criterion = elbo
 
@@ -54,7 +55,7 @@ def train(data_loader, config, model_name='plain_ssupervae', cont_epoch=-1, cont
                                             lambda epoch: (config.train_epochs - epoch) / config.train_epochs,
                                             last_epoch=-1)
     # init trainer
-    trainer = VAETrainer(model=net,
+    trainer = SSuperVAEContextualAttentionalTrainer(model=net,
                          model_name=model_name,
                          criterion=criterion,
                          train_loader=data_loader,
@@ -91,8 +92,11 @@ def train(data_loader, config, model_name='plain_ssupervae', cont_epoch=-1, cont
 
 if __name__ == '__main__':
     ptu.set_gpu_mode(True)
-    config = read_config(Config.SSUPERVAE)
+    config = read_config(Config.PLAIN_SSUPERVAE)
     golden_age_config = read_config(Config.GOLDEN_AGE)
+
+    panel_dim = golden_age_config.panel_dim[0]
+
     cont_epoch = -1
     cont_model = None  # "playground/ssupervae/weights/model-18.pth"
     limit_size = 32
@@ -111,11 +115,10 @@ if __name__ == '__main__':
                                limit_size=limit_size)
     data_loader = DataLoader(data, batch_size=config.batch_size, shuffle=True, num_workers=4)
 
-    if config.use_lstm:
-        model_name = "lstm_ssupervae_model"
-    else:
-        model_name = "plain_ssupervae_model"
-
-    model = train(data_loader, config, model_name, cont_epoch=cont_epoch, cont_model=cont_model)
-
+    model = train(data_loader,
+                  config,
+                  model_name=get_dt_string() + "_model",
+                  cont_epoch=cont_epoch,
+                  cont_model=cont_model,
+                  panel_dim=panel_dim)
     torch.save(model, base_dir + 'playground/ssupervae/results/' + "ssuper_vae_model.pth")
