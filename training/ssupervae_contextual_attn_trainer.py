@@ -15,7 +15,7 @@ from utils.logging_utils import *
 from utils import pytorch_util as ptu
 
 
-class VAETrainer(BaseTrainer):
+class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
     def __init__(self,
                  model: BaseVAE,
                  model_name: str,
@@ -85,7 +85,7 @@ class VAETrainer(BaseTrainer):
                     "test_losses": test_losses
                 },
                     current_epoch=epoch)
-            
+
             metric_recorder.update_metrics(train_losses, test_losses)
             metric_recorder.save_recorder()
         return train_losses, test_losses
@@ -131,7 +131,7 @@ class VAETrainer(BaseTrainer):
             if type(batch) == list and len(batch) == 2:
                 x, y = batch[0].to(ptu.device), batch[1].to(ptu.device)
             elif type(batch) == list and len(batch) == 3:
-                x, y, mask = batch[0].to(ptu.device), batch[1].to(ptu.device),  batch[2].to(ptu.device)
+                x, y, mask = batch[0].to(ptu.device), batch[1].to(ptu.device), batch[2].to(ptu.device)
             else:
                 x, y = batch.to(ptu.device), None
 
@@ -141,6 +141,11 @@ class VAETrainer(BaseTrainer):
 
             out = self.criterion(z, target, mu_z, mu_x, logstd_z)
             out['loss'].backward()
+
+            # TODO: add forward pass for fine_generator
+            # and add a basic loss such as l1
+            # next step is to add discriminators
+            # and getting loss from them
 
             if self.grad_clip:
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.grad_clip)
