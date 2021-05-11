@@ -51,7 +51,7 @@ class BaseTrainer(object):
         :param current_loss:
         :return:
         """
-        checkpoint_path = self.checkpoint_path + self.model_name + "-checkpoint" + ".pth"
+        checkpoint_path = self.checkpoint_path + self.model_name + "-checkpoint" + "-epoch" + str(current_epoch) + ".pth"
         checkpoint = {
             'epoch': current_epoch,
             'model_state_dict': self.model.state_dict(),
@@ -65,14 +65,14 @@ class BaseTrainer(object):
 
         torch.save(checkpoint, checkpoint_path)
 
-    def load_checkpoint(self, alternative_chkpt_path=None):
+    def load_checkpoint(self, alternative_chkpt_path=None, epoch=1):
         """
         Loads model completely from a saved checkpoint
         :param alternative_path: path to be loaded if provided
         :return: epoch, loss
         """
         if alternative_chkpt_path is None:
-            checkpoint_path = self.checkpoint_path + self.model_name + "-checkpoint" ".pth"
+            checkpoint_path = self.checkpoint_path + self.model_name + "-checkpoint" + "-epoch" + str(epoch) + ".pth"
         else:
             checkpoint_path = alternative_chkpt_path
         checkpoint = torch.load(checkpoint_path)
