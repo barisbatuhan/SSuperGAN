@@ -56,7 +56,7 @@ def train(data_loader, config, model_name='plain_ssupervae', cont_epoch=-1, cont
                          scheduler=scheduler,
                          grad_clip=config.g_clip,
                          best_loss_action=lambda m, l: save_best_loss_model(model_name, m, l),
-                         save_dir='playground/ssupervae/',
+                         save_dir=base_dir + 'playground/ssupervae/',
                          checkpoint_every_epoch=True
                         )
     
