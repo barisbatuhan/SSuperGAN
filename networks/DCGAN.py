@@ -76,7 +76,7 @@ class DCGAN(BaseGAN):
         self.ngf = ngf # Size of feature maps in generator
         self.ndf = ndf # Size of feature maps in discriminator
         self.generator = self.create_generator()
-        #self.disciminator = self.create_discriminator()
+        self.disciminator = self.create_discriminator()
 
     def loss(self):
         pass
@@ -104,6 +104,33 @@ class DCGAN(BaseGAN):
             # state size. (nc) x 64 x 64
             )
         return generator
+
+
+    def create_discriminator(self):
+        discriminator = nn.Sequential(
+            # input is (nc) x 64 x 64
+            nn.Conv2d(self.nc, self.ndf, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size. (ndf) x 32 x 32
+            nn.Conv2d(self.ndf, self.ndf*2, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(self.ndf * 2),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size (ndf*2) x 16, 16
+            nn.Conv2d(self.ndf*2, self.ndf*4, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(self.ndf*4),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size (ndf*4) x 8 x 8
+            nn.Conv2d(self.ndf*4, self.ndf*8, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(self.ndf*8),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size (ndf*8) x 4 x4
+            nn.Conv2d(self.ndf*8, 1, kernel_size=4, stride=1, padding=0,bias=False),
+            nn.Sigmoid())
+
+        return discriminator
+
+        
+
 
 
     
