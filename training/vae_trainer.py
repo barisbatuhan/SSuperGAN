@@ -154,7 +154,7 @@ class VAETrainer(BaseTrainer):
                 pbar.update(x.shape[0])
 
         self.scheduler.step()
-        self.model.save_samples(10, self.save_dir + '/results/ + 'f'epoch{epoch}_samples.png')
+        self.model.save_samples(10, self.save_dir + '/results/' + f'epoch{epoch}_samples.png')
         if not self.quiet:
             pbar.close()
         return losses
