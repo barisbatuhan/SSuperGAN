@@ -112,7 +112,7 @@ class GoldenPanelsDataset(Dataset):
                         int(f_shifted[3] * self.panel_dim[1] / H),
                     ]
                     mask_data[m_shifted[1]:m_shifted[3], m_shifted[0]:m_shifted[2]] = 1
-                    mask_coordinates = [m_shifted[1],m_shifted[3], m_shifted[0], m_shifted[2]]
+                    mask_coordinates = np.array((m_shifted[1], m_shifted[3], m_shifted[0], m_shifted[2]))
 
             panel = TF.resize(panel, [self.panel_dim[1], self.panel_dim[0]])
             panels.append(panel)
