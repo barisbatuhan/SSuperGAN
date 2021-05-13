@@ -1,20 +1,17 @@
 from copy import deepcopy
 
 import torch
-import torch.nn as nn
-from torch import Tensor
 from torch.distributions.normal import Normal
-import torchvision
 
 # Models
 from networks.base.base_vae import BaseVAE
-from networks.fine_generator.fine_generator import FineGenerator
+from networks.contextual_networks.fine_discriminators.global_discriminator import GlobalDis
+from networks.contextual_networks.fine_discriminators.local_discriminator import LocalDis
+from networks.contextual_networks.fine_generator.fine_generator import FineGenerator
 from networks.panel_encoder.plain_sequential_encoder import PlainSequentialEncoder
 from networks.intro_vae import Decoder
 
 # Losses
-from functional.losses.kl_loss import kl_loss
-from functional.losses.reconstruction_loss import reconstruction_loss
 
 # Helpers
 from utils import pytorch_util as ptu
@@ -29,7 +26,8 @@ class SSuperVAEContextualAttentional(BaseVAE):
                  embed_dim=256,
                  seq_size=3,
                  decoder_channels=[64, 128, 256, 512],
-                 gen_img_size=64
+                 gen_img_size=64,
+                 cnum_discriminator=32
                  ):
         super(SSuperVAEContextualAttentional, self).__init__()
 
@@ -55,6 +53,17 @@ class SSuperVAEContextualAttentional(BaseVAE):
         # TODO: con't and implement contextual forward
         cnum = panel_img_size // 4
         self.fine_generator = FineGenerator(input_dim, cnum, True, None)
+
+        self.local_disc = LocalDis(cnum_discriminator)
+        self.global_disc = GlobalDis(cnum_discriminator)
+
+    def dis_forward(self, is_local, ground_truth, generated):
+        assert ground_truth.size() == generated.size()
+        batch_size = ground_truth.size(0)
+        batch_data = torch.cat([ground_truth, generated], dim=0)
+        batch_output = self.local_disc(batch_data) if is_local else self.global_disc(batch_data)
+        real_pred, fake_pred = torch.split(batch_output, batch_size, dim=0)
+        return real_pred, fake_pred
 
     def forward(self, x):
         mu, lg_std = self.encode(x)
@@ -120,7 +129,7 @@ class SSuperVAEContextualAttentional(BaseVAE):
                                                                      size=(interim_face_size, interim_face_size))
             fine_faces[i, :, :, :] = interpolated_fine_face
 
-        return x_stage_2, offset_flow, fine_faces
+        return x_stage_0, x_stage_1, x_stage_2, offset_flow, fine_faces
 
     def encode(self, x):
         return self.encoder(x)

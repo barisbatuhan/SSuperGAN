@@ -52,18 +52,31 @@ def train(data_loader,
                            betas=(config.beta_1, config.beta_2),
                            weight_decay=config.weight_decay)
 
+    d_params = list(net.local_disc.parameters()) + list(net.global_disc.parameters())
+    optimizer_disc = optim.Adam(d_params,
+                                lr=config.lr,
+                                betas=(config.beta_1, config.beta_2),
+                                weight_decay=config.weight_decay)
+
     scheduler = optim.lr_scheduler.LambdaLR(optimizer,
+                                            lambda epoch: (config.train_epochs - epoch) / config.train_epochs,
+                                            last_epoch=-1)
+
+    scheduler_disc = optim.lr_scheduler.LambdaLR(optimizer_disc,
                                             lambda epoch: (config.train_epochs - epoch) / config.train_epochs,
                                             last_epoch=-1)
     # init trainer
     trainer = SSuperVAEContextualAttentionalTrainer(model=net,
+                                                    config_disc=config,
                                                     model_name=model_name,
                                                     criterion=criterion,
                                                     train_loader=data_loader,
                                                     test_loader=None,
                                                     epochs=config.train_epochs,
                                                     optimizer=optimizer,
+                                                    optimizer_disc=optimizer_disc,
                                                     scheduler=scheduler,
+                                                    scheduler_disc=scheduler_disc,
                                                     grad_clip=config.g_clip,
                                                     best_loss_action=lambda m, l: save_best_loss_model(model_name, m,
                                                                                                        l),
@@ -177,12 +190,11 @@ def test_forward_for_ssupervae_context():
     print("here")
 
 
-
 if __name__ == '__main__':
     # test_forward_for_ssupervae_context()
 
     ptu.set_gpu_mode(True)
-    config = read_config(Config.PLAIN_SSUPERVAE)
+    config = read_config(Config.VAE_CONTEXT_ATTN)
     golden_age_config = read_config(Config.GOLDEN_AGE)
 
     panel_dim = golden_age_config.panel_dim[0]
