@@ -51,7 +51,7 @@ class SSuperVAEContextualAttentional(BaseVAE):
         # calculation
         # so below assumes that original last panel image is 256 * 256
         # TODO: con't and implement contextual forward
-        cnum = panel_img_size / 4
+        cnum = panel_img_size // 4
         self.fine_generator = FineGenerator(input_dim, cnum, True, None)
 
     def forward(self, x):
