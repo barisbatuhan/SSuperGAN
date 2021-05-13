@@ -11,6 +11,7 @@ import torch.optim as optim
 
 from networks.base.base_vae import BaseVAE
 from networks.generic_vae import GenericVAE
+from networks.ssupervae_contextual_attentional import SSuperVAEContextualAttentional
 from training.base_trainer import BaseTrainer
 from utils.structs.metric_recorder import *
 from utils.logging_utils import *
@@ -20,14 +21,17 @@ import torchvision.utils as vutils
 
 class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
     def __init__(self,
-                 model: BaseVAE,
+                 config_disc,
+                 model: SSuperVAEContextualAttentional,
                  model_name: str,
                  criterion,
                  train_loader,
                  test_loader,
                  epochs: int,
                  optimizer,
+                 optimizer_disc,
                  scheduler=None,
+                 scheduler_disc=None,
                  quiet: bool = False,
                  grad_clip=None,
                  best_loss_action=None,
@@ -38,16 +42,19 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
                          criterion,
                          epochs,
                          save_dir,
-                         {"optimizer": optimizer},
-                         {"scheduler": scheduler},
+                         {"optimizer": optimizer, "optimizer_disc": optimizer_disc},
+                         {"scheduler": scheduler, "scheduler_disc": scheduler_disc},
                          quiet,
                          grad_clip,
                          best_loss_action,
                          checkpoint_every_epoch)
+        self.config_disc = config_disc
         self.train_loader = train_loader
         self.test_loader = test_loader
         self.optimizer = optimizer
+        self.optimizer_disc = optimizer_disc
         self.scheduler = scheduler
+        self.scheduler_disc = scheduler_disc
 
     def train_epochs(self, starting_epoch=None, losses={}):
         metric_recorder = MetricRecorder(experiment_name=self.model_name,
@@ -74,7 +81,7 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
                     train_losses[k] = []
                     test_losses[k] = []
                 train_losses[k].extend(train_loss[k])
-                test_losses[k].append(test_loss[k])
+                test_losses[k].append(test_loss.get(k, 0))
                 if k == "loss":
                     current_test_loss = test_loss[k]
                     if current_test_loss < best_loss:
@@ -113,12 +120,14 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
             target = x if y is None else y
             out = self.criterion(z, target, mu_z, mu_x, logstd_z)
 
-            x_stage_2, offset_flow, fine_faces = self.model.fine_generation_forward(x,
-                                                                                    y,
-                                                                                    mask,
-                                                                                    mu_x,
-                                                                                    mask_coordinates,
-                                                                                    interim_face_size=interim_face_size)
+            _, _, x_stage_2, \
+            offset_flow, \
+            fine_faces = self.model.fine_generation_forward(x,
+                                                            y,
+                                                            mask,
+                                                            mu_x,
+                                                            mask_coordinates,
+                                                            interim_face_size=interim_face_size)
             l1_loss = nn.L1Loss()
             out['l1_fine'] = l1_loss(fine_faces, y)
 
@@ -161,25 +170,74 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
             target = x if y is None else y
 
             out = self.criterion(z, target, mu_z, mu_x, logstd_z)
-            out['loss'].backward(retain_graph=True)
 
             # TODO: add forward pass for fine_generator
             # and add a basic loss such as l1
             # next step is to add discriminators
             # and getting loss from them
-            x_stage_2, offset_flow, fine_faces = self.model.fine_generation_forward(x,
-                                                                                    y,
-                                                                                    mask,
-                                                                                    mu_x,
-                                                                                    mask_coordinates,
-                                                                                    interim_face_size=interim_face_size)
-            l1_loss = nn.L1Loss()
-            out['l1_fine'] = l1_loss(fine_faces, y)
-            out['l1_fine'].backward()
+            x_stage_0, \
+            x_stage_1, \
+            x_stage_2, \
+            offset_flow, \
+            fine_faces = self.model.fine_generation_forward(x,
+                                                            y,
+                                                            mask,
+                                                            mu_x,
+                                                            mask_coordinates,
+                                                            interim_face_size=interim_face_size)
+
+            # wgan g loss
+            if self.config_disc.compute_g_loss:
+                # this does not exactly match with impl because they use l1 many times in different parts of the net
+                l1_loss = nn.L1Loss()
+                out['l1_fine'] = l1_loss(fine_faces, y)
+
+                local_patch_real_pred, local_patch_fake_pred = self.model.dis_forward(is_local=True,
+                                                                                      ground_truth=y,
+                                                                                      generated=fine_faces)
+                global_real_pred, global_fake_pred = self.model.dis_forward(is_local=False,
+                                                                            ground_truth=x_stage_0,
+                                                                            generated=fine_faces)
+                # TODO: do not forget to use "backward" on this!
+                out['wgan_g'] = - torch.mean(local_patch_fake_pred) - \
+                                torch.mean(global_fake_pred) * self.config_disc.global_wgan_loss_alpha
+
+                out['loss'] = out['loss'] + out['wgan_g'] + out['l1_fine']
+
+            # TODO: Original Implementation Has not Retain Graph?
+            #   Possible reason: params of disc is included in optimizer loss although this
+            #       does not need to be the case
+            out['loss'].backward(retain_graph=True)
+
+            # D part
+            # wgan d loss
+            local_patch_real_pred, local_patch_fake_pred = self.model.dis_forward(is_local=True,
+                                                                                  ground_truth=y,
+                                                                                  generated=fine_faces)
+            global_real_pred, global_fake_pred = self.model.dis_forward(is_local=False,
+                                                                        ground_truth=x_stage_0,
+                                                                        generated=x_stage_2)
+            # TODO: do not forget to use "backward" on this!
+            out['wgan_d'] = torch.mean(local_patch_fake_pred - local_patch_real_pred) + \
+                            torch.mean(global_fake_pred - global_real_pred) * self.config_disc.global_wgan_loss_alpha
+            # gradients penalty loss
+            local_penalty = self.calc_gradient_penalty(
+                self.model.local_disc, y, fine_faces.detach())
+            global_penalty = self.calc_gradient_penalty(self.model.global_disc,
+                                                        x_stage_0, x_stage_2.detach())
+            # TODO: do not forget to use "backward" on this!
+            out['wgan_gp'] = local_penalty + global_penalty
+
+            # Update D
+            self.optimizer_disc.zero_grad()
+            out['d'] = out['wgan_d'] + out['wgan_gp'] * self.config_disc.wgan_gp_lambda
+            out['d'].backward()
 
             if self.grad_clip:
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.grad_clip)
+
             self.optimizer.step()
+            self.optimizer_disc.step()
 
             # Saving Fine Faces
             if counter % fine_face_save_frequency == 0:
@@ -201,7 +259,35 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
                 pbar.update(x.shape[0])
 
         self.scheduler.step()
+        self.scheduler_disc.step()
         self.model.save_samples(10, self.save_dir + '/results/' + f'epoch{epoch}_samples.png')
         if not self.quiet:
             pbar.close()
         return losses
+
+        # Calculate gradient penalty
+
+    def calc_gradient_penalty(self, netD, real_data, fake_data):
+        batch_size = real_data.size(0)
+        alpha = torch.rand(batch_size, 1, 1, 1)
+        alpha = alpha.expand_as(real_data)
+        if ptu.gpu_enabled():
+            alpha = alpha.cuda()
+
+        interpolates = alpha * real_data + (1 - alpha) * fake_data
+        interpolates = interpolates.requires_grad_().clone()
+
+        disc_interpolates = netD(interpolates)
+        grad_outputs = torch.ones(disc_interpolates.size())
+
+        if ptu.gpu_enabled():
+            grad_outputs = grad_outputs.cuda()
+
+        gradients = torch.autograd.grad(outputs=disc_interpolates, inputs=interpolates,
+                                        grad_outputs=grad_outputs, create_graph=True,
+                                        retain_graph=True, only_inputs=True)[0]
+
+        gradients = gradients.view(batch_size, -1)
+        gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
+
+        return gradient_penalty
