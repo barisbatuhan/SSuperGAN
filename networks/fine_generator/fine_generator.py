@@ -196,7 +196,11 @@ class FineGenerator(nn.Module):
         x = self.allconv15(x)
         x = self.allconv16(x)
         x = self.allconv17(x)
-        x_stage2 = torch.clamp(x, -1., 1.)
+        # TODO: In original paper clamping is active, I assume
+        #   that is because of wgan gp losses - not sure
+        #       paper needs to be checked
+        # x_stage2 = torch.clamp(x, -1., 1.)
+        x_stage2 = x
 
         return x_stage2, offset_flow
 
