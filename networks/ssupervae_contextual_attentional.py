@@ -83,6 +83,7 @@ class SSuperVAEContextualAttentional(BaseVAE):
         B, S, C, W, H = x.shape
         mask = mask.view(B, 1, W, H)
         x_stage_0 = ptu.zeros(B, C, H, W)
+        last_panel_gts = ptu.zeros_like(x_stage_0)
         x_stage_1 = ptu.zeros_like(x_stage_0)
         for i in range(len(x)):
             last_panel = x[i, 2, :, :, :]
@@ -103,7 +104,11 @@ class SSuperVAEContextualAttentional(BaseVAE):
             interpolated_last_panel_face = interpolated_last_panel_face_batch[0]
             last_panel[:, mask_coordinates_n[0]: mask_coordinates_n[1],
             mask_coordinates_n[2]: mask_coordinates_n[3]] = interpolated_last_panel_face
-            x_stage_0[i, :, :, :] = last_panel
+
+            # expand(torch.cuda.FloatTensor{[8, 3, 128, 128]}, size=[3, 128, 128]):
+            # the number of sizes provided (3) must be greater or equal to the number of dimensions in the tensor (4)
+            x_stage_0[i, :, :, :] = last_panel * (1. - mask[i])
+            last_panel_gts[i, :, :, :] = last_panel
 
             # inserting output face to last panel
             modified = last_panel_output_face.view(1, *last_panel_output_face.size())
@@ -129,7 +134,7 @@ class SSuperVAEContextualAttentional(BaseVAE):
                                                                      size=(interim_face_size, interim_face_size))
             fine_faces[i, :, :, :] = interpolated_fine_face
 
-        return x_stage_0, x_stage_1, x_stage_2, offset_flow, fine_faces
+        return x_stage_0, x_stage_1, x_stage_2, offset_flow, fine_faces, last_panel_gts
 
     def encode(self, x):
         return self.encoder(x)
