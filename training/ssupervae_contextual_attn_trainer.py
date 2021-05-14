@@ -122,7 +122,7 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
 
             _, _, x_stage_2, \
             offset_flow, \
-            fine_faces = self.model.fine_generation_forward(x,
+            fine_faces, last_panel_gts = self.model.fine_generation_forward(x,
                                                             y,
                                                             mask,
                                                             mu_x,
@@ -179,7 +179,8 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
             x_stage_1, \
             x_stage_2, \
             offset_flow, \
-            fine_faces = self.model.fine_generation_forward(x,
+            fine_faces, \
+            last_panel_gts = self.model.fine_generation_forward(x,
                                                             y,
                                                             mask,
                                                             mu_x,
