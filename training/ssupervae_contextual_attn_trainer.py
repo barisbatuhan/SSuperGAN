@@ -193,11 +193,12 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
                 l1_loss = nn.L1Loss()
                 out['l1_fine'] = l1_loss(fine_faces, y)
 
+                # TODO: Parameters of disforward might be incorrect becareful about what you are passing
                 local_patch_real_pred, local_patch_fake_pred = self.model.dis_forward(is_local=True,
                                                                                       ground_truth=y,
                                                                                       generated=fine_faces)
                 global_real_pred, global_fake_pred = self.model.dis_forward(is_local=False,
-                                                                            ground_truth=x_stage_0,
+                                                                            ground_truth=last_panel_gts,
                                                                             generated=fine_faces)
                 # TODO: do not forget to use "backward" on this!
                 out['wgan_g'] = - torch.mean(local_patch_fake_pred) - \
