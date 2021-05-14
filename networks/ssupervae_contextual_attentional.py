@@ -134,6 +134,9 @@ class SSuperVAEContextualAttentional(BaseVAE):
                                                                      size=(interim_face_size, interim_face_size))
             fine_faces[i, :, :, :] = interpolated_fine_face
 
+            # Creating x_stage_2 inpainted
+            x_stage_2[i, :, :, :] = last_panel_gts[i, :, :, :] * (1. - mask[i]) + x_stage_2[i, :, :, :] * mask[i]
+
         return x_stage_0, x_stage_1, x_stage_2, offset_flow, fine_faces, last_panel_gts
 
     def encode(self, x):
