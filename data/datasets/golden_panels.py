@@ -106,10 +106,10 @@ class GoldenPanelsDataset(Dataset):
                 if self.return_mask and i == len(annots[0]) - 1:
                     _, _, H, W = panel.shape
                     m_shifted = [  # after resize, these dims will be masked
-                        int(f_shifted[0] * self.panel_dim[0] / W),
-                        int(f_shifted[1] * self.panel_dim[1] / H),
-                        int(f_shifted[2] * self.panel_dim[0] / W),
-                        int(f_shifted[3] * self.panel_dim[1] / H),
+                        int(round(f_shifted[0] * self.panel_dim[0] / W)),
+                        int(round(f_shifted[1] * self.panel_dim[1] / H)),
+                        int(round(f_shifted[2] * self.panel_dim[0] / W)),
+                        int(round(f_shifted[3] * self.panel_dim[1] / H)),
                     ]
                     mask_data[m_shifted[1]:m_shifted[3], m_shifted[0]:m_shifted[2]] = 1
                     mask_coordinates = np.array((m_shifted[1], m_shifted[3], m_shifted[0], m_shifted[2]))
