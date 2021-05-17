@@ -42,7 +42,7 @@
 
 - **[Çağhan]** GAN yapısı oluşturup (DCGAN gibi ve daha da advanced 1 tane - [In-Domain Inversion](https://github.com/genforce/idinvert_pytorch)) yüz datasıyla eğitme.
 - Global discriminator yapısı ekleme ve onunla modeli eğitme.
-- **[Gürkan]** Weight save ettikten sonra o saved weight ile training sürecine devam ettirmek.
+- **[Gürkan]** Weight save ettikten sonra o saved weight ile training sürecine devam ettirmek. [+]
 - **[İleri Seviye]** LSTM oluşturma.
 
 
