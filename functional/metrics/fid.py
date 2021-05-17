@@ -32,21 +32,21 @@ class FID:
         self.n_samples = n_samples
         self.batch_size = batch_size
     
-    def __call__(self, model):
+    def __call__(self, model, real_mean=None, real_cov=None):
         
         fids, iter_cnt = 0, 0
         
         for i in tqdm(range(0, self.n_samples, self.batch_size)):
             imgs = model.sample(self.batch_size)
-            imgs = (torch.clamp(imgs, min=-1, max=1) + 1) / 2 # make [0, 1]
             features = self.extract_features(imgs).cpu().numpy()
             sample_mean = np.mean(features, 0)
             sample_cov = np.cov(features, rowvar=False)
             
-            with open("functional/metrics/inception_ffhq.pkl", "rb") as f:
-                embeds = pickle.load(f)
-                real_mean = embeds["mean"]
-                real_cov = embeds["cov"]
+            if real_mean is None or real_cov is None:
+                with open("functional/metrics/inception_ffhq.pkl", "rb") as f:
+                    embeds = pickle.load(f)
+                    real_mean = embeds["mean"]
+                    real_cov = embeds["cov"]
 
             fids += self.calc_fid(sample_mean, sample_cov, real_mean, real_cov)
             iter_cnt += 1
@@ -59,11 +59,13 @@ class FID:
         if type(imgs) == tuple:
             feature_list = []
             for img in imgs:
+                img = (torch.clamp(img, min=-1, max=1) + 1) / 2 # make [0, 1]
                 feature = self.inception(img.to(ptu.device))[0].view(img.shape[0], -1)
                 feature_list.append(feature)
             return torch.cat(feature_list, 0)
         
         else:
+            imgs = (torch.clamp(imgs, min=-1, max=1) + 1) / 2 # make [0, 1]
             return self.inception(imgs.to(ptu.device))[0].view(imgs.shape[0], -1)
 
     

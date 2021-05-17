@@ -1,6 +1,9 @@
 import os
 import sys
 import json
+import warnings
+warnings.filterwarnings("ignore")
+
 from tqdm import tqdm
 
 from torch import optim
@@ -22,9 +25,13 @@ from functional.metrics.fid import FID
 metrics = ["PSNR", "FID"]
 
 METRIC = metrics[1]
-BATCH_SIZE = 8
+BATCH_SIZE = 64 # 8
 model_path = "playground/ssupervae/checkpoints/11-05-2021-12-35-34_model-checkpoint-epoch85.pth"
 N_SAMPLES = 1280 # 50000
+
+# Required for FID, if not given, then calculated from scratch
+mus = None
+sigmas = None
 
 ptu.set_gpu_mode(True)
 config = read_config(Config.PLAIN_SSUPERVAE)
@@ -41,20 +48,21 @@ net = PlainSSuperVAE(config.backbone,
 net.load_state_dict(torch.load(model_path)['model_state_dict'])
 net = net.cuda().eval()
 
-if METRIC == "PSNR":
-    dataset = GoldenPanelsDataset(golden_age_config.panel_path,
-                                  golden_age_config.sequence_path, 
-                                  golden_age_config.panel_dim,
-                                  config.image_dim, 
-                                  augment=False, 
-                                  mask_val=1, # mask with white color for 1 and black color for 0
-                                  mask_all=False, # masks faces from all panels and returns all faces
-                                  return_mask=True,
-                                  train_test_ratio=golden_age_config.train_test_ratio,
-                                  train_mode=False,
-                                  limit_size=-1)
+dataset = GoldenPanelsDataset(golden_age_config.panel_path,
+                              golden_age_config.sequence_path, 
+                              golden_age_config.panel_dim,
+                              config.image_dim, 
+                              augment=False, 
+                              mask_val=1, # mask with white color for 1 and black color for 0
+                              mask_all=False, # masks faces from all panels and returns all faces
+                              return_mask=True,
+                              train_test_ratio=golden_age_config.train_test_ratio,
+                              train_mode=False,
+                              limit_size=-1)
 
-    data_loader = DataLoader(dataset, batch_size=BATCH_SIZE)
+data_loader = DataLoader(dataset, batch_size=BATCH_SIZE)
+
+if METRIC == "PSNR":
     
     psnrs, iter_cnt = 0, 0
     for x, y, z in tqdm(data_loader):
@@ -66,7 +74,27 @@ if METRIC == "PSNR":
     
     
 elif METRIC == "FID":
+    
     metric = FID(n_samples=N_SAMPLES, batch_size=BATCH_SIZE)
-    fid = metric.__call__(net)
+    
+    if mus is None or sigmas is None:
+        iter_cnt = 0
+        for _, y, _ in tqdm(data_loader):
+            original_features = metric.extract_features(y).cpu().numpy()
+            mu = np.mean(original_features, axis=0)
+            sigma = np.cov(original_features, rowvar=False)
+            
+            if mus is None:
+                mus, sigmas = mu, sigma
+            else:
+                mus += mu
+                sigmas += sigma
+            
+            iter_cnt += 1
+            
+        mus /= iter_cnt
+        sigmas /= iter_cnt
+        
+    fid = metric.__call__(net, real_mean=mus, real_cov=sigmas)
     print("-- FID:", fid, "on", N_SAMPLES, "samples.")
 
