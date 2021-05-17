@@ -5,3 +5,6 @@ train_vae:
 
 train_ssupervae:
 	python3 playground/ssupervae/plain_ssupervae_playground.py
+
+eval_ssupervae:
+	python3 playground/ssupervae/eval_plain_ssupervae.py

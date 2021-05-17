@@ -57,7 +57,7 @@ class PlainSSuperVAE(BaseVAE):
     def decode(self, z):
         return self.decoder(z)
     
-    def sample(self, size :int, current_device :int=0):
+    def sample(self, size :int):
         z = self.latent_dist.rsample((size, self.latent_dim)).squeeze(-1)
         return self.decode(z)
     
