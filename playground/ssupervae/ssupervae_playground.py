@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from data.datasets.random_dataset import RandomDataset
 from data.datasets.golden_panels import GoldenPanelsDataset
 
-from networks.plain_ssupervae import PlainSSuperVAE
+from networks.ssupervae import SSuperVAE
 from training.vae_trainer import VAETrainer
 from utils.config_utils import read_config, Config
 from utils.plot_utils import *
@@ -28,12 +28,19 @@ def train(data_loader, config, model_name='plain_ssupervae', cont_epoch=-1, cont
     print("[INFO] Initiate training...")
 
     # creating model and training details
-    net = PlainSSuperVAE(config.backbone, 
-                         latent_dim=config.latent_dim, 
-                         embed_dim=config.embed_dim,
-                         seq_size=config.seq_size,
-                         decoder_channels=config.decoder_channels,
-                         gen_img_size=config.image_dim).to(ptu.device) 
+    net = SSuperVAE(config.backbone, 
+                    latent_dim=config.latent_dim, 
+                    embed_dim=config.embed_dim,
+                    use_lstm=config.use_lstm,
+                    seq_size=config.seq_size,
+                    decoder_channels=config.decoder_channels,
+                    gen_img_size=config.image_dim,
+                    lstm_hidden=config.lstm_hidden,
+                    lstm_dropout=config.lstm_dropout,
+                    fc_hidden_dims=config.fc_hidden_dims,
+                    fc_dropout=config.fc_dropout,
+                    num_lstm_layers=config.num_lstm_layers,
+                    masked_first=config.masked_first).to(ptu.device) 
     
     criterion = elbo
 
@@ -84,7 +91,7 @@ def train(data_loader, config, model_name='plain_ssupervae', cont_epoch=-1, cont
 
 if __name__ == '__main__':
     ptu.set_gpu_mode(True)
-    config = read_config(Config.PLAIN_SSUPERVAE)
+    config = read_config(Config.SSUPERVAE)
     golden_age_config = read_config(Config.GOLDEN_AGE)
     cont_epoch = -1
     cont_model = None # "playground/ssupervae/weights/model-18.pth"
@@ -103,5 +110,10 @@ if __name__ == '__main__':
                                limit_size=-1)
     data_loader = DataLoader(data, batch_size=config.batch_size, shuffle=True, num_workers=4)
     
-    model = train(data_loader, config, get_dt_string() + "_model", cont_epoch=cont_epoch, cont_model=cont_model)
+    if config.use_lstm:
+        model_name ="lstm_ssupervae_model"
+    else:
+        model_name ="plain_ssupervae_model"
+    
+    model = train(data_loader, config, model_name, cont_epoch=cont_epoch, cont_model=cont_model)
     torch.save(model, base_dir + 'playground/ssupervae/results/' + "ssuper_vae_model.pth")

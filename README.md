@@ -69,16 +69,27 @@ panel_dim:
 
 ### USING PLAIN SSUPERVAE MODULE
 
-- To train the PlainSSuperVAE network, you have to specify the following parameters in the `plain_ssupervae_config.yaml` file under the *configs* folder.
+- To train the PlainSSuperVAE network, you have to specify the following parameters in the `ssupervae_config.yaml` file under the *configs* folder. To use the LSTM structure, simply set the flag `use_lstm` to `True`.
 
 ```yaml
 # Encoder Parameters
 backbone: "efficientnet-b5"
-seq_size: 3
 embed_dim: 256
+latent_dim: 256 
+use_lstm: False
+
+# Plain Encoder Parameters
+seq_size: 3
+
+# LSTM Encoder Parameters
+lstm_hidden: 256
+lstm_dropout: 0
+fc_hidden_dims: []
+fc_dropout: 0
+num_lstm_layers: 1
+masked_first: True
 
 # Decoder Parameters
-latent_dim: 256 
 decoder_channels:
     - 64
     - 128
@@ -87,7 +98,7 @@ decoder_channels:
 image_dim: 64
 
 # Training Parameters
-batch_size: 8
+batch_size: 4
 train_epochs: 100
 lr: 0.0002
 weight_decay: 0.000025

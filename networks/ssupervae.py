@@ -7,6 +7,7 @@ import torchvision
 # Models
 from networks.base.base_vae import BaseVAE
 from networks.panel_encoder.plain_sequential_encoder import PlainSequentialEncoder
+from networks.panel_encoder.lstm_sequential_encoder import LSTMSequentialEncoder
 from networks.intro_vae import Decoder
 
 # Losses
@@ -16,22 +17,45 @@ from functional.losses.reconstruction_loss import reconstruction_loss
 # Helpers
 from utils import pytorch_util as ptu
 
-class PlainSSuperVAE(BaseVAE):
+class SSuperVAE(BaseVAE):
     
     def __init__(self, 
+                 # common parameters
                  backbone, 
                  latent_dim=256, 
                  embed_dim=256,
+                 use_lstm=False,
+                 # plain encoder parameters
                  seq_size=3,
+                 # VAE parameters
                  decoder_channels=[64, 128, 256, 512],
-                 gen_img_size=64
-                ):
-        super(PlainSSuperVAE, self).__init__()
+                 gen_img_size=64,
+                 # lstm encoder parameters
+                 lstm_hidden=256,
+                 lstm_dropout=0,
+                 fc_hidden_dims=[],
+                 fc_dropout=0,
+                 num_lstm_layers=1,
+                 masked_first=True):
+        super(SSuperVAE, self).__init__()
         
         self.latent_dim = latent_dim
         
-        self.encoder = PlainSequentialEncoder(
-            backbone, latent_dim=latent_dim, embed_dim=embed_dim, seq_size=seq_size)
+        if not use_lstm:
+            self.encoder = PlainSequentialEncoder(backbone, 
+                                                  latent_dim=latent_dim, 
+                                                  embed_dim=embed_dim, 
+                                                  seq_size=seq_size)
+        else:
+            self.encoder = LSTMSequentialEncoder(backbone,
+                                                 latent_dim=latent_dim,
+                                                 embed_dim=embed_dim,
+                                                 lstm_hidden=lstm_hidden,
+                                                 lstm_dropout=lstm_dropout,
+                                                 fc_hidden_dims=fc_hidden_dims,
+                                                 fc_dropout=fc_dropout,
+                                                 num_lstm_layers=num_lstm_layers,
+                                                 masked_first=masked_first)
         
         self.decoder = Decoder(
             hdim=latent_dim, channels=decoder_channels, image_size=gen_img_size)
