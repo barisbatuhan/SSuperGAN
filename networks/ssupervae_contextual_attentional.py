@@ -90,7 +90,7 @@ class SSuperVAEContextualAttentional(BaseVAE):
             output_merged_last_panel = deepcopy(last_panel)
 
             last_panel_face = y[i, :, :, :]
-            last_panel_output_face = mu_x[0, :, :, :]
+            last_panel_output_face = mu_x[i, :, :, :]
 
             mask_coordinates_n = mask_coordinates[i]
 
@@ -102,6 +102,10 @@ class SSuperVAEContextualAttentional(BaseVAE):
             interpolated_last_panel_face_batch = torch.nn.functional.interpolate(modified,
                                                                                  size=(original_w, original_h))
             interpolated_last_panel_face = interpolated_last_panel_face_batch[0]
+            # TODO: we have dimensional problem here
+            #   The expanded size of the tensor (73) must match the existing size (74)
+            #   at non-singleton dimension 1.
+            #   Target sizes: [3, 73, 74].  Tensor sizes: [3, 74, 74]
             last_panel[:, mask_coordinates_n[0]: mask_coordinates_n[1],
             mask_coordinates_n[2]: mask_coordinates_n[3]] = interpolated_last_panel_face
 
