@@ -30,5 +30,5 @@ def elbo_with_L1(z,
     reconstruction_loss_value = -1 * reconstruction_loss(x, mu_x)
     loss = reconstruction_loss_value + kl_loss_weight * kl_loss_value
     return OrderedDict(loss=loss,
-                       reconstruction_loss_L1=reconstruction_loss,
+                       reconstruction_loss_L1=reconstruction_loss_value,
                        kl_loss=kl_loss_value)
