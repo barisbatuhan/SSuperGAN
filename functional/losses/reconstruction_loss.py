@@ -23,5 +23,5 @@ def reconstruction_loss_distributional(x, x_recon, log_scale=None):
     return log_pxz.sum(dim=(1, 2, 3)).mean()
 
 
-def reconstruction_loss(x, x_recon, log_scale):
+def reconstruction_loss(x, x_recon):
     return torch.abs(x - x_recon).mean()
