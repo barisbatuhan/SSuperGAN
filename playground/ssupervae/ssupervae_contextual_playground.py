@@ -19,7 +19,7 @@ from utils.logging_utils import *
 from utils import pytorch_util as ptu
 from utils.image_utils import *
 from configs.base_config import *
-from functional.losses.elbo import elbo
+from functional.losses.elbo import *
 
 
 def save_best_loss_model(model_name, model, best_loss):
@@ -30,6 +30,7 @@ def save_best_loss_model(model_name, model, best_loss):
 def train(data_loader,
           config,
           panel_dim,
+          elbo_criterion,
           model_name='plain_ssupervae',
           cont_epoch=-1,
           cont_model=None):
@@ -45,7 +46,7 @@ def train(data_loader,
                                          decoder_channels=config.decoder_channels,
                                          gen_img_size=config.image_dim).to(ptu.device)
 
-    criterion = elbo
+    criterion = elbo_criterion
 
     optimizer = optim.Adam(net.parameters(),
                            lr=config.lr,
@@ -63,8 +64,8 @@ def train(data_loader,
                                             last_epoch=-1)
 
     scheduler_disc = optim.lr_scheduler.LambdaLR(optimizer_disc,
-                                            lambda epoch: (config.train_epochs - epoch) / config.train_epochs,
-                                            last_epoch=-1)
+                                                 lambda epoch: (config.train_epochs - epoch) / config.train_epochs,
+                                                 last_epoch=-1)
     # init trainer
     trainer = SSuperVAEContextualAttentionalTrainer(model=net,
                                                     config_disc=config,
@@ -201,7 +202,7 @@ if __name__ == '__main__':
 
     cont_epoch = -1
     cont_model = None  # "playground/ssupervae/weights/model-18.pth"
-    limit_size = 32
+    limit_size = 3000
 
     # data = RandomDataset((3, 3, 360, 360), (3, config.image_dim, config.image_dim))
     data = GoldenPanelsDataset(golden_age_config.panel_path,
@@ -215,14 +216,15 @@ if __name__ == '__main__':
                                train_test_ratio=golden_age_config.train_test_ratio,
                                train_mode=True,
                                limit_size=limit_size)
-    data_loader = DataLoader(data, batch_size=config.batch_size, shuffle=True, num_workers=4)
+    data_loader = DataLoader(data, batch_size=config.batch_size, shuffle=False, num_workers=4)
 
     model = train(data_loader,
                   config,
                   model_name=get_dt_string() + "_model",
                   cont_epoch=cont_epoch,
                   cont_model=cont_model,
-                  panel_dim=panel_dim)
+                  panel_dim=panel_dim,
+                  elbo_criterion=elbo_with_L1)
     torch.save(model, base_dir + 'playground/ssupervae/results/' + "ssuper_vae_model.pth")
 
     """
