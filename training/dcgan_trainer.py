@@ -22,6 +22,7 @@ class DCGANTrainer:
                  epochs: int,
                  optimizer_disc,
                  optimizer_gen,
+                 dataset_name,
                  scheduler_disc=None,
                  scheduler_gen=None,
                  gen_steps=1,
@@ -29,7 +30,8 @@ class DCGANTrainer:
                  quiet=False,
                  real_label = 1,
                  fake_label = 0,
-                 save_dir="playground/dcgan"
+                 save_dir="playground/dcgan",
+                 
                 ):
         
         self.model = model
@@ -83,7 +85,7 @@ class DCGANTrainer:
             
             for iterno, x in enumerate(self.data_loader):
                 
-                x = x[0].to(ptu.device)
+                x = x.to(ptu.device)
                 batch_size = x.shape[0]
 
                 ############################
@@ -169,6 +171,6 @@ class DCGANTrainer:
             
             # creating and saving images after each epoch
             if self.save_dir is not None:
-                self.model.save_samples(10, self.save_dir + 'samples/ + 'f'epoch{epoch}_samples.png')  
+                self.model.save_samples(100, self.save_dir + 'samples/ + 'f'epoch{epoch}_samples.png')  
         
         return losses
