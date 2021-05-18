@@ -26,7 +26,7 @@ def save_best_loss_model(model_name, model, best_loss):
     torch.save(model, base_dir + 'playground/vae/results/' + model_name + ".pth")
 
 
-def continue_training(model_name, train_golden_face=True):
+def continue_training(model_name, train_golden_face=True, cont_epoch=1):
     logging.info("Continuing training...")
     config = read_config(Config.VAE)
 
@@ -72,7 +72,7 @@ def continue_training(model_name, train_golden_face=True):
                          checkpoint_every_epoch=True,
                          best_loss_action=lambda m, l: save_best_loss_model(model_name, m, l))
 
-    epoch, losses = trainer.load_checkpoint()
+    epoch, losses = trainer.load_checkpoint(epoch=cont_epoch)
 
     train_losses, test_losses = trainer.train_epochs(starting_epoch=epoch, losses=losses)
 
@@ -145,7 +145,9 @@ def train(model_name='test_model', train_golden_face=True):
 
 if __name__ == '__main__':
     ptu.set_gpu_mode(True)
-    continue_training(model_name='10-05-2021-13-49-23_model', train_golden_face=False)
+    cont_epoch = 1
+    
+    continue_training(model_name='10-05-2021-13-49-23_model', train_golden_face=False, cont_epoch=cont_epoch)
     # model = train(get_dt_string() + "_model", train_golden_face=False)
     # torch.save(model, base_dir + 'playground/vae/results/' + "test_model.pth")
     # model = torch.load(base_dir + 'playground/vae/results/' + "test_model.pth")

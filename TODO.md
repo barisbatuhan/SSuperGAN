@@ -18,24 +18,31 @@
 
 ## Golden Dataset Üzerine Geliştirmeler
 
-- **[Barış]** Bir preprocess ile şu yapı çıkartılacak: 
+- **[+]** Bir preprocess ile şu yapı çıkartılacak: 
 
 ```python
 {
-    ["img1.jpg", "img2.jpg", "img3.jpg", "..."]: {
-        "panel_coords": ["<img1_panel_coords>", "<img2_panel_coords>", "<img3_panel_coords>", "..."],
-        "face_coords": ["<img1_face_coords>", "<img2_face_coords>", "<img3_face_coords>", "..."]
-    }
+    1: [
+        ["img1.jpg", "img2.jpg", "..."],
+        [
+            ["<img1_panel_coords>", "<img1_face_coords>"],
+            ["<img2_panel_coords>", "<img2_face_coords>"],
+            "..."
+        ]
+        
+    ],
+    
+    2: "..."
 }
 ```
 
-- **[Barış]** Daha sade ve sadece crop & augment olan bir dataset çıkartılacak.
+- **[+]** Daha sade ve sadece crop & augment olan bir dataset çıkartılacak.
 
 ## Model Geliştirmeleri
 
 - **[Çağhan]** GAN yapısı oluşturup (DCGAN gibi ve daha da advanced 1 tane - [In-Domain Inversion](https://github.com/genforce/idinvert_pytorch)) yüz datasıyla eğitme.
 - Global discriminator yapısı ekleme ve onunla modeli eğitme.
-- **[Gürkan]** Weight save ettikten sonra o saved weight ile training sürecine devam ettirmek.
+- **[Gürkan]** Weight save ettikten sonra o saved weight ile training sürecine devam ettirmek. [+]
 - **[İleri Seviye]** LSTM oluşturma.
 
 
@@ -45,7 +52,7 @@
 - [+] Data Okuma => DataLoader yapıcaz => X: [B, P(panel sayısı), 3, W, H], Y: Masklenmiş yüz, [B, 1 (single face), 3, W, H], (Yüzleri keserken square kesicez yüzü içeren ve 64 * 64 e resize edicez), y resize edilmiş image olarak verilecek. 
 	- [+] Yüz keserken minimum edge 32 olsun, daha küçük olunca yok olmuş olacak
 	- [+] DataLoader yapılıcak.
-	- [] Average Aspect Ratio bulucaz dataset içinde daha sonra image kesmeyi buna göre yapabiliriz. ve bunu center crop yaparak daha sonra image larda kullanıcaz. 
+	- [+] Average Aspect Ratio bulucaz dataset içinde daha sonra image kesmeyi buna göre yapabiliriz. ve bunu center crop yaparak daha sonra image larda kullanıcaz. 
 - [+] CNN LSTM networku kurma
 - [+] Latent alındığı zaman generator discriminator yapısını oluşturma
 

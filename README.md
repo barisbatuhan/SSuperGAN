@@ -12,19 +12,28 @@ This repository is not fully completed!
 
 The whole panel data is processed by a cartoon Face Detector model (which can be found in [here](https://github.com/barisbatuhan/FaceDetector)) by using `mixed_r50` weights and by setting `confidence threshold` to 0.55 and `nms threshold` to 0.2. The following statistics are retrieved from the outputs of the detector model.
 
-- **Total files:** 684885
+- ** Total files:** 1229664
+- **Total files with found faces:** 684885
 - **Total faces:** 1063804
 - **Faces above 64px:** 309079 / 521089 `(min(width, height) >= 64 / max(width, height) >= 64)`
 - **Faces above 128px:** 75111 / 158988 `(min(width, height) >= 128 / max(width, height) >= 128)`
 - **Faces above 256px:** 13214 / 27471 `(min(width, height) >= 256 / max(width, height) >= 256)`
-- **Mean of Panel Height:** 510.0328, Median of Height: 475, Mode of Height: 445, Num Samples: 1229664
-- **Mean of Panel Widths:** 508.4944, Median of Height: 460, Mode of Height: 460, Num Samples: 1229664 
+- **Panel Height:** mean=510.0328 / median=475 / mode=445
+- **Panel Width:** mean=508.4944 / median=460 / mode=460
 
 ## Model Architecture
 
 ![gmodel](./images/readme_images/Model.JPG)
 
 ## Results
+
+### Visual Results
+
+![Result 1](./images/readme_images/res1.JPG)
+
+![Result 2](./images/readme_images/res2.JPG)
+
+### Metric Results
 
 ![WIP](./images/readme_images/work_in_progress.JPG)
 
@@ -40,11 +49,18 @@ The whole panel data is processed by a cartoon Face Detector model (which can be
 - Example Config:
 
 ```yaml
-panel_path: /datasets/COMICS/raw_panel_images/
-sequence_path: /userfiles/comics_grp/golden_age/golden_panel_annots.json
-annot_path: /userfiles/comics_grp/golden_age/face_annots/
+# For directly face generation task
 faces_path: /userfiles/comics_grp/golden_age/faces_128/
-face_confidence: 0.9
+
+# For panel face reconstruction task
+panel_path: /datasets/COMICS/raw_panel_images/
+sequence_path: /userfiles/comics_grp/golden_age/panel_face_areas.json
+annot_path: /userfiles/comics_grp/golden_age/face_annots/
+mask_val: 1
+mask_all: False
+return_mask: False
+train_test_ratio: 0.95
+train_mode: True
 panel_dim: 
     - 300
     - 300
@@ -53,16 +69,27 @@ panel_dim:
 
 ### USING PLAIN SSUPERVAE MODULE
 
-- To train the PlainSSuperVAE network, you have to specify the following parameters in the `plain_ssupervae_config.yaml` file under the *configs* folder.
+- To train the PlainSSuperVAE network, you have to specify the following parameters in the `ssupervae_config.yaml` file under the *configs* folder. To use the LSTM structure, simply set the flag `use_lstm` to `True`.
 
 ```yaml
 # Encoder Parameters
 backbone: "efficientnet-b5"
-seq_size: 3
 embed_dim: 256
+latent_dim: 256 
+use_lstm: False
+
+# Plain Encoder Parameters
+seq_size: 3
+
+# LSTM Encoder Parameters
+lstm_hidden: 256
+lstm_dropout: 0
+fc_hidden_dims: []
+fc_dropout: 0
+num_lstm_layers: 1
+masked_first: True
 
 # Decoder Parameters
-latent_dim: 256 
 decoder_channels:
     - 64
     - 128
@@ -71,7 +98,7 @@ decoder_channels:
 image_dim: 64
 
 # Training Parameters
-batch_size: 8
+batch_size: 4
 train_epochs: 100
 lr: 0.0002
 weight_decay: 0.000025

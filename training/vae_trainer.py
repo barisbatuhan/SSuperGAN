@@ -85,6 +85,7 @@ class VAETrainer(BaseTrainer):
                     "test_losses": test_losses
                 },
                     current_epoch=epoch)
+            
             metric_recorder.update_metrics(train_losses, test_losses)
             metric_recorder.save_recorder()
         return train_losses, test_losses
@@ -153,7 +154,7 @@ class VAETrainer(BaseTrainer):
                 pbar.update(x.shape[0])
 
         self.scheduler.step()
-        self.model.save_samples(10, self.save_dir + '/results/ + 'f'epoch{epoch}_samples.png')
+        self.model.save_samples(10, self.save_dir + '/results/' + f'epoch{epoch}_samples.png')
         if not self.quiet:
             pbar.close()
         return losses

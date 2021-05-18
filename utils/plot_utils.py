@@ -88,12 +88,12 @@ def show_samples(samples, fname=None, nrow=10, title='Samples'):
 
 def plot_panels_and_faces(panels_tensor, face_tensor, recon_face_tensor):
     
-    y_recon = get_PIL_image(recon_face_tensor[0,:,:,:], means=None, stds=None)
-    y = get_PIL_image(face_tensor[0,:,:,:], means=None, stds=None)
+    y_recon = get_PIL_image(recon_face_tensor[0,:,:,:])
+    y = get_PIL_image(face_tensor[0,:,:,:])
     
     panels = []
     for i in range(panels_tensor.shape[1]):
-        panels.append(get_PIL_image(panels_tensor[0,i,:,:,:], means=None, stds=None))
+        panels.append(get_PIL_image(panels_tensor[0,i,:,:,:]))
     
     w, h = panels[0].size
     wsize, hsize = panels_tensor.shape[1] + 2, 1
@@ -115,3 +115,74 @@ def plot_panels_and_faces(panels_tensor, face_tensor, recon_face_tensor):
         ax[i+2].title.set_text("Panel" + str(i+1))
     
     plt.show()
+    
+def draw_saliency(model, imgs, y):
+    h, w = imgs.shape[-2:]
+    px = 1/plt.rcParams['figure.dpi']
+    fig, ax = plt.subplots(3, 5)
+    fig.set_size_inches(5*w*px, 2.5*h*px)
+    
+    imgs.requires_grad_()
+    _, _, _, outs, _ = model(imgs.cuda())
+    out = outs.sum()
+    out.backward()
+    
+    g_imgs = imgs.grad
+    
+    for i in range(3):
+        saliency, _ = torch.max(g_imgs[0,i,:,:,:].data.abs(), dim=0) 
+        saliency = saliency.reshape(h, w)
+        init_img = get_PIL_image(imgs[0,i,:,:,:])
+        # Visualize the image and the saliency map
+        ax[0, i].imshow(init_img)
+        ax[0, i].axis('off')
+        ax[0, i].title.set_text("Panel" + str(i+1))
+        ax[1, i].imshow(saliency.cpu(), cmap='hot')
+        ax[1, i].axis('off')
+        ax[2, i].imshow(init_img)
+        ax[2, i].imshow(saliency.cpu(), cmap='hot', alpha=0.7)
+        ax[2, i].axis('off')
+    
+    target = get_PIL_image(y[0,:,:,:])
+    ax[0, 3].imshow(target)
+    ax[0, 3].title.set_text("Original Face")
+    ax[1, 3].imshow(target)
+    ax[2, 3].imshow(target)
+    
+    y_recon = get_PIL_image(outs[0,:,:,:])
+    ax[0, 4].imshow(y_recon)
+    ax[0, 4].title.set_text("Reconstructed")
+    ax[1, 4].imshow(y_recon)
+    ax[2, 4].imshow(y_recon)
+    
+    plt.tight_layout()
+    plt.show() 
+
+def draw_backbone_saliency(model, img, idx):
+    h, w = img.shape[-2:]
+    px = 1/plt.rcParams['figure.dpi']
+    fig, ax = plt.subplots(1, 3)
+    fig.set_size_inches(3*w*px, 1.2*h*px)
+    
+    img.requires_grad_()
+    outs = model(img.cuda())
+    out = outs.sum()
+    out.backward()
+    
+    g_img = img.grad
+    
+    saliency, _ = torch.max(g_img[0,idx,:,:,:].data.abs(), dim=0) 
+    saliency = saliency.reshape(h, w)
+    
+    # Visualize the image and the saliency map
+    init_img = get_PIL_image(img[0,idx,:,:,:])
+    ax[0].imshow(init_img)
+    ax[0].axis('off')
+    ax[1].imshow(saliency.cpu(), cmap='hot')
+    ax[1].axis('off')
+    ax[2].imshow(init_img)
+    ax[2].imshow(saliency.cpu(), cmap='hot', alpha=0.7)
+    ax[2].axis('off')
+    
+    plt.tight_layout()
+    plt.show() 

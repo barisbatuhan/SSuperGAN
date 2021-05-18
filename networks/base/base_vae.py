@@ -32,7 +32,7 @@ class BaseVAE(nn.Module):
     @abstractmethod
     @torch.no_grad()
     def save_samples(self, n, filename):
-        samples = self.sample(size=n, current_device=ptu.device)
+        samples = self.sample(size=n)
         save_image(samples, filename, nrow=10, normalize=True)
 
 
