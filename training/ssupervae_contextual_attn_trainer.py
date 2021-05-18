@@ -193,7 +193,6 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
                 l1_loss = nn.L1Loss()
                 out['l1_fine'] = l1_loss(fine_faces, y) * self.config_disc.l1_loss_alpha
 
-                # TODO: Parameters of disforward might be incorrect becareful about what you are passing
                 local_patch_real_pred, local_patch_fake_pred = self.model.dis_forward(is_local=True,
                                                                                       ground_truth=y,
                                                                                       generated=fine_faces)
