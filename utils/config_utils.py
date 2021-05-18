@@ -12,6 +12,7 @@ class Config(Enum):
     VAE = 5
     PLAIN_SSUPERVAE = 6
     DCGAN = 7
+    
 
 
 def read_config(config: Config):
@@ -29,6 +30,8 @@ def read_config(config: Config):
         path = base_dir + 'configs/vae_config.yaml'
     elif config == Config.DCGAN:
         path = base_dir + 'configs/dcgan_config.yaml'
+        
+        
     
 
     else:
