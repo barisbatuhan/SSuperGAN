@@ -105,33 +105,7 @@ class SSuperDCGANTrainer(BaseTrainer):
             metric_recorder.save_recorder()
         return train_losses, test_losses
 
-    @torch.no_grad()
-    def eval_loss(self, data_loader):
-        self.model.eval()
-        total_losses = OrderedDict()
-        for batch in data_loader:
-
-            if type(batch) == list and len(batch) == 2:
-                x, y = batch[0].to(ptu.device), batch[1].to(ptu.device)
-            else:
-                x, y = batch.to(ptu.device), None
-
-            z, _, mu_z, mu_x, logstd_z = self.model(x)
-            target = x if y is None else y
-
-            out = elbo(z, target, mu_z, mu_x, logstd_z)
-
-            for k, v in out.items():
-                total_losses[k] = total_losses.get(k, 0) + v.item() * x.shape[0]
-
-        desc = 'Test --> '
-        for k in total_losses.keys():
-            total_losses[k] /= len(data_loader.dataset)
-            desc += f'{k} {total_losses[k]:.4f}'
-        if not self.quiet:
-            print(desc)
-            logging.info(desc)
-        return total_losses
+   
 
     def train_ssuper_dcgan(self, epoch):
         self.model.train()
@@ -142,6 +116,9 @@ class SSuperDCGANTrainer(BaseTrainer):
             batch = batch
             if type(batch) == list and len(batch) == 2:
                 x, y = batch[0].to(ptu.device), batch[1].to(ptu.device)
+                # Shape is 
+                #torch.Size([BATCH_SIZE, 3, 3, 300, 300])
+                #torch.Size([BATCH_SIZE, 3, 64, 64])
             else:
                 x, y = batch.to(ptu.device), None
 
@@ -150,14 +127,76 @@ class SSuperDCGANTrainer(BaseTrainer):
             self.optimizer["optimizer_generator"].zero_grad()
             
             z, _, mu_z, mu_x, logstd_z = self.model(x)
+            
             target = x if y is None else y
 
-            out = self.criterion(z, target, mu_z, mu_x, logstd_z)
-            out['loss'].backward()
+            out = elbo(z, target, mu_z, mu_x, logstd_z)
+            reconstruction_loss = out["reconstruction_loss"]
+            kl_loss = out["kl_loss"]
+
+
+
+            # UPDATE ENCODER
+            out['loss'].backward(retain_graph=True)
 
             if self.grad_clip:
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.grad_clip)
-            self.optimizer.step()
+                torch.nn.utils.clip_grad_norm_(self.model.encoder.parameters(), self.grad_clip)
+            self.optimizer["optimizer_encoder"].step()
+
+            
+            # Discriminator Loss with Real Dtat
+            #self.model.dcgan.generator
+            real_label = 1
+            fake_label = 0
+            bs = x.shape[0]
+            label = torch.full((bs,), real_label, dtype=torch.float, device=ptu.device)
+            output = self.model.dcgan.discriminator(y).view(-1)
+            errD_real = nn.BCELoss(output, label)
+            errD_real.backward()
+            D_x = output.mean().item()
+
+
+            #Train with all-fake batch
+            # mu_x --> Generated Images
+            label.fill_(fake_label)
+            output = self.model.dcgan.discriminator((mu_x.detach()).view(-1))
+            # Calculate D's loss on the all-fake batch
+            errD_fake = nn.BCELoss(output, label)
+            # Calculate the gradients for this batch, accumulated (summed) with previous gradients
+            errD_fake.backward()
+            D_G_z1 = output.mean().item()
+            # Compute error of D as sum over the fake and the real batches
+            errD = errD_real + errD_fake
+            # Update D
+            self.optimizer["optimizer_discriminator"].step()
+
+
+            
+
+
+            ############################
+            # (2) Update G network: maximize log(D(G(z)))
+            ###########################
+
+            self.model.dcgan.generator.zero_grad()
+            label.fill_(real_label) # fake labels are real for generator cost
+
+            # Since we just updated D, perform another forward pass of all-fake batch through D
+            output = self.model.dcgan.discriminator((mu_x).view(-1))
+            # Calculate G's loss based on this output
+            errG = nn.BCELoss(output, label) + reconstruction_loss
+            # Calculate gradients for G
+            errG.backward()
+        
+            # Update G
+            #optimizerG.step()
+            self.optimizer["optimizer_generator"].step()
+
+
+            if self.grad_clip:
+                torch.nn.utils.clip_grad_norm_(self.model.dcgan.generator.parameters(), self.grad_clip)
+
+
 
             desc = f'Epoch {epoch}'
             for k, v in out.items():
