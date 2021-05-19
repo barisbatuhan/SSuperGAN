@@ -6,6 +6,7 @@ from data.datasources.ffhq_datasource import FFHQDatasource
 from data.datasets.golden_faces import GoldenFacesDataset
 
 from networks.intro_vae import IntroVAE
+from training.intro_vae_trainer import IntroVAETrainer
 from training.vae_trainer import VAETrainer
 from utils.config_utils import read_config, Config
 from utils.logging_utils import *
@@ -23,12 +24,12 @@ from functional.losses.elbo import elbo
 def save_best_loss_model(model_name, model, best_loss):
     # print('current best loss: ' + str(best_loss))
     logging.info('Current best loss: ' + str(best_loss))
-    torch.save(model, base_dir + 'playground/vae/results/' + model_name + ".pth")
+    torch.save(model, base_dir + 'playground/intro_vae/results/' + model_name + ".pth")
 
 
 def continue_training(model_name, train_golden_face=True, cont_epoch=1):
     logging.info("Continuing training...")
-    config = read_config(Config.VAE)
+    config = read_config(Config.INTRO_VAE)
 
     # loading datasets
     if train_golden_face:
@@ -81,14 +82,14 @@ def continue_training(model_name, train_golden_face=True, cont_epoch=1):
     save_training_plot(train_losses['loss'],
                        test_losses['loss'],
                        "VAE Losses",
-                       base_dir + 'playground/vae/' + f'results/vae_plot.png')
+                       base_dir + 'playground/intro_vae/' + f'results/vae_plot.png')
     return net
 
 
 def train(model_name='test_model', train_golden_face=True):
     # loading config
     logging.info("Initiating training...")
-    config = read_config(Config.VAE)
+    config = read_config(Config.INTRO_VAE)
 
     # loading datasets
     if train_golden_face:
@@ -108,29 +109,43 @@ def train(model_name='test_model', train_golden_face=True):
     # creating model and training details
     net = IntroVAE(image_size=config.image_dim, channels=config.channels, hdim=config.latent_dim_z).to(ptu.device)
 
-    criterion = elbo
+    test_criterion = elbo
 
-    optimizer = optim.Adam(net.parameters(),
-                           lr=config.lr,
-                           betas=(config.beta_1, config.beta_2),
-                           weight_decay=config.weight_decay)
+    optimizer_e = optim.Adam(net.encoder.parameters(),
+                             lr=config.lr,
+                             betas=(config.beta_1, config.beta_2),
+                             weight_decay=config.weight_decay)
 
-    scheduler = optim.lr_scheduler.LambdaLR(optimizer,
-                                            lambda epoch: (config.train_epochs - epoch) / config.train_epochs,
-                                            last_epoch=-1)
+    optimizer_g = optim.Adam(net.decoder.parameters(),
+                             lr=config.lr,
+                             betas=(config.beta_1, config.beta_2),
+                             weight_decay=config.weight_decay)
+
+    scheduler_e = optim.lr_scheduler.LambdaLR(optimizer_e,
+                                              lambda epoch: (config.train_epochs - epoch) / config.train_epochs,
+                                              last_epoch=-1)
+
+    scheduler_g = optim.lr_scheduler.LambdaLR(optimizer_g,
+                                              lambda epoch: (config.train_epochs - epoch) / config.train_epochs,
+                                              last_epoch=-1)
 
     # init trainer
-    trainer = VAETrainer(model=net,
-                         model_name=model_name,
-                         criterion=criterion,
-                         train_loader=train_dataloader,
-                         test_loader=test_dataloader,
-                         epochs=config.train_epochs,
-                         optimizer=optimizer,
-                         scheduler=scheduler,
-                         grad_clip=config.g_clip,
-                         checkpoint_every_epoch=True,
-                         best_loss_action=lambda m, l: save_best_loss_model(model_name, m, l))
+    trainer = IntroVAETrainer(model=net,
+                              model_name=model_name,
+                              test_criterion=test_criterion,
+                              train_loader=train_dataloader,
+                              test_loader=test_dataloader,
+                              epochs=config.train_epochs,
+                              optimizer_g=optimizer_g,
+                              optimizer_e=optimizer_e,
+                              scheduler_e=scheduler_e,
+                              scheduler_g=scheduler_g,
+                              grad_clip=config.g_clip,
+                              ae_beta=config.ae_beta,
+                              adversarial_alpha=config.adversarial_alpha,
+                              adversarial_margin=config.adversarial_margin,
+                              checkpoint_every_epoch=True,
+                              best_loss_action=lambda m, l: save_best_loss_model(model_name, m, l))
 
     train_losses, test_losses = trainer.train_epochs()
 
@@ -139,17 +154,17 @@ def train(model_name='test_model', train_golden_face=True):
     save_training_plot(train_losses['loss'],
                        test_losses['loss'],
                        "VAE Losses",
-                       base_dir + 'playground/vae/' + f'results/vae_plot.png')
+                       base_dir + 'playground/intro_vae/' + f'results/vae_plot.png')
     return net
 
 
 if __name__ == '__main__':
     ptu.set_gpu_mode(True)
     cont_epoch = 1
-    
+
     # continue_training(model_name='10-05-2021-13-49-23_model', train_golden_face=False, cont_epoch=cont_epoch)
     model = train(get_dt_string() + "_model", train_golden_face=False)
-    # torch.save(model, base_dir + 'playground/vae/results/' + "test_model.pth")
-    # model = torch.load(base_dir + 'playground/vae/results/' + "test_model.pth")
-    # model.save_samples(200, base_dir + 'playground/vae/results/end_samples.png' )
+    # torch.save(model, base_dir + 'playground/intro_vae/results/' + "test_model.pth")
+    # model = torch.load(base_dir + 'playground/intro_vae/results/' + "test_model.pth")
+    # model.save_samples(200, base_dir + 'playground/intro_vae/results/end_samples.png' )
     # TODO: add visualizations of reconstruction and sampling from model

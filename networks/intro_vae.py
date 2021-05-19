@@ -135,7 +135,8 @@ class IntroVAE(GenericVAE):
     """
     This is only the model, however, the loss function is extremely important for
     this paper. Maybe we can make use of that as well!
-Source: https://github.com/hhb072/IntroVAE/blob/master/networks.py
+Source: https://github.com/hhb072/IntroVAE/blob/master/networks.py # this might be erronous in terms of loss
+Source: https://github.com/woxuankai/IntroVAE-Pytorch/blob/988f2ad88ad5bec278629e0475bbac5f542f5235/model.py#L208 # used for loss calculation along with the paper
 Source PAPER: IntroVAE: Introspective Variational Autoencoders forPhotographic Image Synthesis
 https://arxiv.org/pdf/1807.06358.pdf
     """
