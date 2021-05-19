@@ -95,11 +95,18 @@ def train(model_name='test_model', train_golden_face=True):
     if train_golden_face:
         golden_age_config = read_config(Config.GOLDEN_AGE)
         train_dataset = GoldenFacesDataset(
-            golden_age_config.faces_path, config.image_dim, limit_size=config.num_training_samples, augment=False)
+            golden_age_config.faces_path, 
+            config.image_dim,
+            limit_size=config.num_training_samples,
+            augment=False,
+            train_mode=True,
+            train_test_ratio=golden_age_config.face_train_test_ratio
+        )
         train_dataloader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
-        test_dataset = GoldenFacesDataset(
-            golden_age_config.faces_path, config.image_dim, limit_size=config.num_test_samples, augment=False)
-        test_dataloader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
+       # test_dataset = GoldenFacesDataset(
+        #    golden_age_config.faces_path, config.image_dim, limit_size=config.num_test_samples, augment=False)
+       # test_dataloader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
+        test_dataloader = None
     else:
         train_dataset = FFHQDataset(datasource=FFHQDatasource(config, DataSourceMode.TRAIN))
         train_dataloader = DataLoader(train_dataset, batch_size=config.batch_size)
@@ -163,7 +170,7 @@ if __name__ == '__main__':
     cont_epoch = 1
 
     # continue_training(model_name='10-05-2021-13-49-23_model', train_golden_face=False, cont_epoch=cont_epoch)
-    model = train(get_dt_string() + "_model", train_golden_face=False)
+    model = train(get_dt_string() + "_model", train_golden_face=True)
     # torch.save(model, base_dir + 'playground/intro_vae/results/' + "test_model.pth")
     # model = torch.load(base_dir + 'playground/intro_vae/results/' + "test_model.pth")
     # model.save_samples(200, base_dir + 'playground/intro_vae/results/end_samples.png' )
