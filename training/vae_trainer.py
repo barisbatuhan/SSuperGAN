@@ -124,7 +124,6 @@ class VAETrainer(BaseTrainer):
             pbar = tqdm(total=len(self.train_loader.dataset))
         losses = OrderedDict()
         for batch in self.train_loader:
-            batch = batch
 
             if type(batch) == list and len(batch) == 2:
                 x, y = batch[0].to(ptu.device), batch[1].to(ptu.device)
