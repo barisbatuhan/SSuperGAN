@@ -51,6 +51,7 @@ The whole panel data is processed by a cartoon Face Detector model (which can be
 ```yaml
 # For directly face generation task
 faces_path: /userfiles/comics_grp/golden_age/faces_128/
+face_train_test_ratio: 0.9
 
 # For panel face reconstruction task
 panel_path: /datasets/COMICS/raw_panel_images/
