@@ -29,7 +29,7 @@ def save_best_loss_model(model_name, model, best_loss):
 
 def continue_training(model_name, train_golden_face=True, cont_epoch=1):
     logging.info("Continuing training...")
-    config = read_config(Config.VAE)
+    config = read_config(Config.INTRO_VAE)
 
     # loading datasets
     if train_golden_face:
@@ -89,7 +89,7 @@ def continue_training(model_name, train_golden_face=True, cont_epoch=1):
 def train(model_name='test_model', train_golden_face=True):
     # loading config
     logging.info("Initiating training...")
-    config = read_config(Config.VAE)
+    config = read_config(Config.INTRO_VAE)
 
     # loading datasets
     if train_golden_face:
@@ -141,6 +141,9 @@ def train(model_name='test_model', train_golden_face=True):
                               scheduler_e=scheduler_e,
                               scheduler_g=scheduler_g,
                               grad_clip=config.g_clip,
+                              ae_beta=config.ae_beta,
+                              adversarial_alpha=config.adversarial_alpha,
+                              adversarial_margin=config.adversarial_margin,
                               checkpoint_every_epoch=True,
                               best_loss_action=lambda m, l: save_best_loss_model(model_name, m, l))
 
