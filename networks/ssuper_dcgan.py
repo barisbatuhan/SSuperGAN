@@ -20,6 +20,9 @@ from functional.losses.reconstruction_loss import reconstruction_loss
 from utils import pytorch_util as ptu
 from utils.config_utils import read_config,Config
 
+import torch.nn as nn
+
+
 class SSuperDCGAN(nn.Module):
     
     def __init__(self, 
@@ -37,7 +40,12 @@ class SSuperDCGAN(nn.Module):
                  fc_hidden_dims=[],
                  fc_dropout=0,
                  num_lstm_layers=1,
-                 masked_first=True):
+                 masked_first=True,
+                 ngpu = 1,
+                 ngf = 64,
+                 ndf = 64,
+                 nc=3,
+                 image_size=64):
         super(SSuperDCGAN, self).__init__()
         
         self.latent_dim = latent_dim
@@ -58,20 +66,12 @@ class SSuperDCGAN(nn.Module):
                                                  num_lstm_layers=num_lstm_layers,
                                                  masked_first=masked_first)
         
-        
+
         
 
        
-        config = read_config(Config.DCGAN)
 
-        nc = config.nc
-        nz = config.nz
-        ngf = config.ngf
-        ndf = config.ndf
-        ngpu = config.ngpu
-        image_size = config.image_size
-
-        self.dcgan = DCGAN(ngpu, image_size, nc, nz, ngf, ndf)
+        self.dcgan = DCGAN(ngpu, image_size, nc, embed_dim, ngf, ndf)
 
 
         self.latent_dist = Normal(
