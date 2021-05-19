@@ -5,7 +5,7 @@ from typing import List, Callable, Union, Any, TypeVar, Tuple
 from torch import Tensor
 from abc import abstractmethod
 from torchvision.utils import save_image
-
+from utils.image_utils import *
 
 class BaseVAE(nn.Module):
 
