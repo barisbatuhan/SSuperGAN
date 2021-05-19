@@ -131,7 +131,36 @@ channels:
     - 256
     - 512
 ```
+### INTRO VAE MODULE
+- In order to run the module 'intro_vae_config.yaml' file should be created under configs.
+- Example Config:
+```yaml
+face_image_folder_train_path: /home/gsoykan20/Desktop/ffhq_thumbnails/thumbnails128x128/
+face_image_folder_test_path: /home/gsoykan20/Desktop/ffhq_thumbnails/thumbnails128x128/
+num_training_samples: 100
+test_samples_range:
+    - 10240
+    - 10640
+image_dim: 64
+batch_size: 32
+train_epochs: 200
+lr: 0.0002
+weight_decay: 0.000025
+beta_1: 0.5
+beta_2: 0.999
+latent_dim_z: 256
+g_clip: 100
+channels:
+    - 64
+    - 128
+    - 256
+    - 512
 
+# Check paper for the meaning of this params https://arxiv.org/abs/1807.06358
+adversarial_alpha: 0.25
+ae_beta: 5
+adversarial_margin: 110
+```
 
 ### Project Based Configuration
 
