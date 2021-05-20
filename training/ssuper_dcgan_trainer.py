@@ -42,7 +42,7 @@ class SSuperDCGANTrainer(BaseTrainer):
                          {
                             "optimizer_encoder": optimizer_encoder,
                             "optimizer_generator": optimizer_generator,
-                            "optimized_discriminator":optimized_discriminator},
+                            "optimizer_discriminator":optimized_discriminator},
                          
                          {"scheduler": scheduler},
                          quiet,
@@ -51,12 +51,13 @@ class SSuperDCGANTrainer(BaseTrainer):
                          checkpoint_every_epoch)
         self.train_loader = train_loader
         self.test_loader = test_loader
+        """
         self.optimizer = {
                         "optimizer_encoder": optimizer_encoder,
                         "optimizer_generator": optimizer_generator,
                         "optimized_discriminator":optimized_discriminator
                         },
-        self.scheduler = scheduler
+        self.scheduler = scheduler"""
 
 
         
@@ -70,7 +71,7 @@ class SSuperDCGANTrainer(BaseTrainer):
 
         train_losses = losses.get("train_losses", OrderedDict())
         test_losses = losses.get("test_losses", OrderedDict())
-
+        #torch.autograd.set_detect_anomaly(True)
         for epoch in range(self.epochs):
             if starting_epoch is not None and starting_epoch >= epoch:
                 continue
@@ -79,7 +80,7 @@ class SSuperDCGANTrainer(BaseTrainer):
             if self.test_loader is not None:
                 test_loss = self.eval_loss(self.test_loader)
             else:
-                test_loss = {"loss": 0, "kl_loss": 0, "reconstruction_loss": 0}
+                test_loss = {"loss": 0, "kl_loss": 0, "reconstruction_loss": 0, "disc_loss":0, "gen_loss":0}
 
             for k in train_loss.keys():
                 if k not in train_losses:
@@ -95,7 +96,8 @@ class SSuperDCGANTrainer(BaseTrainer):
                             self.best_loss_action(self.model, best_loss)
 
             if self.checkpoint_every_epoch:
-                self.save_checkpoint(current_loss={
+                self.save_checkpoint(current_loss=
+                {
                     "train_losses": train_losses,
                     "test_losses": test_losses
                 },
@@ -121,10 +123,12 @@ class SSuperDCGANTrainer(BaseTrainer):
                 #torch.Size([BATCH_SIZE, 3, 64, 64])
             else:
                 x, y = batch.to(ptu.device), None
-
-            self.optimizer["optimizer_encoder"].zero_grad()
-            self.optimizer["optimizer_discriminator"].zero_grad()
-            self.optimizer["optimizer_generator"].zero_grad()
+            
+            
+            
+            self.optimizers["optimizer_encoder"].zero_grad()
+            self.optimizers["optimizer_discriminator"].zero_grad()
+            self.optimizers["optimizer_generator"].zero_grad()
             
             z, _, mu_z, mu_x, logstd_z = self.model(x)
             
@@ -133,16 +137,16 @@ class SSuperDCGANTrainer(BaseTrainer):
             out = elbo(z, target, mu_z, mu_x, logstd_z)
             reconstruction_loss = out["reconstruction_loss"]
             kl_loss = out["kl_loss"]
-
+            total_loss = out["loss"]
 
 
             # UPDATE ENCODER
-            out['loss'].backward(retain_graph=True)
+            total_loss.backward(retain_graph=True)
 
             if self.grad_clip:
                 torch.nn.utils.clip_grad_norm_(self.model.encoder.parameters(), self.grad_clip)
-            self.optimizer["optimizer_encoder"].step()
-
+            
+            
             
             # Discriminator Loss with Real Dtat
             #self.model.dcgan.generator
@@ -151,24 +155,25 @@ class SSuperDCGANTrainer(BaseTrainer):
             bs = x.shape[0]
             label = torch.full((bs,), real_label, dtype=torch.float, device=ptu.device)
             output = self.model.dcgan.discriminator(y).view(-1)
-            errD_real = nn.BCELoss(output, label)
+            #print("OUTPUT DISC ",output, "SHAPE ",output.shape, "label ",label, "label shape ",label.shape)
+            errD_real = nn.BCELoss()(output, label)
             errD_real.backward()
             D_x = output.mean().item()
 
 
             #Train with all-fake batch
             # mu_x --> Generated Images
-            label.fill_(fake_label)
-            output = self.model.dcgan.discriminator((mu_x.detach()).view(-1))
+            label2 = torch.full((bs,), fake_label, dtype=torch.float, device=ptu.device)
+            output = self.model.dcgan.discriminator(mu_x.detach()).view(-1)
             # Calculate D's loss on the all-fake batch
-            errD_fake = nn.BCELoss(output, label)
+            errD_fake = nn.BCELoss()(output, label2)
             # Calculate the gradients for this batch, accumulated (summed) with previous gradients
             errD_fake.backward()
             D_G_z1 = output.mean().item()
             # Compute error of D as sum over the fake and the real batches
             errD = errD_real + errD_fake
             # Update D
-            self.optimizer["optimizer_discriminator"].step()
+            self.optimizers["optimizer_discriminator"].step()
 
 
             
@@ -182,27 +187,38 @@ class SSuperDCGANTrainer(BaseTrainer):
             label.fill_(real_label) # fake labels are real for generator cost
 
             # Since we just updated D, perform another forward pass of all-fake batch through D
-            output = self.model.dcgan.discriminator((mu_x).view(-1))
+            output = self.model.dcgan.discriminator((mu_x)).view(-1)
             # Calculate G's loss based on this output
-            errG = nn.BCELoss(output, label) + reconstruction_loss
+            errG = nn.BCELoss()(output, label) + reconstruction_loss
             # Calculate gradients for G
             errG.backward()
         
             # Update G
             #optimizerG.step()
-            self.optimizer["optimizer_generator"].step()
-
+            
 
             if self.grad_clip:
                 torch.nn.utils.clip_grad_norm_(self.model.dcgan.generator.parameters(), self.grad_clip)
-
-
-
+                
+            self.optimizers["optimizer_generator"].step()
+            self.optimizers["optimizer_encoder"].step()
+            
+    
+        
+            #self.optimizers["optimizer_encoder"].step()
             desc = f'Epoch {epoch}'
+            out["disc_loss"] =  errD
+            out["gen_loss"] = errG
             for k, v in out.items():
                 if k not in losses:
                     losses[k] = []
+                if "gen_loss" not in losses  or "disc_loss" not in losses:
+                    losses["disc_loss"] = []
+                    losses["gen_loss"] = []
+                    
+                    
                 losses[k].append(v.item())
+                
                 avg = np.mean(losses[k][-50:])
                 desc += f', {k} {avg:.4f}'
 
@@ -210,8 +226,8 @@ class SSuperDCGANTrainer(BaseTrainer):
                 pbar.set_description(desc)
                 pbar.update(x.shape[0])
 
-        self.scheduler.step()
-        self.model.save_samples(10, self.save_dir + '/results/' + f'epoch{epoch}_samples.png')
+        #self.scheduler.step()
+        self.model.save_samples(100, self.save_dir + '/results/' + f'epoch{epoch}_samples.png')
         if not self.quiet:
             pbar.close()
         return losses
