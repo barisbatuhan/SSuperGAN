@@ -21,6 +21,7 @@ from utils import pytorch_util as ptu
 from utils.config_utils import read_config,Config
 
 import torch.nn as nn
+from torchvision.utils import save_image
 
 
 class SSuperDCGAN(nn.Module):
@@ -70,8 +71,8 @@ class SSuperDCGAN(nn.Module):
         
 
        
-
-        self.dcgan = DCGAN(ngpu, image_size, nc, embed_dim, ngf, ndf)
+        print(f"DCGAN PRAMS ngpu : {ngpu}  image_size : {image_size}  nc : {nc} latent_dim : {latent_dim}  ngf : {ngf} ndf {ndf}")
+        self.dcgan = DCGAN(ngpu, image_size, nc, latent_dim, ngf, ndf)
 
 
         self.latent_dist = Normal(
@@ -82,6 +83,8 @@ class SSuperDCGAN(nn.Module):
     def forward(self, x):
         mu, lg_std = self.encode(x)
         z = torch.distributions.Normal(mu, lg_std.exp()).rsample()
+        z = torch.unsqueeze(z, (2))
+        z = torch.unsqueeze(z, (3))
         x_recon = self.dcgan.generator(z)
 
         return z, None, mu, x_recon, lg_std
@@ -98,8 +101,17 @@ class SSuperDCGAN(nn.Module):
     
     def sample(self, size :int):
         z = self.latent_dist.rsample((size, self.latent_dim)).squeeze(-1)
+        z = torch.unsqueeze(z, (2))
+        #print("Forward z shape ",z.shape)
+        z = torch.unsqueeze(z, (3))
+        #print("Sample z size : ",z.shape)
         return self.decode(z)
     
     def reconstruct(self, x):
         mu, _ = self.encode(x)
         return self.decode(mu)
+    
+    @torch.no_grad()
+    def save_samples(self, n, filename):
+        samples = self.sample(size=n)
+        save_image(samples, filename, nrow=10, normalize=True)
