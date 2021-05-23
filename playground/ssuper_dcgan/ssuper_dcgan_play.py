@@ -8,7 +8,8 @@ sys.path.append("/kuacc/users/ckoksal20/COMP547Project/SSuperGAN/")
 from torch import optim
 from torch.utils.data import DataLoader
 from data.datasets.random_dataset import RandomDataset
-from data.datasets.golden_faces import GoldenFacesDataset, GoldenPanelsDataset
+from data.datasets.golden_faces import GoldenFacesDataset
+from data.datasets.golden_panels import GoldenPanelsDataset
 
 from training.dcgan_trainer import DCGANTrainer
 from training.ssuper_dcgan_trainer import SSuperDCGANTrainer
@@ -43,7 +44,6 @@ def train(data_loader,config,dataset, model_name='ssuper_dcgan',):
                     embed_dim=config.embed_dim,
                     use_lstm=config.use_lstm,
                     seq_size=config.seq_size,
-                    decoder_channels=config.decoder_channels,
                     gen_img_size=config.image_dim,
                     lstm_hidden=config.lstm_hidden,
                     lstm_dropout=config.lstm_dropout,
@@ -54,9 +54,11 @@ def train(data_loader,config,dataset, model_name='ssuper_dcgan',):
                     ngpu = config.ngpu,
                     ngf = config.ngf,
                     ndf = config.ndf,
-                    nc = config,
-                    image_size=config.image_size).to(ptu.device) 
-
+                    nc = config.nc,
+                    image_size=config.image_dim).to(ptu.device) 
+    
+    #print(net)
+    
 
 
 
@@ -68,7 +70,7 @@ def train(data_loader,config,dataset, model_name='ssuper_dcgan',):
     optimizerG = optim.Adam(net.dcgan.generator.parameters(), lr=config.lr, betas=(config.beta_1, config.beta_2))
 
 
-
+    print("Total epochs ",config.train_epochs)
     
     # init trainer
     trainer = SSuperDCGANTrainer(model=net,
@@ -88,14 +90,15 @@ def train(data_loader,config,dataset, model_name='ssuper_dcgan',):
 
 
 
-    losses = trainer.train_epochs()
+    losses, test_losses = trainer.train_epochs()
 
     logging.info("[INFO] Completed training!")
     
-    save_training_plot(losses['gen'],
-                       losses['disc'],
-                       "DCGAN Faces Losses",
-                       base_dir + 'playground/dcgan/' + f'results/{model_name}_plot.png'
+    #print("Losses ",losses)
+    save_training_plot(losses['gen_loss'],
+                       losses['disc_loss'],
+                       "SSPUPERGAN  Losses",
+                       base_dir + 'playground/ssuper_dcgan/' + f'results/{model_name}_plot.png'
                       )
     return net
 
@@ -123,14 +126,14 @@ if __name__ == '__main__':
     data_loader = DataLoader(data, batch_size=config.batch_size, shuffle=True, num_workers=4)
     
     if config.use_lstm:
-        model_name ="lstm_ssupervae_model"
+        model_name ="lstm_ssuper_dcgan_model"
     else:
-        model_name ="plain_ssupervae_model"
+        model_name ="plain_ssuper_dcgan_model"
     
     
     
-    """model = train(data_loader, config, model_name, cont_epoch=cont_epoch, cont_model=cont_model)
-    torch.save(model, base_dir + 'playground/ssupervae/results/' + "ssuper_vae_model.pth")"""
+    model = train(data_loader, config, model_name)
+    torch.save(model, base_dir + 'playground/ssuper_dcgan/results/' + "ssuper_dcgan_model.pth")
         
         
     """model = train(train_dataloader,  config, args.dataset, get_dt_string() + "dcgan_faces_model")
