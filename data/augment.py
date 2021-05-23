@@ -11,9 +11,8 @@ def read_image(img_path, augment=True, resize_len=[128, 128]):
     if augment:
         img = distort_color(img)
         # img = horizontal_flip(img, box)
-    
-    # img = resize(img, resize_len)
-    
+
+    img = resize(img, resize_len)
     img = normalize(transforms.ToTensor()(img))
     return img
 

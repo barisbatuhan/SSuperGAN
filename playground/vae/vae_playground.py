@@ -147,8 +147,8 @@ if __name__ == '__main__':
     ptu.set_gpu_mode(True)
     cont_epoch = 1
     
-    continue_training(model_name='10-05-2021-13-49-23_model', train_golden_face=False, cont_epoch=cont_epoch)
-    # model = train(get_dt_string() + "_model", train_golden_face=False)
+    # continue_training(model_name='10-05-2021-13-49-23_model', train_golden_face=False, cont_epoch=cont_epoch)
+    model = train(get_dt_string() + "_model", train_golden_face=False)
     # torch.save(model, base_dir + 'playground/vae/results/' + "test_model.pth")
     # model = torch.load(base_dir + 'playground/vae/results/' + "test_model.pth")
     # model.save_samples(200, base_dir + 'playground/vae/results/end_samples.png' )
