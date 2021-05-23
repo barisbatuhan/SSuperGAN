@@ -12,7 +12,9 @@ class Config(Enum):
     VAE = 5
     SSUPERVAE = 6
     DCGAN = 7
-    INTRO_VAE = 8
+   INTRO_VAE = 8
+   SSUPERDCGAN = 9
+
 
 def read_config(config: Config):
     if config == Config.FACE_RECOGNITION:
@@ -31,6 +33,9 @@ def read_config(config: Config):
         path = base_dir + 'configs/intro_vae_config.yaml'
     elif config == Config.DCGAN:
         path = base_dir + 'configs/dcgan_config.yaml'
+    elif config == Config.SSUPERDCGAN:
+        path = base_dir + 'configs/ssuper_dcgan_config.yaml'
+
     else:
         raise NotImplementedError
     with open(path) as file:

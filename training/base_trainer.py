@@ -40,7 +40,7 @@ class BaseTrainer(object):
         self.grad_clip = grad_clip
         self.best_loss_action = best_loss_action
         self.checkpoint_every_epoch = checkpoint_every_epoch
-        self.checkpoint_path = self.save_dir + 'checkpoints/'
+        self.checkpoint_path = self.save_dir + 'ckpts/'
 
     def save_checkpoint(self, current_epoch, current_loss):
         """
@@ -60,8 +60,10 @@ class BaseTrainer(object):
 
         for key, value in self.optimizers.items():
             checkpoint[key] = value.state_dict()
-        for key, value in self.schedulers.items():
-            checkpoint[key] = value.state_dict()
+        #rint("SELF SCHEDULERS ",self.schedulers)
+        if self.schedulers["scheduler"] != None:
+            for key, value in self.schedulers.items():
+                checkpoint[key] = value.state_dict()
 
         torch.save(checkpoint, checkpoint_path)
 
