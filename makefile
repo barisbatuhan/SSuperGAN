@@ -9,5 +9,8 @@ train_introvae:
 train_ssupervae:
 	python3 playground/ssupervae/ssupervae_playground.py
 
+train_ssuper_dcgan:
+	python3 playground/ssuper_dcgan/ssuper_dcgan_play.py
+
 eval_ssupervae:
 	python3 playground/ssupervae/eval_ssupervae.py
