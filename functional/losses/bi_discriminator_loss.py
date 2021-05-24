@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as F
 from collections import OrderedDict
 
-from networks.base_gan import BaseGAN
+from networks.base.base_gan import BaseGAN
 from networks.bigan import BiGAN
 from utils import pytorch_util as ptu
 import numpy as np
