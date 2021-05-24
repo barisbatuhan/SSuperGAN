@@ -17,6 +17,7 @@
 - **[Gürkan]** Inpainting içindeki Fine Pass çıkartılarak Global ve Local Discr. Coarse generator'a bağlanmalı, reconstruction kalitesi
 - **[Çağhan]** StyleGAN implementasyonu bizim yapıya benzetip golden yüz datasıyla eğitmek e.g. [Style-Based-GAN](https://github.com/rosinality/style-based-gan-pytorch).
 - **[Barış & Çağhan]** DCGAN Loss yapısını WGAN Loss tarzına çevirmek
+- **[Gürkan]** Grid-/RandomSearch tarzında bir yapı ile doğru hyper-parameter arama.
 
 
 ## CNN Backbone Yapısı Eğitimi
