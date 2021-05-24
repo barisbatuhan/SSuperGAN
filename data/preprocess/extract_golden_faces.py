@@ -104,9 +104,9 @@ def extract_faces(annots, golden_dir, save_dir):
             
 if __name__ == '__main__':
     golden_dir = "/datasets/COMICS/raw_panel_images/"
-    annot_dir = "/userfiles/comics_grp/golden_annot/"
+    annot_dir = "/userfiles/comics_grp/golden_age/golden_annot_new/"
     save_dir = "./golden_faces/"
-    conf_thold = 0.9
+    conf_thold = 0.85
     face_thold = 96
     annots = read_golden_annots(annot_dir, conf_thold=conf_thold, face_thold=face_thold)
     extract_faces(annots, golden_dir, save_dir)

@@ -260,15 +260,15 @@ def save_data(extracted_data, save_file, shuffle=True):
 if __name__ == '__main__':
     # Parameters to set
     golden_dir = "/datasets/COMICS/raw_panel_images/"
-    annot_dir = "/userfiles/comics_grp/golden_age/face_annots/"
-    save_file = "./panel_face_areas_margin.json"
+    annot_dir = "/userfiles/comics_grp/golden_age/golden_annot_new/"
+    save_file = "./panel_face_areas_new_90.json"
     extraction_method = "random"
     conf_thold = 0.9
     face_thold = 32
     window_size = 3
     w_h_ratio = 1
     shuffle = True
-    add_face_margin = True
+    add_face_margin = False
     # Extraction Process
     annots = read_golden_annots(annot_dir, conf_thold, face_thold)
     gt_paths = return_folder_structure(golden_dir)
