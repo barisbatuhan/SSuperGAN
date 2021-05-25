@@ -10,10 +10,6 @@ from networks.panel_encoder.plain_sequential_encoder import PlainSequentialEncod
 from networks.panel_encoder.lstm_sequential_encoder import LSTMSequentialEncoder
 from networks.intro_vae import Decoder
 
-# Losses
-from functional.losses.kl_loss import kl_loss
-from functional.losses.reconstruction_loss import reconstruction_loss
-
 # Helpers
 from utils import pytorch_util as ptu
 

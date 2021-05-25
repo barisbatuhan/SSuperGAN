@@ -24,10 +24,16 @@ from functional.metrics.fid import FID
 
 metrics = ["PSNR", "FID"]
 
-METRIC = metrics[0]
-BATCH_SIZE = 64 if METRIC == "FID" else 16
-model_path = "playground/ssupervae/plain_checkpoints/11-05-2021-12-35-34_model-checkpoint-epoch85.pth"
-N_SAMPLES = 1280 # 50000
+METRIC = metrics[1]
+BATCH_SIZE = 256 if METRIC == "FID" else 64
+N_SAMPLES = 50000
+
+# model_path = "/userfiles/comics_grp/pretrained_models/plain_ssupervae_epoch85.pth"
+# use_lstm = False
+
+# model_path = "/userfiles/comics_grp/pretrained_models/lstm_ssupervae_epoch99.pth"
+model_path = "playground/ssupervae/checkpoints/lstm_ssupervae_model-checkpoint-epoch80.pth"
+use_lstm = True
 
 # Required for FID, if not given, then calculated from scratch
 mus = None
@@ -40,7 +46,7 @@ golden_age_config = read_config(Config.GOLDEN_AGE)
 net = SSuperVAE(config.backbone, 
                 latent_dim=config.latent_dim, 
                 embed_dim=config.embed_dim,
-                use_lstm=config.use_lstm,
+                use_lstm=use_lstm,
                 seq_size=config.seq_size,
                 decoder_channels=config.decoder_channels,
                 gen_img_size=config.image_dim,
@@ -62,7 +68,7 @@ dataset = GoldenPanelsDataset(golden_age_config.panel_path,
                               mask_val=1, # mask with white color for 1 and black color for 0
                               mask_all=False, # masks faces from all panels and returns all faces
                               return_mask=True,
-                              train_test_ratio=golden_age_config.train_test_ratio,
+                              train_test_ratio= golden_age_config.train_test_ratio,
                               train_mode=False,
                               limit_size=-1)
 

@@ -163,6 +163,101 @@ ae_beta: 5
 adversarial_margin: 110
 ```
 
+
+### DCGAN MODULE
+- In order to run the module 'dcgan_config.yaml' file should be created under configs.
+- Example Config:
+```yaml
+# For directly face generation task
+dataroot : "data/celeba"
+# Number of workers for dataloader
+workers : 4
+
+# Batch size during training
+batch_size : 128
+
+# Spatial size of training images. All images will be resized to this
+#   size using a transformer.
+image_size : 64
+
+# Number of channels in the training images. For color images this is 3
+nc : 3
+
+# Size of z latent vector (i.e. size of generator input)
+nz : 100
+
+# Size of feature maps in generator
+ngf : 64
+
+# Size of feature maps in discriminator
+ndf : 64
+
+# Number of training epochs
+num_epochs : 150
+
+# Learning rate for optimizers
+lr : 0.0002
+
+# Beta1 hyperparam for Adam optimizers
+beta1 : 0.5
+
+# Number of GPUs available. Use 0 for CPU mode.
+ngpu : 1
+
+# Dataset path
+#dataset_path : "/userfiles/ckoksal20/img_align_dataset"
+dataset_path : "/kuacc/users/ckoksal20/img_align_dataset"
+```
+
+
+### SSuper_DCGAN MODULE
+- In order to run the module 'ssuper_dcgan_config.yaml' file should be created under configs.
+- Example Config:
+```yaml
+# Encoder Parameters
+backbone: "efficientnet-b5"
+embed_dim: 256
+latent_dim: 100 
+use_lstm: False
+
+# Plain Encoder Parameters
+seq_size: 3
+
+# LSTM Encoder Parameters
+lstm_hidden: 256
+lstm_dropout: 0
+fc_hidden_dims: []
+fc_dropout: 0
+num_lstm_layers: 1
+masked_first: True
+
+
+# Training Parameters
+batch_size: 8
+train_epochs: 300
+lr: 0.0002
+weight_decay: 0.000025
+beta_1: 0.5
+beta_2: 0.999
+g_clip: 100
+
+
+#
+# Spatial size of training images. All images will be resized to this
+#   size using a transformer.
+image_dim : 64
+# Number of channels in the training images. For color images this is 3
+nc : 3
+# Size of z latent vector (i.e. size of generator input)
+nz : 100
+# Size of feature maps in generator
+ngf : 64
+# Size of feature maps in discriminator
+ndf : 64
+# Number of GPUs available. Use 0 for CPU mode.
+ngpu : 1
+```
+
 ### Project Based Configuration
 
 One should check and update 'configs/base_config' for global config parameters such base project directory.
