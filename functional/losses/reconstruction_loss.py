@@ -25,6 +25,3 @@ def reconstruction_loss_distributional(x, x_recon, log_scale=None):
 
 def l1_loss(x, x_recon):
     return torch.abs(x - x_recon).mean()
-
-def l1_loss(x, x_recon):
-    return torch.abs(x - x_recon).mean()
