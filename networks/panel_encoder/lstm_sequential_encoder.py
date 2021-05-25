@@ -68,14 +68,17 @@ class LSTMSequentialEncoder(nn.Module):
         # Embedding outputs are passed to the lstm
         first_h_dim = self.num_lstm_layers if not self.lstm_bidirectional else self.num_lstm_layers * 2
         
-        outs, _ = self.lstm(
+        _, ( outs, _ ) = self.lstm(
             outs,
             (
                 torch.zeros(first_h_dim, B, self.lstm_hidden).to(ptu.device), # h0
                 torch.zeros(first_h_dim, B, self.lstm_hidden).to(ptu.device)  # c0
             ) 
         )
-        outs = outs[-1,:,:]
+        
+        num_directions = 2 if self.lstm_bidirectional else 1
+        outs = outs.view(self.num_lstm_layers, num_directions, B, -1)
+        outs = outs.permute(2, 0, 1, 3)[:,-1,:,:].reshape(B, -1)
 
         # Additional FC layers
         if self.fc_projector is not None:
