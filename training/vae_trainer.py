@@ -13,6 +13,7 @@ from training.base_trainer import BaseTrainer
 from utils.structs.metric_recorder import *
 from utils.logging_utils import *
 from utils import pytorch_util as ptu
+from utils.image_utils import *
 
 
 class VAETrainer(BaseTrainer):
@@ -123,7 +124,6 @@ class VAETrainer(BaseTrainer):
             pbar = tqdm(total=len(self.train_loader.dataset))
         losses = OrderedDict()
         for batch in self.train_loader:
-            batch = batch
 
             if type(batch) == list and len(batch) == 2:
                 x, y = batch[0].to(ptu.device), batch[1].to(ptu.device)

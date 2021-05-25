@@ -56,20 +56,20 @@ class LSTMSequentialEncoder(nn.Module):
         B, S, C, H, W = x.shape
 
         # Retrieved the embeddings for each of the panels
-        outs = self.embedder(x).reshape(B, S, -1)
+        outs = self.embedder(x).reshape(B, S, -1).permute(1, 0, 2)
         
         if self.masked_first: # brings the embedding of the last panel to the first
-            outs = outs[:,[-1, *np.arange(S-1)],:]
+            outs = outs[[-1, *np.arange(S-1)],:,:]
 
         # Embedding outputs are passed to the lstm
         outs, _ = self.lstm(
             outs,
             (
-                torch.zeros(self.num_lstm_layers, S, self.lstm_hidden).to(ptu.device), # h0
-                torch.zeros(self.num_lstm_layers, S, self.lstm_hidden).to(ptu.device)  # c0
+                torch.zeros(self.num_lstm_layers, B, self.lstm_hidden).to(ptu.device), # h0
+                torch.zeros(self.num_lstm_layers, B, self.lstm_hidden).to(ptu.device)  # c0
             ) 
         )
-        outs = outs[:, -1, :]
+        outs = outs[-1,:,:]
 
         # Additional FC layers
         if self.fc_projector is not None:
