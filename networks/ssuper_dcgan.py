@@ -15,6 +15,7 @@ from networks.dcgan import DCGAN
 # Losses
 from functional.losses.kl_loss import kl_loss
 
+
 # Helpers
 from utils import pytorch_util as ptu
 from utils.config_utils import read_config,Config
