@@ -27,6 +27,7 @@ class SSuperVAE(BaseVAE):
                  decoder_channels=[64, 128, 256, 512],
                  gen_img_size=64,
                  # lstm encoder parameters
+                 lstm_bidirectional=False,
                  lstm_hidden=256,
                  lstm_dropout=0,
                  fc_hidden_dims=[],
@@ -48,6 +49,7 @@ class SSuperVAE(BaseVAE):
                                                  embed_dim=embed_dim,
                                                  lstm_hidden=lstm_hidden,
                                                  lstm_dropout=lstm_dropout,
+                                                 lstm_bidirectional=lstm_bidirectional,
                                                  fc_hidden_dims=fc_hidden_dims,
                                                  fc_dropout=fc_dropout,
                                                  num_lstm_layers=num_lstm_layers,
