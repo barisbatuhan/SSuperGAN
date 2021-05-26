@@ -135,9 +135,9 @@ class SSuperDCGANTrainer(BaseTrainer):
             target = x if y is None else y
 
 
-            out = elbo(z, target, mu_z, mu_x, logstd_z, l1_recon=True)
+            out = elbo(z, target, mu_z, mu_x, logstd_z, l1_recon=False)
 
-            reconstruction_loss = out["reconstruction_loss"]
+            reconstruction_loss = out["reconstruction_loss"]/10
             kl_loss = out["kl_loss"]
             total_loss = out["loss"]
 
