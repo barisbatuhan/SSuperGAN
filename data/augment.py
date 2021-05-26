@@ -17,7 +17,8 @@ def read_image(img_path, augment=True, resize_len=[128, 128]):
     return img
 
 
-def normalize(img, means=[0.485, 0.456, 0.406], stds=[0.229, 0.224, 0.225]):
+def normalize(img, means=0.5, stds=0.5):
+    # means=[0.485, 0.456, 0.406], stds=[0.229, 0.224, 0.225]
     return TF.normalize(img, mean=means, std=stds)
 
 
@@ -66,11 +67,9 @@ def random_crop(img):
     return img
 
 
-def get_PIL_image(img_tensor,
-                 means = torch.Tensor([[[0.485]], [[0.456]], [[0.406]]]),
-                 stds = torch.Tensor([[[0.229]], [[0.224]], [[0.225]]])):
+def get_PIL_image(img_tensor, means=0.5, stds=0.5):
     img = img_tensor.to("cpu")
-    
+
     if means is None or stds is None:
         return transforms.ToPILImage()(img)
     else:
