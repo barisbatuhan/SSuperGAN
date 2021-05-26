@@ -35,7 +35,7 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
                  quiet: bool = False,
                  grad_clip=None,
                  best_loss_action=None,
-                 save_dir=base_dir + 'playground/vae/',
+                 save_dir=base_dir + 'playground/ssupervae_contextual_attention/',
                  checkpoint_every_epoch=False):
         super().__init__(model,
                          model_name,
@@ -243,7 +243,7 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
             # Saving Fine Faces
             if counter % fine_face_save_frequency == 0:
                 vutils.save_image(fine_faces,
-                                  self.save_dir + '/results/' + f'fine_epoch{epoch}_samples.png',
+                                  self.save_dir + '/results/' + self.model_name +f'fine_epoch{epoch}_samples.png',
                                   nrow=len(fine_faces),
                                   normalize=True)
 
@@ -261,7 +261,7 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
 
         self.scheduler.step()
         self.scheduler_disc.step()
-        self.model.save_samples(10, self.save_dir + '/results/' + f'epoch{epoch}_samples.png')
+        self.model.save_samples(50, self.save_dir + '/results/' + self.model_name + f'epoch{epoch}_samples.png')
         if not self.quiet:
             pbar.close()
         return losses
