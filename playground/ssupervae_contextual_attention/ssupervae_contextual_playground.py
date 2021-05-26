@@ -1,22 +1,12 @@
-import os
-import sys
-import json
 from copy import deepcopy
-
 from torch import optim
 from torch.utils.data import DataLoader
-
-from data.datasets.random_dataset import RandomDataset
 from data.datasets.golden_panels import GoldenPanelsDataset
-
-from networks.plain_ssupervae import PlainSSuperVAE
 from networks.ssupervae_contextual_attentional import SSuperVAEContextualAttentional
 from training.ssupervae_contextual_attn_trainer import SSuperVAEContextualAttentionalTrainer
-from training.vae_trainer import VAETrainer
 from utils.config_utils import read_config, Config
 from utils.plot_utils import *
 from utils.logging_utils import *
-from utils import pytorch_util as ptu
 from utils.image_utils import *
 from configs.base_config import *
 from functional.losses.elbo import *
