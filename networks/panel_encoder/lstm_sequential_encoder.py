@@ -16,6 +16,7 @@ class LSTMSequentialEncoder(nn.Module):
                  embed_dim=256,
                  lstm_hidden=256,
                  lstm_dropout=0,
+                 lstm_bidirectional=False,
                  fc_hidden_dims=[],
                  fc_dropout=0,
                  num_lstm_layers=1,
@@ -25,17 +26,20 @@ class LSTMSequentialEncoder(nn.Module):
         
         self.masked_first = masked_first
         self.num_lstm_layers = num_lstm_layers
-        self.lstm_hidden = lstm_hidden
+        self.lstm_hidden = lstm_hidden if not lstm_bidirectional else lstm_hidden//2
+        self.lstm_bidirectional = lstm_bidirectional
         self.embedder = CNNEmbedder(backbone, embed_dim=embed_dim)
         
         # LSTM, sequential processing unit
-        self.lstm = nn.LSTM(embed_dim, lstm_hidden,
+        
+        self.lstm = nn.LSTM(embed_dim, self.lstm_hidden,
+                            bidirectional=lstm_bidirectional,
                             dropout=lstm_dropout, 
                             num_layers=num_lstm_layers)
 
         # Additional FC layers to further process the LSTM output
         if len(fc_hidden_dims) > 0:
-            fc_hidden_sizes = [lstm_hidden, fc_hidden_dims]
+            fc_hidden_sizes = [lstm_hidden, *fc_hidden_dims]
             fc_layers = []
             for i in range(len(fc_hidden_sizes) - 1):
                 fc_layers.append(nn.Dropout(fc_dropout))
@@ -62,14 +66,19 @@ class LSTMSequentialEncoder(nn.Module):
             outs = outs[[-1, *np.arange(S-1)],:,:]
 
         # Embedding outputs are passed to the lstm
-        outs, _ = self.lstm(
+        first_h_dim = self.num_lstm_layers if not self.lstm_bidirectional else self.num_lstm_layers * 2
+        
+        _, ( outs, _ ) = self.lstm(
             outs,
             (
-                torch.zeros(self.num_lstm_layers, B, self.lstm_hidden).to(ptu.device), # h0
-                torch.zeros(self.num_lstm_layers, B, self.lstm_hidden).to(ptu.device)  # c0
+                torch.zeros(first_h_dim, B, self.lstm_hidden).to(ptu.device), # h0
+                torch.zeros(first_h_dim, B, self.lstm_hidden).to(ptu.device)  # c0
             ) 
         )
-        outs = outs[-1,:,:]
+        
+        num_directions = 2 if self.lstm_bidirectional else 1
+        outs = outs.view(self.num_lstm_layers, num_directions, B, -1)
+        outs = outs.permute(2, 0, 1, 3)[:,-1,:,:].reshape(B, -1)
 
         # Additional FC layers
         if self.fc_projector is not None:

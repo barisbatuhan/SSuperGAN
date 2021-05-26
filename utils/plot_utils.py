@@ -89,6 +89,7 @@ def show_samples(samples, fname=None, nrow=10, title='Samples'):
 def plot_panels_and_faces(panels_tensor, face_tensor, recon_face_tensor):
     
     y_recon = get_PIL_image(recon_face_tensor[0,:,:,:])
+    
     y = get_PIL_image(face_tensor[0,:,:,:])
     
     panels = []

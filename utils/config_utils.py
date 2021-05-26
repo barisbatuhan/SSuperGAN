@@ -12,9 +12,11 @@ class Config(Enum):
     VAE = 5
     SSUPERVAE = 6
     DCGAN = 7
+
     INTRO_VAE = 8
     SSUPERDCGAN = 9
     VAE_CONTEXT_ATTN = 10
+
 
 
 def read_config(config: Config):
