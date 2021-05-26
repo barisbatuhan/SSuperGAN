@@ -23,13 +23,14 @@ def save_best_loss_model(model_name, model, best_loss):
     print('[INFO] Current best loss: ' + str(best_loss))
     torch.save(model, base_dir + 'playground/ssupervae/weights/' + model_name + ".pth")
 
+
 def train(data_loader, config, model_name='plain_ssupervae', cont_epoch=-1, cont_model=None):
     # loading config
     print("[INFO] Initiate training...")
 
     # creating model and training details
-    net = SSuperVAE(config.backbone, 
-                    latent_dim=config.latent_dim, 
+    net = SSuperVAE(config.backbone,
+                    latent_dim=config.latent_dim,
                     embed_dim=config.embed_dim,
                     use_lstm=config.use_lstm,
                     seq_size=config.seq_size,
@@ -40,8 +41,8 @@ def train(data_loader, config, model_name='plain_ssupervae', cont_epoch=-1, cont
                     fc_hidden_dims=config.fc_hidden_dims,
                     fc_dropout=config.fc_dropout,
                     num_lstm_layers=config.num_lstm_layers,
-                    masked_first=config.masked_first).to(ptu.device) 
-    
+                    masked_first=config.masked_first).to(ptu.device)
+
     criterion = elbo
 
     optimizer = optim.Adam(net.parameters(),
@@ -65,8 +66,8 @@ def train(data_loader, config, model_name='plain_ssupervae', cont_epoch=-1, cont
                          best_loss_action=lambda m, l: save_best_loss_model(model_name, m, l),
                          save_dir=base_dir + 'playground/ssupervae/',
                          checkpoint_every_epoch=True
-                        )
-    
+                         )
+
     if cont_epoch > -1:
         epoch, losses = trainer.load_checkpoint(epoch=cont_epoch)
     elif cont_model is not None:
@@ -75,17 +76,16 @@ def train(data_loader, config, model_name='plain_ssupervae', cont_epoch=-1, cont
         scheduler.step()
     else:
         epoch, losses = None, {}
-    
-    
+
     train_losses, test_losses = trainer.train_epochs(starting_epoch=epoch, losses=losses)
 
     print("[INFO] Completed training!")
-    
+
     save_training_plot(train_losses['loss'],
                        test_losses['loss'],
                        "Plain_SSuperVAE Losses",
                        base_dir + 'playground/supervae/' + f'results/ssupervae_plot.png'
-                      )
+                       )
     return net
 
 
@@ -94,26 +94,28 @@ if __name__ == '__main__':
     config = read_config(Config.SSUPERVAE)
     golden_age_config = read_config(Config.GOLDEN_AGE)
     cont_epoch = -1
-    cont_model = None # "playground/ssupervae/weights/model-18.pth"
-    
+    cont_model = None  # "playground/ssupervae/weights/model-18.pth"
+    limit_size = 32
+
     # data = RandomDataset((3, 3, 360, 360), (3, config.image_dim, config.image_dim))
     data = GoldenPanelsDataset(golden_age_config.panel_path,
-                               golden_age_config.sequence_path, 
+                               golden_age_config.sequence_path,
                                golden_age_config.panel_dim,
-                               config.image_dim, 
-                               augment=False, 
+                               config.image_dim,
+                               augment=False,
                                mask_val=golden_age_config.mask_val,
                                mask_all=golden_age_config.mask_all,
                                return_mask=golden_age_config.return_mask,
                                train_test_ratio=golden_age_config.train_test_ratio,
                                train_mode=True,
-                               limit_size=-1)
+                               limit_size=limit_size)
     data_loader = DataLoader(data, batch_size=config.batch_size, shuffle=True, num_workers=4)
-    
+
     if config.use_lstm:
-        model_name ="lstm_ssupervae_model"
+        model_name = "lstm_ssupervae_model"
     else:
-        model_name ="plain_ssupervae_model"
-    
+        model_name = "plain_ssupervae_model"
+
     model = train(data_loader, config, model_name, cont_epoch=cont_epoch, cont_model=cont_model)
+
     torch.save(model, base_dir + 'playground/ssupervae/results/' + "ssuper_vae_model.pth")

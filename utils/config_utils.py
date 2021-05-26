@@ -15,6 +15,7 @@ class Config(Enum):
 
     INTRO_VAE = 8
     SSUPERDCGAN = 9
+    VAE_CONTEXT_ATTN = 10
 
 
 
@@ -37,7 +38,8 @@ def read_config(config: Config):
         path = base_dir + 'configs/dcgan_config.yaml'
     elif config == Config.SSUPERDCGAN:
         path = base_dir + 'configs/ssuper_dcgan_config.yaml'
-
+    elif config == Config.VAE_CONTEXT_ATTN:
+        path = base_dir + 'configs/vae_context_attn_config.yaml'
     else:
         raise NotImplementedError
     with open(path) as file:
