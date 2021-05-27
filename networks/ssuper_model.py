@@ -200,10 +200,10 @@ class SSuperModel(nn.Module):
     
     
     # Samples <size> many images 
+    @torch.no_grad()
     def sample(self, size :int):
         z = self.latent_dist.rsample((size, self.latent_dim)).squeeze(-1)
-        with torch.no_grad():
-            return self.generate(z, clamp=True)
+        return self.generate(z, clamp=True)
     
     @torch.no_grad()
     def save_samples(self, n, filename):
@@ -211,10 +211,11 @@ class SSuperModel(nn.Module):
         save_image(samples, filename, nrow=10, normalize=True)
     
     # Reconstructs the image given the panel images or initial image
-    def reconstruct(self, x):
-        if self.seq_encoder is not None and self.encoder is None:
+    @torch.no_grad()
+    def reconstruct(self, x, seq_encoder=True):
+        if seq_encoder:
             mu, _ = self.seq_encode(x)
-        elif self.encoder is not None and self.seq_encoder is None:
+        else:
             mu, _ = self.encode(x)
         else:
             raise AttributeError
