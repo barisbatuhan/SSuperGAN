@@ -4,7 +4,7 @@ import json
 os.path.dirname(sys.executable)
 sys.path.append("/kuacc/users/ckoksal20/COMP547Project/SSuperGAN/")
 
-
+import torch
 from torch import optim
 from torch.utils.data import DataLoader
 from data.datasets.random_dataset import RandomDataset
@@ -22,7 +22,7 @@ from configs.base_config import *
 from networks.ssuper_dcgan import SSuperDCGAN
 
 import torch.nn as nn
-import torch.nn as nn
+
 
 
 

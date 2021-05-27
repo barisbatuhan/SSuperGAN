@@ -69,7 +69,7 @@ def random_crop(img):
 
 def get_PIL_image(img_tensor, means=0.5, stds=0.5):
     img = img_tensor.to("cpu")
-    
+
     if means is None or stds is None:
         return transforms.ToPILImage()(img)
     else:

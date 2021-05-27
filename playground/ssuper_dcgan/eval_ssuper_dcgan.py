@@ -32,11 +32,11 @@ from functional.metrics.fid import FID
 
 metrics = ["PSNR", "FID"]
 
-METRIC = metrics[1]
+METRIC = metrics[0]
 BATCH_SIZE = 64 if METRIC == "FID" else 16
-model_path = "ckpts/ssuper_dcgan-checkpoint-epoch15.pth"
+model_path = "ckpts/ssuper_dcgan-checkpoint-epoch97.pth"
 
-N_SAMPLES = 1280 # 50000
+N_SAMPLES = 50000 # 50000
 
 # Required for FID, if not given, then calculated from scratch
 mus = None
@@ -78,7 +78,7 @@ dataset = GoldenPanelsDataset(golden_age_config.panel_path,
                               mask_val=1, # mask with white color for 1 and black color for 0
                               mask_all=False, # masks faces from all panels and returns all faces
                               return_mask=True,
-                              train_test_ratio=golden_age_config.train_test_ratio,
+                              train_test_ratio=0.01,
                               train_mode=False,
                               limit_size=-1)
 
