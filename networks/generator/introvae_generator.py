@@ -58,51 +58,14 @@ class _Residual_Block(nn.Module):
         output = self.conv2(output)
         output = self.relu2(self.bn2(torch.add(output, identity_data)))
         return output
-
-
-class Encoder(nn.Module):
+    
+class IntroVAEGenerator(nn.Module):
     def __init__(self,
                  cdim=3,
                  hdim=512,
                  channels=[64, 128, 256, 512, 512, 512],
                  image_size=256):
-        super(Encoder, self).__init__()
-
-        assert (2 ** len(channels)) * 4 == image_size
-
-        self.hdim = hdim
-        cc = channels[0]
-        self.main = nn.Sequential(
-            nn.Conv2d(cdim, cc, 5, 1, 2, bias=False),
-            nn.BatchNorm2d(cc),
-            nn.LeakyReLU(0.2),
-            nn.AvgPool2d(2),
-        )
-
-        sz = image_size // 2
-        for ch in channels[1:]:
-            self.main.add_module('res_in_{}'.format(sz), _Residual_Block(cc, ch, scale=1.0))
-            self.main.add_module('down_to_{}'.format(sz // 2), nn.AvgPool2d(2))
-            cc, sz = ch, sz // 2
-
-        self.main.add_module('res_in_{}'.format(sz), _Residual_Block(cc, cc, scale=1.0))
-        self.fc = nn.Linear((cc) * 4 * 4, 2 * hdim)
-
-    def forward(self, x):
-        y = self.main(x).view(x.size(0), -1)
-        y = self.fc(y)
-        return y
-        # mu, logvar = y.chunk(2, dim=1)
-        # return mu, logvar
-
-
-class Decoder(nn.Module):
-    def __init__(self,
-                 cdim=3,
-                 hdim=512,
-                 channels=[64, 128, 256, 512, 512, 512],
-                 image_size=256):
-        super(Decoder, self).__init__()
+        super(IntroVAEGenerator, self).__init__()
 
         assert (2 ** len(channels)) * 4 == image_size
 
@@ -113,7 +76,6 @@ class Decoder(nn.Module):
         )
 
         sz = 4
-
         self.main = nn.Sequential()
         for ch in channels[::-1]:
             self.main.add_module('res_in_{}'.format(sz), _Residual_Block(cc, ch, scale=1.0))
@@ -129,39 +91,3 @@ class Decoder(nn.Module):
         y = y.view(z.size(0), -1, 4, 4)
         y = self.main(y)
         return y
-
-
-class IntroVAE(GenericVAE):
-    """
-    This is only the model, however, the loss function is extremely important for
-    this paper. Maybe we can make use of that as well!
-Source: https://github.com/hhb072/IntroVAE/blob/master/networks.py # this might be erronous in terms of loss
-Source: https://github.com/woxuankai/IntroVAE-Pytorch/blob/988f2ad88ad5bec278629e0475bbac5f542f5235/model.py#L208 # used for loss calculation along with the paper
-Source PAPER: IntroVAE: Introspective Variational Autoencoders forPhotographic Image Synthesis
-https://arxiv.org/pdf/1807.06358.pdf
-    """
-
-    def __init__(self,
-                 cdim=3,
-                 hdim=512,
-                 channels=[64, 128, 256, 512, 512, 512],
-                 image_size=256):
-        """
-        :param cdim: channel dimension
-        :param hdim: latent (z) dimension
-        :param channels: following needs to be considered => assert (2 ** len(channels)) * 4 == image_size
-        :param image_size: input - output image size
-        """
-        encoder = Encoder(cdim, hdim, channels, image_size)
-        decoder = Decoder(cdim, hdim, channels, image_size)
-        super(IntroVAE, self).__init__(encoder=encoder,
-                                       decoder=decoder,
-                                       latent_dim=hdim)
-
-
-if __name__ == '__main__':
-    im_size = 64
-    intro_vae = IntroVAE(image_size=im_size, channels=[64, 128, 256, 512])
-    batch_like = ptu.randn(1, 3, im_size, im_size, torch_device=ptu.device)
-    encoder_result = intro_vae.forward(batch_like)
-    print(encoder_result)

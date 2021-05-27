@@ -1,0 +1,222 @@
+import torch
+import torch.nn as nn
+from torch import Tensor
+from torch.distributions.normal import Normal
+import torchvision
+from torchvision.utils import save_image
+
+import copy
+import numpy as np
+from copy import deepcopy
+
+# Models
+from networks.panel_encoder.plain_sequential_encoder import PlainSequentialEncoder
+from networks.panel_encoder.lstm_sequential_encoder import LSTMSequentialEncoder
+from networks.encoder.introvae_encoder import IntroVAEEncoder
+from networks.generator.dcgan_generator import DCGANGenerator
+from networks.generator.introvae_generator import IntroVAEGenerator
+from networks.discriminator.dcgan_discriminator import DCGANDiscriminator
+from networks.discriminator.inpainting_discriminator import InpaintingDiscriminator
+
+# Helpers
+from utils import pytorch_util as ptu
+
+class SSuperModel(nn.Module):
+    
+    def __init__(self, 
+                 # required parameters
+                 backbone="efficientnet-b5",       # options: ["resnet50", "efficientnet-bX"]
+                 embed_dim: int=256,               # size of the embedding vectors of the panels taken from CNN
+                 latent_dim: int=256,              # generated latent z size
+                 panel_size: tuple=(300, 300)      # sizes of the panels
+                 img_size: int=64,                 # generated face image size (shape is square)
+                 use_lstm: bool=False,             # flag for using plain concat or lstm in sequential encoder
+                 use_seq_enc: bool=True,           # Set to False of you only want to run pure generation module
+                 enc_choice=None,                  # options: ["vae", None]. If "vae", then gen. should be also vae
+                 gen_choice="dcgan",               # options: ["dcgan", "vae"]
+                 local_disc_choice="dcgan",        # options: ["dcgan", "inpainting", None]
+                 global_disc_choice="dcgan",       # options: ["dcgan", "inpainting", None]
+                 gen_channels=64,                  # pass integer for DCGAN and [64, 128, 256, 512] for VAE,
+                 
+                 # seq. plain enc. parameters
+                 seq_size: int=3,                  # number of sequntial panels if plain encoder is used
+                 
+                 # seq. lstm enc. parameters
+                 lstm_bidirectional: bool=False,   # if LSTM is used, a flag for setting bidirectionality
+                 lstm_hidden: int=256,             # h and c size of the lstm hidden. If bidirectional, then h size is the half
+                 lstm_dropout: float=0,            # set to 0 if num_lstm_layers == 0
+                 fc_hidden_dims: list=[],          # set hidden dims if you want to add FC layers to the LSTM output  
+                 fc_dropout: float=0,              # set if fc_hidden_dims is not empty
+                 num_lstm_layers: float=1,         # number of layers that the LSTM encoder module includes
+                 masked_first: bool=True,          # Set true to pass the masked panel image first in the LSTM
+                 
+                 # GAN parameters
+                 local_disc_channels=64,          # same with the gen_channels but for local discr.
+                 global_disc_channels=64,         # same with the gen_channels but for global discr.
+                ):
+        
+        super(SSuperModel, self).__init__()
+        
+        # Input correctness checks
+        assert enc_choice in ["vae", None]
+        assert gen_choice in ["dcgan", "vae"]
+        assert local_disc_choice in ["dcgan", "inpainting", None]
+        assert global_disc_choice in ["dcgan", "inpainting", None]
+        
+        if type(gen_channels) == int:
+            assert gen_choice == "dcgan"
+        else:
+            assert gen_choice == "vae"
+        
+        if enc_choice == "vae":
+            assert gen_choice == "vae"
+        
+        self.latent_dim = latent_dim
+        
+        # Sequential Encoder Declaration
+        if not use_seq_enc:
+            self.seq_encoder = None
+        
+        elif not use_lstm:
+            self.seq_encoder = PlainSequentialEncoder(backbone, 
+                                                      latent_dim=latent_dim, 
+                                                      embed_dim=embed_dim, 
+                                                      seq_size=seq_size)
+        else:
+            self.seq_encoder = LSTMSequentialEncoder(backbone,
+                                                     latent_dim=latent_dim,
+                                                     embed_dim=embed_dim,
+                                                     lstm_hidden=lstm_hidden,
+                                                     lstm_dropout=lstm_dropout,
+                                                     lstm_bidirectional=lstm_bidirectional,
+                                                     fc_hidden_dims=fc_hidden_dims,
+                                                     fc_dropout=fc_dropout,
+                                                     num_lstm_layers=num_lstm_layers,
+                                                     masked_first=masked_first)
+        
+        # Encoder Module Declaration
+        if enc_choice is None:
+            self.encoder = None
+        elif enc_choice == "vae":
+            self.encoder = IntroVAEEncoder(
+                hdim=latent_dim, channels=decoder_channels, image_size=img_size)
+        else:
+            raise NotImplementedError
+        
+        # Generator Module Declaration
+        if gen_choice == "vae":
+            self.generator = IntroVAEGenerator(
+                hdim=latent_dim, channels=decoder_channels, image_size=img_size)
+        
+        elif gen_choice == "dcgan":
+            self.generator = DCGANGenerator(img_size, 3, latent_dim, gen_channels)
+        
+        # Local Discriminator Module Declaration
+        if local_disc_choice is None:
+            self.local_discriminator = None
+        elif local_disc_choice == "dcgan":
+            self.local_discriminator = DCGANDiscriminator(
+                img_size, 3, latent_dim, local_disc_channels)
+        elif local_disc_choice == "inpainting":
+            raise NotImplementedError
+            
+        # Global Discriminator Module Declaration
+        if global_disc_choice is None:
+            self.global_discriminator = None
+        elif global_disc_choice == "dcgan":
+            self.global_discriminator = DCGANDiscriminator(
+                img_size, 3, latent_dim, global_disc_channels)
+        elif global_disc_choice == "inpainting":
+            self.global_discriminator = InpaintingDiscriminator(
+                panel_size, global_disc_channels)
+        
+        self.latent_dist = Normal(
+            ptu.FloatTensor([0.0], torch_device=ptu.device),
+            ptu.FloatTensor([1.0], torch_device=ptu.device)
+        )
+        
+    def forward(self, x):
+        """ 
+        Not sure what to do there, probably calling the functions below is a much
+        more logical option than calling a forward function.
+        """
+        raise NotImplementedError
+    
+    
+    # Returns mu, lg_std
+    def seq_encode(self, x):
+        return self.seq_encoder(x)
+    
+    # Returns mu, lg_std
+    def encode(self, x):
+        return self.encoder(x)
+    
+    # Returns the generated image in the range [-1, 1]
+    def generate(self, z, clamp=False):
+        out = self.generator(z)
+        if clamp:
+            out = torch.clamp(out, min=-1, max=1)
+        return out
+    
+    # Returns a float in the range of [0, 1] depending on the success of the discriminator
+    def discriminate(self, x, local=True):
+        if local:
+            return self.local_discriminator(x)
+        else:
+            return self.global_discriminator(x)
+    
+    
+    def create_global_images(self, panels, r_faces, f_faces, mask_coordinates):
+        # Preparing for Fine Generator
+        B, S, C, W, H = panels.shape
+        last_panel_gts = ptu.zeros(B, C, H, W)
+        panel_with_generation = ptu.zeros_like(last_panel_gts)
+        for i in range(len(panels)):
+            last_panel = panels[i, -1, :, :, :]
+            output_merged_last_panel = deepcopy(last_panel)
+            last_panel_face = r_faces[i, :, :, :]
+            last_panel_output_face = f_faces[i, :, :, :]
+
+            x1, x2, y1, y2 = mask_coordinates[i]
+            w, h = abs(x1 - x2), abs(y1 - y2)
+
+            # inserting original face to last panel
+            modified = last_panel_face.view(1, *last_panel_face.size())
+            interpolated_last_panel_face_batch = torch.nn.functional.interpolate(modified,
+                                                                                 size=(w, h))
+            interpolated_last_panel_face = interpolated_last_panel_face_batch[0]
+            last_panel[:, x1:x2, y1:y2] = interpolated_last_panel_face
+            last_panel_gts[i, :, :, :] = last_panel
+
+            # inserting output face to last panel
+            modified = last_panel_output_face.view(1, *last_panel_output_face.size())
+            interpolated_last_panel_face_batch = torch.nn.functional.interpolate(modified,
+                                                                                 size=(w, h))
+            interpolated_last_panel_face = interpolated_last_panel_face_batch[0]
+            output_merged_last_panel[:, x1:x2, y1:y2] = interpolated_last_panel_face
+            panel_with_generation[i, :, :, :] = output_merged_last_panel
+
+        return panel_with_generation, last_panel_gts
+    
+    
+    # Samples <size> many images 
+    def sample(self, size :int):
+        z = self.latent_dist.rsample((size, self.latent_dim)).squeeze(-1)
+        with torch.no_grad():
+            return self.generate(z, clamp=True)
+    
+    @torch.no_grad()
+    def save_samples(self, n, filename):
+        samples = self.sample(size=n)
+        save_image(samples, filename, nrow=10, normalize=True)
+    
+    # Reconstructs the image given the panel images or initial image
+    def reconstruct(self, x):
+        if self.seq_encoder is not None and self.encoder is None:
+            mu, _ = self.seq_encode(x)
+        elif self.encoder is not None and self.seq_encoder is None:
+            mu, _ = self.encode(x)
+        else:
+            raise AttributeError
+        
+        return self.generate(mu, clamp=True)
