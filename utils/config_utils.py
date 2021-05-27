@@ -12,11 +12,10 @@ class Config(Enum):
     VAE = 5
     SSUPERVAE = 6
     DCGAN = 7
-
     INTRO_VAE = 8
     SSUPERDCGAN = 9
     VAE_CONTEXT_ATTN = 10
-
+    GLOBAL_LOCAL_DISC = 11
 
 
 def read_config(config: Config):
@@ -40,6 +39,8 @@ def read_config(config: Config):
         path = base_dir + 'configs/ssuper_dcgan_config.yaml'
     elif config == Config.VAE_CONTEXT_ATTN:
         path = base_dir + 'configs/vae_context_attn_config.yaml'
+    elif config == Config.GLOBAL_LOCAL_DISC:
+        path = base_dir + 'configs/global_local_disc_config.yaml'
     else:
         raise NotImplementedError
     with open(path) as file:

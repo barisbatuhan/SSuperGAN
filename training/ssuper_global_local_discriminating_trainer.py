@@ -89,7 +89,7 @@ class SSuperGlobalLocalDiscriminatingTrainer(BaseTrainer):
                 train_losses[k].extend(train_loss[k])
                 test_losses[k].append(test_loss.get(k, 0))
                 if k == "loss":
-                    current_test_loss = test_loss[k]
+                    current_test_loss = test_loss.get(k, math.inf)
                     if current_test_loss < best_loss:
                         best_loss = current_test_loss
                         if self.best_loss_action != None:
@@ -162,7 +162,7 @@ class SSuperGlobalLocalDiscriminatingTrainer(BaseTrainer):
             self.optimizer.zero_grad()
 
             # TODO: If we divert from VAE, this part should be updated
-            z, _, mu_z, mu_x, logstd_z = self.model.forward(x)
+            z, _, mu_z, mu_x, logstd_z = self.model.forward(x=x)
             out = self.criterion(z, target, mu_z, mu_x, logstd_z)
             pred_global, gt_global = self.model.create_global_pred_gt_images(x,
                                                                              y,
@@ -170,7 +170,7 @@ class SSuperGlobalLocalDiscriminatingTrainer(BaseTrainer):
                                                                              mask_coordinates)
             # Generator Update
             self.compute_generator_loss(out, y, mu_x, gt_global, pred_global)
-            out['loss'].backward()
+            out['loss'].backward(retain_graph=True)
 
             # Discriminator Update
             self.optimizer_disc.zero_grad()
@@ -243,6 +243,8 @@ class SSuperGlobalLocalDiscriminatingTrainer(BaseTrainer):
                                    mu_x,
                                    gt_global,
                                    pred_global):
+        B, S, C, W, H = x.shape
+        mask = mask.view(B, 1, W, H)
         local_patch_real_pred, local_patch_fake_pred = self.model.dis_forward(is_local=True,
                                                                               ground_truth=y,
                                                                               generated=mu_x)
@@ -260,9 +262,9 @@ class SSuperGlobalLocalDiscriminatingTrainer(BaseTrainer):
             raise NotImplementedError
         # gradients penalty loss
         local_penalty = calculate_gradient_penalty(
-            self.model.local_disc, y, mu_x.detach())
+            self.model.local_discriminator, y, mu_x.detach())
         x_stage_0 = x[:, -1, :, :, :] * (1. - mask)
-        global_penalty = calculate_gradient_penalty(self.model.global_disc,
+        global_penalty = calculate_gradient_penalty(self.model.global_discriminator,
                                                     x_stage_0, pred_global.detach())
 
         out['wgan_gp'] = local_penalty + global_penalty

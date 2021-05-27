@@ -17,11 +17,11 @@ class SSuperGlobalLocalDiscriminating(BaseGlobalLocalDiscriminating):
                  panel_img_size,
                  local_disc_intermediate_channel_num=16,
                  global_disc_intermediate_channel_num=32):
-        super().__init__(generator)
         self.output_img_size = output_img_size
         self.panel_img_size = panel_img_size
         self.local_disc_intermediate_channel_num = local_disc_intermediate_channel_num
         self.global_disc_intermediate_channel_num = global_disc_intermediate_channel_num
+        super().__init__(generator)
 
     def forward(self, **kwargs) -> List[Tensor]:
         return self.generator(**kwargs)

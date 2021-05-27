@@ -11,6 +11,7 @@ import torchvision.transforms.functional as TF
 
 from data.augment import *
 
+sort_golden_panel_dataset = True
 
 class GoldenPanelsDataset(Dataset):
 
@@ -40,14 +41,15 @@ class GoldenPanelsDataset(Dataset):
             annots = json.load(f)
 
         #### Sorting By Comic Number
-        def sort_by_comic_number(element):
-            return int(element[0][0].split("/")[0])
+        if sort_golden_panel_dataset:
+            def sort_by_comic_number(element):
+                return int(element[0][0].split("/")[0])
 
-        annots_values = list(annots.values())
-        annots_values.sort(key=sort_by_comic_number)
+            annots_values = list(annots.values())
+            annots_values.sort(key=sort_by_comic_number)
 
-        for i in range(len(annots_values)):
-            annots[str(i)] = annots_values[i]
+            for i in range(len(annots_values)):
+                annots[str(i)] = annots_values[i]
 
         #### Sorting By Comic Number
 
