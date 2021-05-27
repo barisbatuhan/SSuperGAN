@@ -177,23 +177,23 @@ class SSuperModel(nn.Module):
             last_panel_face = r_faces[i, :, :, :]
             last_panel_output_face = f_faces[i, :, :, :]
 
-            x1, x2, y1, y2 = mask_coordinates[i]
+            y1, y2, x1, x2 = mask_coordinates[i]
             w, h = abs(x1 - x2), abs(y1 - y2)
 
             # inserting original face to last panel
             modified = last_panel_face.view(1, *last_panel_face.size())
             interpolated_last_panel_face_batch = torch.nn.functional.interpolate(modified,
-                                                                                 size=(w, h))
+                                                                                 size=(h, w))
             interpolated_last_panel_face = interpolated_last_panel_face_batch[0]
-            last_panel[:, x1:x2, y1:y2] = interpolated_last_panel_face
+            last_panel[:, y1:y2, x1:x2] = interpolated_last_panel_face
             last_panel_gts[i, :, :, :] = last_panel
 
             # inserting output face to last panel
             modified = last_panel_output_face.view(1, *last_panel_output_face.size())
             interpolated_last_panel_face_batch = torch.nn.functional.interpolate(modified,
-                                                                                 size=(w, h))
+                                                                                 size=(h, w))
             interpolated_last_panel_face = interpolated_last_panel_face_batch[0]
-            output_merged_last_panel[:, x1:x2, y1:y2] = interpolated_last_panel_face
+            output_merged_last_panel[:, y1:y2, x1:x2] = interpolated_last_panel_face
             panel_with_generation[i, :, :, :] = output_merged_last_panel
 
         return panel_with_generation, last_panel_gts
