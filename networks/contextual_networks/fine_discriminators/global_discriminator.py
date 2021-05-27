@@ -1,5 +1,6 @@
 import torch.nn as nn
 from networks.contextual_networks.shared import DisConvModule
+from typing import List
 
 
 class GlobalDis(nn.Module):
@@ -12,9 +13,9 @@ class GlobalDis(nn.Module):
 
         self.dis_conv_module = DisConvModule(self.input_dim, self.cnum)
         # below is from the original impl
-        self.linear = nn.Linear(self.cnum*4*16*16, 1)
+        self.linear = nn.Linear(self.cnum * 4 * 16 * 16, 1)
         # below was modification for 128 * 128 panel size
-        #self.linear = nn.Linear(self.cnum * 16 * 16, 1)
+        # self.linear = nn.Linear(self.cnum * 16 * 16, 1)
 
     def forward(self, x):
         x = self.dis_conv_module(x)

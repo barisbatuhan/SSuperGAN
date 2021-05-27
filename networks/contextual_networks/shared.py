@@ -13,6 +13,9 @@ from utils.image_utils import extract_image_patches, reduce_mean, reduce_sum, sa
 
 
 class DisConvModule(nn.Module):
+    """
+    Output will be in shape of (4*cnum, W/4, H/4)
+    """
     def __init__(self, input_dim, cnum):
         super(DisConvModule, self).__init__()
         self.conv1 = dis_conv(input_dim, cnum, 5, 2, 2)

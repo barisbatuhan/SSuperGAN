@@ -1,3 +1,5 @@
+from typing import List
+
 import torch.nn as nn
 from networks.contextual_networks.shared import gen_conv, dis_conv, DisConvModule
 

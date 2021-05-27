@@ -1,16 +1,10 @@
 from collections import OrderedDict
-from copy import deepcopy
-
 from tqdm import tqdm
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
-import torch.utils.data as data
-import torch.optim as optim
 
-from networks.base.base_vae import BaseVAE
-from networks.generic_vae import GenericVAE
+from functional.losses.gradient_penalty import calculate_gradient_penalty
 from networks.ssupervae_contextual_attentional import SSuperVAEContextualAttentional
 from training.base_trainer import BaseTrainer
 from utils.structs.metric_recorder import *
@@ -222,9 +216,9 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
             out['wgan_d'] = torch.mean(local_patch_fake_pred - local_patch_real_pred) + \
                             torch.mean(global_fake_pred - global_real_pred) * self.config_disc.global_wgan_loss_alpha
             # gradients penalty loss
-            local_penalty = self.calc_gradient_penalty(
+            local_penalty = calculate_gradient_penalty(
                 self.model.local_disc, y, fine_faces.detach())
-            global_penalty = self.calc_gradient_penalty(self.model.global_disc,
+            global_penalty = calculate_gradient_penalty(self.model.global_disc,
                                                         x_stage_0, x_stage_2.detach())
             # TODO: do not forget to use "backward" on this!
             out['wgan_gp'] = local_penalty + global_penalty
@@ -265,30 +259,3 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
         if not self.quiet:
             pbar.close()
         return losses
-
-        # Calculate gradient penalty
-
-    def calc_gradient_penalty(self, netD, real_data, fake_data):
-        batch_size = real_data.size(0)
-        alpha = torch.rand(batch_size, 1, 1, 1)
-        alpha = alpha.expand_as(real_data)
-        if ptu.gpu_enabled():
-            alpha = alpha.cuda()
-
-        interpolates = alpha * real_data + (1 - alpha) * fake_data
-        interpolates = interpolates.requires_grad_().clone()
-
-        disc_interpolates = netD(interpolates)
-        grad_outputs = torch.ones(disc_interpolates.size())
-
-        if ptu.gpu_enabled():
-            grad_outputs = grad_outputs.cuda()
-
-        gradients = torch.autograd.grad(outputs=disc_interpolates, inputs=interpolates,
-                                        grad_outputs=grad_outputs, create_graph=True,
-                                        retain_graph=True, only_inputs=True)[0]
-
-        gradients = gradients.view(batch_size, -1)
-        gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
-
-        return gradient_penalty
