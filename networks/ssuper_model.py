@@ -213,11 +213,5 @@ class SSuperModel(nn.Module):
     # Reconstructs the image given the panel images or initial image
     @torch.no_grad()
     def reconstruct(self, x, seq_encoder=True):
-        if seq_encoder:
-            mu, _ = self.seq_encode(x)
-        else:
-            mu, _ = self.encode(x)
-        else:
-            raise AttributeError
-        
+        mu, _ = self.seq_encode(x) if seq_encoder else self.encode(x)
         return self.generate(mu, clamp=True)
