@@ -10,10 +10,7 @@ from utils.structs.metric_recorder import *
 from utils.logging_utils import *
 from configs.base_config import *
 
-
-
-
-from networks.dcgan import DCGAN
+from networks.models import DCGAN
 
 class DCGANTrainer:
     def __init__(self,

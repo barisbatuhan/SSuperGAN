@@ -8,8 +8,6 @@ import torch.utils.data as data
 import torch.optim as optim
 from typing import Dict
 
-from networks.base.base_vae import BaseVAE
-from networks.generic_vae import GenericVAE
 from utils.structs.metric_recorder import *
 from utils.logging_utils import *
 from utils import pytorch_util as ptu

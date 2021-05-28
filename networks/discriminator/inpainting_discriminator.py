@@ -9,7 +9,6 @@ import torchvision.datasets as dset
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
 import numpy as np
-from utils import pytorch_util as ptu
 
 class InpaintingDiscriminator(nn.Module):  
     

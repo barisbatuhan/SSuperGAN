@@ -6,7 +6,6 @@ import torchvision.models as models
 import numpy as np
 
 from networks.panel_encoder.cnn_embedder import CNNEmbedder
-from utils import pytorch_util as ptu
 
 class LSTMSequentialEncoder(nn.Module):
 
@@ -71,8 +70,8 @@ class LSTMSequentialEncoder(nn.Module):
         _, ( outs, _ ) = self.lstm(
             outs,
             (
-                torch.zeros(first_h_dim, B, self.lstm_hidden).to(ptu.device), # h0
-                torch.zeros(first_h_dim, B, self.lstm_hidden).to(ptu.device)  # c0
+                torch.zeros(first_h_dim, B, self.lstm_hidden).cuda(), # h0
+                torch.zeros(first_h_dim, B, self.lstm_hidden).cuda()  # c0
             ) 
         )
         

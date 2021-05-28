@@ -1,22 +1,13 @@
-import os
-import random
 import torch
 import torch.nn as nn
-import torch.backends.cudnn as cudnn
-import torch.optim as optim
-import torch.utils.data
-import torchvision.datasets as dset
-import torchvision.transforms as transforms
-import torchvision.utils as vutils
 import numpy as np
-from utils import pytorch_util as ptu
 
 class DCGANGenerator(nn.Module):
     
     def __init__(self, image_size, nc, nz, ngf):
         super().__init__()
         self.model = nn.Sequential(
-            nn.ConvTranspose2d(self.nz, out_channels=ngf*8, kernel_size=4, stride=1, padding=0, bias=False),
+            nn.ConvTranspose2d(nz, out_channels=ngf*8, kernel_size=4, stride=1, padding=0, bias=False),
             nn.BatchNorm2d(ngf*8),
             nn.ReLU(),
             # state size. (ngf*8) x 4 x 4

@@ -18,8 +18,7 @@ from networks.generator.introvae_generator import IntroVAEGenerator
 from networks.discriminator.dcgan_discriminator import DCGANDiscriminator
 from networks.discriminator.inpainting_discriminator import InpaintingDiscriminator
 
-# Helpers
-from utils import pytorch_util as ptu
+from functional.losses.elbo import elbo
 
 class SSuperModel(nn.Module):
     
@@ -28,7 +27,7 @@ class SSuperModel(nn.Module):
                  backbone="efficientnet-b5",       # options: ["resnet50", "efficientnet-bX"]
                  embed_dim: int=256,               # size of the embedding vectors of the panels taken from CNN
                  latent_dim: int=256,              # generated latent z size
-                 panel_size: tuple=(300, 300)      # sizes of the panels
+                 panel_size: tuple=(300, 300),     # sizes of the panels
                  img_size: int=64,                 # generated face image size (shape is square)
                  use_lstm: bool=False,             # flag for using plain concat or lstm in sequential encoder
                  use_seq_enc: bool=True,           # Set to False of you only want to run pure generation module
@@ -39,7 +38,7 @@ class SSuperModel(nn.Module):
                  gen_channels=64,                  # pass integer for DCGAN and [64, 128, 256, 512] for VAE,
                  
                  # seq. plain enc. parameters
-                 seq_size: int=3,                  # number of sequntial panels if plain encoder is used
+                 seq_size: int=3,                  # number of sequential panels if plain encoder is used
                  
                  # seq. lstm enc. parameters
                  lstm_bidirectional: bool=False,   # if LSTM is used, a flag for setting bidirectionality
@@ -72,7 +71,10 @@ class SSuperModel(nn.Module):
             assert gen_choice == "vae"
         
         self.latent_dim = latent_dim
-        
+        self.gen_choice = gen_choice
+        self.local_disc_choice = local_disc_choice
+        self.global_disc_choice = global_disc_choice
+        self.enc_choice = enc_choice
         # Sequential Encoder Declaration
         if not use_seq_enc:
             self.seq_encoder = None
@@ -125,22 +127,73 @@ class SSuperModel(nn.Module):
             self.global_discriminator = None
         elif global_disc_choice == "dcgan":
             self.global_discriminator = DCGANDiscriminator(
-                img_size, 3, latent_dim, global_disc_channels)
+                panel_size, 3, latent_dim, global_disc_channels)
         elif global_disc_choice == "inpainting":
             self.global_discriminator = InpaintingDiscriminator(
                 panel_size, global_disc_channels)
         
         self.latent_dist = Normal(
-            ptu.FloatTensor([0.0], torch_device=ptu.device),
-            ptu.FloatTensor([1.0], torch_device=ptu.device)
+            torch.FloatTensor([0.0]).cuda(),
+            torch.FloatTensor([1.0]).cuda()
         )
         
-    def forward(self, x):
-        """ 
-        Not sure what to do there, probably calling the functions below is a much
-        more logical option than calling a forward function.
-        """
-        raise NotImplementedError
+    def forward(self, x, y=None, losses=None):
+
+        bs = x.shape[0]
+        
+        if self.seq_encoder is not None or self.encoder is not None:
+            
+            if self.seq_encoder is not None:
+                mu_z, lg_std_z = self.seq_encode(x)
+                z = torch.distributions.Normal(mu_z, lg_std_z.exp()).rsample()
+            
+            elif self.encoder is not None:
+                mu_z, lg_std_z = self.encode(x)
+                z = torch.distributions.Normal(mu_z, lg_std_z.exp()).rsample()
+        
+        else:
+            z = self.latent_dist.rsample((size, self.latent_dim)).squeeze(-1)
+        
+        if self.gen_choice == "dcgan":
+                    z = z.unsqueeze(2).unsqueeze(3)
+        
+        if self.generator is not None:
+            mu_x = self.generate(z)
+        
+        if self.seq_encoder is not None or self.encoder is not None:
+            out = elbo(z, y, mu_z, mu_x, lg_std_z, l1_recon=False)
+            errE = out["loss"]
+            
+            losses["loss"] = errE.item()
+            losses["reconstruction_loss"] = out["reconstruction_loss"].item()
+            losses["kl_loss"] = out["kl_loss"].item()
+        else:
+            errE = 0
+        
+        if self.local_discriminator is None and self.global_discriminator is None:
+            return errE
+        
+        # Discriminator Loss
+        labels = torch.ones(2*bs).cuda().view(-1)
+        labels[bs:] = 0
+    
+        disc_out = self.discriminate(torch.cat([y, mu_x.detach()], dim=0), local=True).view(-1)
+        errD = nn.BCELoss()(disc_out, labels)
+        losses["disc_loss"] = errD.item()
+        
+        # Generator Loss
+        gen_out = self.discriminate(mu_x, local=True).view(-1)
+        errG = nn.BCELoss()(gen_out, labels[:bs]) 
+        losses["gen_loss"] = errG.item() + losses["reconstruction_loss"]
+        
+        total_loss = errE + errD + errG
+        
+        if self.global_discriminator is not None:
+            # TO DO: calculate global discriminator loss + generator loss 
+            #        and add to the total loss
+            raise NotImplementedError
+        
+        return total_loss
     
     
     # Returns mu, lg_std
@@ -169,8 +222,8 @@ class SSuperModel(nn.Module):
     def create_global_images(self, panels, r_faces, f_faces, mask_coordinates):
         # Preparing for Fine Generator
         B, S, C, W, H = panels.shape
-        last_panel_gts = ptu.zeros(B, C, H, W)
-        panel_with_generation = ptu.zeros_like(last_panel_gts)
+        last_panel_gts = torch.zeros(B, C, H, W).cuda()
+        panel_with_generation = torch.zeros_like(last_panel_gts).cuda()
         for i in range(len(panels)):
             last_panel = panels[i, -1, :, :, :]
             output_merged_last_panel = deepcopy(last_panel)

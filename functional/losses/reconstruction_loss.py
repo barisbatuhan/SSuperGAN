@@ -14,8 +14,7 @@ def reconstruction_loss_distributional(x, x_recon, log_scale=None):
     https://towardsdatascience.com/variational-autoencoder-demystified-with-pytorch-implementation-3a06bee395ed
    """
     if log_scale is None:
-        dist = torch.distributions.Normal(x_recon, ptu.FloatTensor([1.0],
-                                                                   torch_device=ptu.device))
+        dist = torch.distributions.Normal(x_recon, torch.FloatTensor([1.0]).cuda())
     else:
         dist = torch.distributions.Normal(x_recon, torch.exp(log_scale))
     # measure prob of seeing image under p(x|z)
