@@ -120,7 +120,7 @@ class SSuperGlobalLocalDiscriminatingTrainer(BaseTrainer):
         total_losses = OrderedDict()
         for batch in data_loader:
             if type(batch) == list and len(batch) == 4:
-                x, y, mask = batch[0].to(ptu.device), batch[1].to(ptu.device), batch[2].to(ptu.device)
+                x, y, mask = batch[0].cuda(), batch[1].cuda(), batch[2].cuda()
                 mask_coordinates = ptu.get_numpy(batch[3])
             else:
                 raise AssertionError("Batch should have panels, face, mask, mask_coordinates")
@@ -159,7 +159,7 @@ class SSuperGlobalLocalDiscriminatingTrainer(BaseTrainer):
         losses = OrderedDict()
         for counter, batch in enumerate(self.train_loader):
             if type(batch) == list and len(batch) == 4:
-                x, y, mask = batch[0].to(ptu.device), batch[1].to(ptu.device), batch[2].to(ptu.device)
+                x, y, mask = batch[0].cuda(), batch[1].cuda(), batch[2].cuda()
                 mask_coordinates = ptu.get_numpy(batch[3])
             else:
                 raise AssertionError("Batch should have panels, face, mask, mask_coordinates")
@@ -251,8 +251,8 @@ class SSuperGlobalLocalDiscriminatingTrainer(BaseTrainer):
 
             real_label = 1
             fake_label = 0
-            local_label = torch.full((B,), real_label, dtype=torch.float).to(ptu.device)
-            global_label = torch.full((B,), real_label, dtype=torch.float).to(ptu.device)
+            local_label = torch.full((B,), real_label, dtype=torch.float).cuda()
+            global_label = torch.full((B,), real_label, dtype=torch.float).cuda()
             dc_local_criterion = nn.BCELoss()
             dc_global_criterion = nn.BCELoss()
             if self.disc_option is GlobalLocalDiscriminatingTrainerDiscOption.GLOBAL_AND_LOCAL:
@@ -313,10 +313,10 @@ class SSuperGlobalLocalDiscriminatingTrainer(BaseTrainer):
 
             real_label = 1
             fake_label = 0
-            local_real_label = torch.full((B,), real_label, dtype=torch.float).to(ptu.device)
-            global_real_label = torch.full((B,), real_label, dtype=torch.float).to(ptu.device)
-            local_fake_label = torch.full((B,), fake_label, dtype=torch.float).to(ptu.device)
-            global_fake_label = torch.full((B,), fake_label, dtype=torch.float).to(ptu.device)
+            local_real_label = torch.full((B,), real_label, dtype=torch.float).cuda()
+            global_real_label = torch.full((B,), real_label, dtype=torch.float).cuda()
+            local_fake_label = torch.full((B,), fake_label, dtype=torch.float).cuda()
+            global_fake_label = torch.full((B,), fake_label, dtype=torch.float).cuda()
 
             global_label = torch.cat((global_fake_label, global_real_label), 0)
             local_label = torch.cat((local_fake_label, local_real_label), 0)

@@ -37,7 +37,7 @@ def train_model(config, data_loader, save_dir=None):
         d_hidden_size=config.d_hidden_size,
         e_hidden_size=config.e_hidden_size, 
         gan_type="bigan"
-    ).to(ptu.device)
+    ).cuda()
 
     d_optimizer = torch.optim.Adam(net.gan.discriminator.parameters(),
                                    lr=config.discriminator_lr,

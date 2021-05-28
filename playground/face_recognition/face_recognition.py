@@ -55,7 +55,7 @@ def train_siamese(model_name='test_model'):
     test_dataset = facedataset.PairedFaceDataset(
         datasource=facedatasource.ICartoonFaceDatasource(config, mode=DataSourceMode.TEST))
     test_dataloader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=True)
-    net = SiameseNetwork(image_dim=config.image_dim).to(ptu.device)
+    net = SiameseNetwork(image_dim=config.image_dim).cuda()
     criterion = ContrastiveLoss()
     optimizer = optim.Adam(net.parameters(), lr=5e-4)
     train_losses, test_losses = train_epochs(net,

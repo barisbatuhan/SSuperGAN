@@ -71,7 +71,7 @@ class DCGANTrainer:
         
 
         """
-        self.model.to(ptu.device)
+        self.model.cuda()
         self.model.train()
         metric_recorder = MetricRecorder(save_dir=self.save_dir + 'results/')
         losses = OrderedDict()
@@ -85,7 +85,7 @@ class DCGANTrainer:
             
             for iterno, x in enumerate(self.data_loader):
                 
-                x = x.to(ptu.device)
+                x = x.cuda()
                 batch_size = x.shape[0]
 
                 ############################
@@ -93,8 +93,8 @@ class DCGANTrainer:
                 ###########################
                 ## Train with all-real batch
                 self.model.discriminator.zero_grad()
-                real = x.to(ptu.device)
-                label = torch.full((batch_size,), self.real_label, dtype=torch.float).to(ptu.device)
+                real = x.cuda()
+                label = torch.full((batch_size,), self.real_label, dtype=torch.float).cuda()
                 #Forward pass Discriminator
                 output = self.model.discriminator(real).view(-1)
                 
@@ -105,10 +105,10 @@ class DCGANTrainer:
                 #Train with all fake batch
                 # Generate batch of latent vectors
 
-                noise = torch.randn(batch_size, self.model.nz, 1, 1).to(ptu.device)
+                noise = torch.randn(batch_size, self.model.nz, 1, 1).cuda()
                 # Generate fake images
                 fake = self.model.generator(noise)
-                label = torch.full((batch_size,), self.fake_label, dtype=torch.float).to(ptu.device)
+                label = torch.full((batch_size,), self.fake_label, dtype=torch.float).cuda()
                 # Classify all fake bach with Discriminator
                 output = self.model.discriminator(fake.detach()).view(-1)
                 error_disc_fake = self.model.criterion(output, label)
@@ -127,7 +127,7 @@ class DCGANTrainer:
                 ###########################
 
                 self.model.generator.zero_grad()
-                label = torch.full((batch_size,), self.real_label, dtype=torch.float).to(ptu.device)
+                label = torch.full((batch_size,), self.real_label, dtype=torch.float).cuda()
                 output = self.model.discriminator(fake).view(-1)
                 # Calculate G's loss based on this output
                 error_G = self.model.criterion(output, label)

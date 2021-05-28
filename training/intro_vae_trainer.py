@@ -105,9 +105,9 @@ class IntroVAETrainer(BaseTrainer):
         for batch in data_loader:
 
             if type(batch) == list and len(batch) == 2:
-                x, y = batch[0].to(ptu.device), batch[1].to(ptu.device)
+                x, y = batch[0].cuda(), batch[1].cuda()
             else:
-                x, y = batch.to(ptu.device), None
+                x, y = batch.cuda(), None
 
             z, _, mu_z, mu_x, logstd_z = self.model(x)
             target = x if y is None else y
@@ -138,9 +138,9 @@ class IntroVAETrainer(BaseTrainer):
         for batch in self.train_loader:
             
             if type(batch) == list and len(batch) == 2:
-                x, y = batch[0].to(ptu.device), batch[1].to(ptu.device)
+                x, y = batch[0].cuda(), batch[1].cuda()
             else:
-                x, y = batch.to(ptu.device), None
+                x, y = batch.cuda(), None
 
             batch_size = x.shape[0]
             target = x if y is None else y

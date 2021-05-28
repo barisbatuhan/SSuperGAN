@@ -334,7 +334,7 @@ def test_fine_generator():
     input_dim = 3
     cnum = 64
     fine_generator = FineGenerator(input_dim, cnum, True, None)
-    fine_generator.to(ptu.device)
+    fine_generator.cuda()
 
     im_dim = 256
     # with my updated configs => B, C, H, W

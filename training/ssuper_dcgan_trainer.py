@@ -117,12 +117,12 @@ class SSuperDCGANTrainer(BaseTrainer):
         for batch in self.train_loader:
             batch = batch
             if type(batch) == list and len(batch) == 2:
-                x, y = batch[0].to(ptu.device), batch[1].to(ptu.device)
+                x, y = batch[0].cuda(), batch[1].cuda()
                 # Shape is 
                 #torch.Size([BATCH_SIZE, 3, 3, 300, 300])
                 #torch.Size([BATCH_SIZE, 3, 64, 64])
             else:
-                x, y = batch.to(ptu.device), None
+                x, y = batch.cuda(), None
             
             
             

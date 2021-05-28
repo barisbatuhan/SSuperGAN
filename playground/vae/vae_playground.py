@@ -46,7 +46,7 @@ def continue_training(model_name, train_golden_face=True, cont_epoch=1):
         test_dataloader = DataLoader(test_dataset, batch_size=config.batch_size)
 
     # creating model and training details
-    net = IntroVAE(image_size=config.image_dim, channels=config.channels, hdim=config.latent_dim_z).to(ptu.device)
+    net = IntroVAE(image_size=config.image_dim, channels=config.channels, hdim=config.latent_dim_z).cuda()
 
     criterion = elbo
 
@@ -106,7 +106,7 @@ def train(model_name='test_model', train_golden_face=True):
         test_dataloader = DataLoader(test_dataset, batch_size=config.batch_size)
 
     # creating model and training details
-    net = IntroVAE(image_size=config.image_dim, channels=config.channels, hdim=config.latent_dim_z).to(ptu.device)
+    net = IntroVAE(image_size=config.image_dim, channels=config.channels, hdim=config.latent_dim_z).cuda()
 
     criterion = elbo
 

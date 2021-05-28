@@ -62,7 +62,7 @@ net = SSuperDCGAN(config.backbone,
                     ngf = config.ngf,
                     ndf = config.ndf,
                     nc = config.nc,
-                    image_size=config.image_dim).to(ptu.device) 
+                    image_size=config.image_dim).cuda() 
 
 
 print(os.listdir())

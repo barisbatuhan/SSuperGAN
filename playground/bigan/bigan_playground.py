@@ -55,7 +55,7 @@ def train_bigan(model_name='test_model'):
     train_dataset = FFHQDataset(
         datasource=FFHQDatasource(config, mode=DataSourceMode.TRAIN))
     train_dataloader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
-    net = BiGAN(image_dim=config.image_dim, latent_dim=config.latent_dim_z).to(ptu.device)
+    net = BiGAN(image_dim=config.image_dim, latent_dim=config.latent_dim_z).cuda()
     criterion = BidirectionalDiscriminatorLoss(loss_type=BidirectionalDiscriminatorLossType.VANILLA_LOG_MEAN)
 
     d_optimizer = torch.optim.Adam(net.discriminator.parameters(),
@@ -99,7 +99,7 @@ def train_w_bigan(model_name='test_model'):
     train_dataset = FFHQDataset(
         datasource=FFHQDatasource(config, mode=DataSourceMode.TRAIN))
     train_dataloader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
-    net = WBiGAN(image_dim=config.image_dim, latent_dim=config.latent_dim_z).to(ptu.device)
+    net = WBiGAN(image_dim=config.image_dim, latent_dim=config.latent_dim_z).cuda()
     criterion = BidirectionalDiscriminatorLoss(loss_type=BidirectionalDiscriminatorLossType.WASSERSTEIN)
 
     d_optimizer = optim.RMSprop(net.discriminator.parameters(), lr=config.discriminator_lr)  # \
@@ -149,7 +149,7 @@ def train_golden_age_face_bigan(model_name='test_model'):
     train_dataset = FFHQDataset(
         datasource=GoldenAgeFaceDatasource(golden_age_config, mode=DataSourceMode.TRAIN))
     train_dataloader = DataLoader(train_dataset, batch_size=train_config.batch_size, shuffle=True)
-    net = BiGAN(image_dim=golden_age_config.image_dim).to(ptu.device)
+    net = BiGAN(image_dim=golden_age_config.image_dim).cuda()
     criterion = BidirectionalDiscriminatorLoss(loss_type=BidirectionalDiscriminatorLossType.VANILLA_LOG_MEAN)
 
     d_optimizer = torch.optim.Adam(net.discriminator.parameters(),

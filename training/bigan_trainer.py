@@ -63,7 +63,7 @@ class BiGANTrainer(object):
             if not self.quiet:
                 pbar = tqdm(total=len(self.train_loader.dataset))
             for count, batch in enumerate(self.train_loader):
-                batch = batch.to(ptu.device).float()
+                batch = batch.cuda().float()
 
                 # do a minibatch update
                 self.optimizer_discriminator.zero_grad()

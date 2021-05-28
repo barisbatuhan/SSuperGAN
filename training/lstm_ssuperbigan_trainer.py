@@ -57,7 +57,7 @@ class LSTMSSuperBiGANTrainer:
             pbar = tqdm(total=len(self.data_loader.dataset))
             
             for iterno, (x, y) in enumerate(self.data_loader):
-                x, y = x.to(ptu.device), y.to(ptu.device)
+                x, y = x.cuda(), y.cuda()
                 batch_size = x.shape[0]              
                 
                 # Sequential Encoder (CNN + LSTM) update

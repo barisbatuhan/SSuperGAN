@@ -27,7 +27,7 @@ class FID:
     # https://github.com/rosinality/stylegan2-pytorch/raw/master/inception_ffhq.pkl
     
     def __init__(self, n_samples=50000, batch_size=64):
-        self.inception = InceptionV3([3], normalize_input=False).to(ptu.device)
+        self.inception = InceptionV3([3], normalize_input=False).cuda()
         self.inception.eval()
         self.n_samples = n_samples
         self.batch_size = batch_size
