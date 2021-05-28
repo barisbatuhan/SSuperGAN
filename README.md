@@ -216,46 +216,38 @@ dataset_path : "/kuacc/users/ckoksal20/img_align_dataset"
 ```yaml
 # Encoder Parameters
 backbone: "efficientnet-b5"
-embed_dim: 256
-latent_dim: 100 
-use_lstm: False
+embed_dim: 1024
+latent_dim: 512
+use_lstm: True
 
 # Plain Encoder Parameters
 seq_size: 3
 
 # LSTM Encoder Parameters
-lstm_hidden: 256
+lstm_hidden: 1024
+lstm_bidirectional: True
 lstm_dropout: 0
 fc_hidden_dims: []
 fc_dropout: 0
 num_lstm_layers: 1
 masked_first: True
 
+# DCGAN Parameters
+img_size: 64
+gen_channels: 64
+local_disc_channels: 64
 
 # Training Parameters
-batch_size: 8
-train_epochs: 300
+batch_size: 24
+train_epochs: 200
 lr: 0.0002
 weight_decay: 0.000025
 beta_1: 0.5
 beta_2: 0.999
 g_clip: 100
 
-
-#
-# Spatial size of training images. All images will be resized to this
-#   size using a transformer.
-image_dim : 64
-# Number of channels in the training images. For color images this is 3
-nc : 3
-# Size of z latent vector (i.e. size of generator input)
-nz : 100
-# Size of feature maps in generator
-ngf : 64
-# Size of feature maps in discriminator
-ndf : 64
-# Number of GPUs available. Use 0 for CPU mode.
-ngpu : 1
+# Parallelization Parameters
+parallel: True
 ```
 
 ### Project Based Configuration

@@ -193,7 +193,7 @@ class SSuperModel(nn.Module):
             #        and add to the total loss
             raise NotImplementedError
         
-        return total_loss
+        return total_loss.unsqueeze(0) # required for removing warning
     
     
     # Returns mu, lg_std

@@ -67,6 +67,7 @@ class LSTMSequentialEncoder(nn.Module):
         # Embedding outputs are passed to the lstm
         first_h_dim = self.num_lstm_layers if not self.lstm_bidirectional else self.num_lstm_layers * 2
         
+        self.lstm.flatten_parameters() # required for warning removal in parallel execution
         _, ( outs, _ ) = self.lstm(
             outs,
             (
