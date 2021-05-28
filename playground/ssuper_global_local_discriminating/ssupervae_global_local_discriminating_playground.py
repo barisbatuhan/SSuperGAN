@@ -119,7 +119,7 @@ if __name__ == '__main__':
 
     cont_epoch = -1
     cont_model = None  # "playground/ssupervae/weights/model-18.pth"
-    limit_size = -1
+    limit_size = 32
 
     # data = RandomDataset((3, 3, 360, 360), (3, config.image_dim, config.image_dim))
     data = GoldenPanelsDataset(golden_age_config.panel_path,
@@ -130,6 +130,7 @@ if __name__ == '__main__':
                                mask_val=golden_age_config.mask_val,
                                mask_all=golden_age_config.mask_all,
                                return_mask=golden_age_config.return_mask,
+                               return_mask_coordinates=golden_age_config.return_mask_coordinates,
                                train_test_ratio=golden_age_config.train_test_ratio,
                                train_mode=True,
                                limit_size=limit_size)

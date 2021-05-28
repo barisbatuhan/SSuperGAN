@@ -16,25 +16,35 @@ class SSuperGlobalLocalDiscriminating(BaseGlobalLocalDiscriminating):
                  output_img_size,
                  panel_img_size,
                  local_disc_intermediate_channel_num=16,
-                 global_disc_intermediate_channel_num=32):
+                 global_disc_intermediate_channel_num=32,
+                 create_local_disc_lambda=None,
+                 create_global_disc_lambda=None):
         self.output_img_size = output_img_size
         self.panel_img_size = panel_img_size
         self.local_disc_intermediate_channel_num = local_disc_intermediate_channel_num
         self.global_disc_intermediate_channel_num = global_disc_intermediate_channel_num
+        self.create_local_disc_lambda = create_local_disc_lambda
+        self.create_global_disc_lambda = create_global_disc_lambda
         super().__init__(generator)
 
     def forward(self, **kwargs) -> List[Tensor]:
         return self.generator(**kwargs)
 
     def create_local_discriminator(self) -> nn.Module:
-        return BaseDiscriminator(spatial_dims=[self.output_img_size,
-                                               self.output_img_size],
-                                 intermediate_channel_num=self.local_disc_intermediate_channel_num)
+        if self.create_local_disc_lambda is not None:
+            return self.create_local_disc_lambda()
+        else:
+            return BaseDiscriminator(spatial_dims=[self.output_img_size,
+                                                   self.output_img_size],
+                                     intermediate_channel_num=self.local_disc_intermediate_channel_num)
 
     def create_global_discriminator(self) -> nn.Module:
-        return BaseDiscriminator(spatial_dims=[self.panel_img_size,
-                                               self.panel_img_size],
-                                 intermediate_channel_num=self.global_disc_intermediate_channel_num)
+        if self.create_global_disc_lambda is not None:
+            return self.create_global_disc_lambda()
+        else:
+            return BaseDiscriminator(spatial_dims=[self.panel_img_size,
+                                                   self.panel_img_size],
+                                     intermediate_channel_num=self.global_disc_intermediate_channel_num)
 
     def sample(self, size: int) -> Tensor:
         return self.generator.sample(size)
