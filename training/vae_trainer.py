@@ -29,7 +29,7 @@ class VAETrainer(BaseTrainer):
                  quiet: bool = False,
                  grad_clip=None,
                  best_loss_action=None,
-                 save_dir=base_dir + 'playground/vae/',
+                 save_dir=base_dir + 'playground/ssupervae/',
                  checkpoint_every_epoch=False):
         super().__init__(model,
                          model_name,
@@ -159,7 +159,11 @@ class VAETrainer(BaseTrainer):
                 pbar.update(x.shape[0])
 
         self.scheduler.step()
-        self.model.save_samples(10, self.save_dir + '/results/' + f'epoch{epoch}_samples.png')
+        
+        if isinstance(self.model, nn.DataParallel):
+            self.model.module.save_samples(10, self.save_dir + '/results/' + self.model_name + f'epoch{epoch}_samples.png')
+        else:
+            self.model.save_samples(10, self.save_dir + '/results/' + self.model_name + f'epoch{epoch}_samples.png')
         if not self.quiet:
             pbar.close()
         return losses

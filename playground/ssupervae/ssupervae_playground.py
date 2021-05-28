@@ -4,6 +4,7 @@ import json
 
 from torch import optim
 from torch.utils.data import DataLoader
+import torch.nn as nn
 
 from data.datasets.random_dataset import RandomDataset
 from data.datasets.golden_panels import GoldenPanelsDataset
@@ -42,6 +43,8 @@ def train(data_loader, config, model_name='plain_ssupervae', cont_epoch=-1, cont
                     fc_dropout=config.fc_dropout,
                     num_lstm_layers=config.num_lstm_layers,
                     masked_first=config.masked_first).to(ptu.device)
+    
+    net = nn.DataParallel(net)
 
     criterion = elbo
 
@@ -95,7 +98,7 @@ if __name__ == '__main__':
     golden_age_config = read_config(Config.GOLDEN_AGE)
     cont_epoch = -1
     cont_model = None  # "playground/ssupervae/weights/model-18.pth"
-    limit_size = 32
+    limit_size = -1
 
     # data = RandomDataset((3, 3, 360, 360), (3, config.image_dim, config.image_dim))
     data = GoldenPanelsDataset(golden_age_config.panel_path,
