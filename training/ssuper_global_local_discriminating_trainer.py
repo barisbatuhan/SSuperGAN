@@ -233,6 +233,7 @@ class SSuperGlobalLocalDiscriminatingTrainer(BaseTrainer):
         else:
             raise NotImplementedError
 
+        out['wgan_g'] = out['wgan_g'] * self.config_disc.gan_loss_alpha
         out['loss'] = out['loss'] + out['wgan_g']
 
     def compute_discriminator_loss(self,
