@@ -116,6 +116,7 @@ if __name__ == '__main__':
                                mask_val=golden_age_config.mask_val,
                                mask_all=golden_age_config.mask_all,
                                return_mask=golden_age_config.return_mask,
+                               return_mask_coordinates=golden_age_config.return_mask_coordinates,
                                train_test_ratio=golden_age_config.train_test_ratio,
                                train_mode=True,
                                limit_size=limit_size)

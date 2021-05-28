@@ -13,6 +13,7 @@ from data.augment import *
 
 sort_golden_panel_dataset = True
 
+
 class GoldenPanelsDataset(Dataset):
 
     def __init__(self,
@@ -25,6 +26,7 @@ class GoldenPanelsDataset(Dataset):
                  mask_val: float = 1,  # mask with white color for 1 and black color for 0
                  mask_all: bool = False,  # masks faces from all panels and returns all faces
                  return_mask: bool = False,  # returns last panel's masking information
+                 return_mask_coordinates=False,  # returns coordinates of the masked area
                  train_test_ratio: float = 0.95,  # ratio of train data
                  train_mode: bool = True,
                  limit_size: int = -1):
@@ -36,6 +38,7 @@ class GoldenPanelsDataset(Dataset):
         self.mask_val = min(1, max(0, mask_val))
         self.mask_all = mask_all
         self.return_mask = return_mask
+        self.return_mask_coordinates = return_mask_coordinates
 
         with open(annot_path, "r") as f:
             annots = json.load(f)
@@ -125,7 +128,9 @@ class GoldenPanelsDataset(Dataset):
         else:
             faces = normalize(faces[0])
 
-        if self.return_mask:
+        if self.return_mask and self.return_mask_coordinates:
             return panels, faces, mask_data, mask_coordinates
+        if self.return_mask:
+            return panels, faces, mask_data
         else:
             return panels, faces
