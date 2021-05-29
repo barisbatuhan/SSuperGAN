@@ -142,7 +142,6 @@ class SSuperModel(nn.Module):
         func = getattr(self, f)
         return func(x, **kwargs)
     
-    
     # Returns mu, lg_std
     def seq_encode(self, x):
         return self.seq_encoder(x)

@@ -113,47 +113,61 @@ class SSuperDCGANTrainer(BaseTrainer):
             bs = x.shape[0]
             
             # Encoder Update
-            self.optimizers["optimizer_encoder"].zero_grad()
-            
             mu_z, lg_std_z = self.model(x, f="seq_encode")
             z = torch.distributions.Normal(mu_z, lg_std_z.exp()).rsample().unsqueeze(2).unsqueeze(3)
-            mu_x = self.model(z, f="generate")
-            out = elbo(z, y, mu_z, mu_x, lg_std_z, recon_loss_weight=1, l1_recon=False)
-            errE = out["loss"]
-            errE.backward()
+            y_recon = self.model(z, f="generate")
+            out = elbo(z, y, mu_z, y_recon, lg_std_z, l1_recon=False)
+            errE = out["loss"].mean()
             
-            if self.grad_clip:
+            self.optimizers["optimizer_encoder"].zero_grad()
+            errE.backward()
+
+            if self.grad_clip and self.parallel:
                 torch.nn.utils.clip_grad_norm_(self.model.module.seq_encoder.parameters(), self.grad_clip)
+            elif self.grad_clip and not self.parallel:
+                torch.nn.utils.clip_grad_norm_(self.model.seq_encoder.parameters(), self.grad_clip)
             self.optimizers["optimizer_encoder"].step()
             
             # Label set before GAN update
             labels = torch.ones(2*bs).cuda().view(-1)
             labels[bs:] = 0
             
-            # Discriminator Update
-            self.optimizers["optimizer_discriminator"].zero_grad()
+            # Discriminator Update   
+            with torch.no_grad():
+                mu_z, lg_std_z = self.model(x, f="seq_encode")
+                z = torch.distributions.Normal(mu_z, lg_std_z.exp()).rsample().unsqueeze(2).unsqueeze(3)
+                y_recon = self.model(z.detach(), f="generate")
             
-            disc_out = self.model(torch.cat([y, mu_x.detach()], dim=0), f="discriminate", local=True).view(-1)
-            errD = nn.BCELoss()(disc_out, labels)
+            disc_out = self.model(torch.cat([y, y_recon.detach()], dim=0), f="discriminate", local=True).view(-1)
+            errD = nn.BCEWithLogitsLoss()(disc_out, labels).mean()
             out["disc_loss"] = errD
             
-            if self.grad_clip:
+            self.optimizers["optimizer_discriminator"].zero_grad()
+            errD.backward()
+            
+            if self.grad_clip and self.parallel:
                 torch.nn.utils.clip_grad_norm_(self.model.module.local_discriminator.parameters(), self.grad_clip)
-            self.optimizers["optimizer_discriminator"].step()
+            elif self.grad_clip and not self.parallel:
+                torch.nn.utils.clip_grad_norm_(self.model.local_discriminator.parameters(), self.grad_clip)
+            self.optimizers["optimizer_discriminator"].step() 
+            
             
             # Generator Update
-            self.optimizers["optimizer_generator"].zero_grad()
-            
             y_recon = self.model(z.detach(), f="generate")
             recon_loss = -reconstruction_loss_distributional(y, y_recon) / 10
-            fake_out = self.model(y_recon, f="discriminate", local=True).view(-1)
-            errG = nn.BCELoss()(fake_out, labels[:bs]) + recon_loss
-            out["gen_loss"] = errG
-                
-            if self.grad_clip:
-                torch.nn.utils.clip_grad_norm_(self.model.module.generator.parameters(), self.grad_clip)
-            self.optimizers["optimizer_generator"].step()
             
+            fake_out = self.model(y_recon, f="discriminate", local=True).view(-1)
+            errG = nn.BCEWithLogitsLoss()(fake_out, labels[:bs]).mean() + recon_loss
+            out["gen_loss"] = errG
+            
+            self.optimizers["optimizer_generator"].zero_grad()
+            errG.backward()
+        
+            if self.grad_clip and self.parallel:
+                torch.nn.utils.clip_grad_norm_(self.model.module.generator.parameters(), self.grad_clip)
+            elif self.grad_clip and not self.parallel:
+                torch.nn.utils.clip_grad_norm_(self.model.generator.parameters(), self.grad_clip)
+            self.optimizers["optimizer_generator"].step()        
 
             desc = f'Epoch {epoch}'
             for k, v in out.items():
