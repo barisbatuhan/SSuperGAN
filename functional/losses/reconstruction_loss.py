@@ -1,8 +1,6 @@
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
-from utils import pytorch_util as ptu
-
 
 def reconstruction_loss_distributional(x, x_recon, log_scale=None):
     """

@@ -137,63 +137,10 @@ class SSuperModel(nn.Module):
             torch.FloatTensor([1.0]).cuda()
         )
         
-    def forward(self, x, y=None, losses=None):
-
-        bs = x.shape[0]
         
-        if self.seq_encoder is not None or self.encoder is not None:
-            
-            if self.seq_encoder is not None:
-                mu_z, lg_std_z = self.seq_encode(x)
-                z = torch.distributions.Normal(mu_z, lg_std_z.exp()).rsample()
-            
-            elif self.encoder is not None:
-                mu_z, lg_std_z = self.encode(x)
-                z = torch.distributions.Normal(mu_z, lg_std_z.exp()).rsample()
-        
-        else:
-            z = self.latent_dist.rsample((size, self.latent_dim)).squeeze(-1)
-        
-        if self.gen_choice == "dcgan":
-                    z = z.unsqueeze(2).unsqueeze(3)
-        
-        if self.generator is not None:
-            mu_x = self.generate(z)
-        
-        if self.seq_encoder is not None or self.encoder is not None:
-            out = elbo(z, y, mu_z, mu_x, lg_std_z, l1_recon=False)
-            errE = out["loss"]
-            
-            losses["loss"] = errE.item()
-            losses["reconstruction_loss"] = out["reconstruction_loss"].item()
-            losses["kl_loss"] = out["kl_loss"].item()
-        else:
-            errE = 0
-        
-        if self.local_discriminator is None and self.global_discriminator is None:
-            return errE
-        
-        # Discriminator Loss
-        labels = torch.ones(2*bs).cuda().view(-1)
-        labels[bs:] = 0
-    
-        disc_out = self.discriminate(torch.cat([y, mu_x.detach()], dim=0), local=True).view(-1)
-        errD = nn.BCELoss()(disc_out, labels)
-        losses["disc_loss"] = errD.item()
-        
-        # Generator Loss
-        gen_out = self.discriminate(mu_x, local=True).view(-1)
-        errG = nn.BCELoss()(gen_out, labels[:bs]) 
-        losses["gen_loss"] = errG.item() + losses["reconstruction_loss"]
-        
-        total_loss = errE + errD + errG
-        
-        if self.global_discriminator is not None:
-            # TO DO: calculate global discriminator loss + generator loss 
-            #        and add to the total loss
-            raise NotImplementedError
-        
-        return total_loss.unsqueeze(0) # required for removing warning
+    def forward(self, x, f=None, **kwargs):
+        func = getattr(self, f)
+        return func(x, **kwargs)
     
     
     # Returns mu, lg_std
@@ -256,6 +203,8 @@ class SSuperModel(nn.Module):
     @torch.no_grad()
     def sample(self, size :int):
         z = self.latent_dist.rsample((size, self.latent_dim)).squeeze(-1)
+        if self.gen_choice == "dcgan":
+            z = z.unsqueeze(2).unsqueeze(3)
         return self.generate(z, clamp=True)
     
     @torch.no_grad()

@@ -72,9 +72,7 @@ def train(data_loader, config, dataset, model_name='ssuper_dcgan',):
 
     losses, test_losses = trainer.train_epochs()
     logging.info("[INFO] Completed training!")
-    
     return net
-
 
 if __name__ == '__main__':
     ptu.set_gpu_mode(True)
@@ -86,7 +84,7 @@ if __name__ == '__main__':
     
     data = GoldenPanelsDataset(golden_age_config.panel_path,
                                golden_age_config.sequence_path, 
-                               golden_age_config.panel_size,
+                               config.panel_size,
                                config.img_size, 
                                augment=False, 
                                mask_val=golden_age_config.mask_val,
