@@ -7,23 +7,19 @@ warnings.filterwarnings("ignore")
 import os
 import sys
 import json
-os.path.dirname(sys.executable)
-sys.path.append("/kuacc/users/ckoksal20/COMP547Project/SSuperGAN/")
 
 from tqdm import tqdm
 
 from torch import optim
+import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from data.datasets.golden_panels import GoldenPanelsDataset
-from networks.ssupervae import SSuperVAE
-
-from networks.ssuper_dcgan import SSuperDCGAN
+from networks.models import SSuperDCGAN
 
 from utils.config_utils import read_config, Config
 from utils.plot_utils import *
 from utils.logging_utils import *
-from utils import pytorch_util as ptu
 
 from configs.base_config import *
 
@@ -32,9 +28,9 @@ from functional.metrics.fid import FID
 
 metrics = ["PSNR", "FID"]
 
-METRIC = metrics[0]
-BATCH_SIZE = 64 if METRIC == "FID" else 16
-model_path = "ckpts/ssuper_dcgan-checkpoint-epoch97.pth"
+METRIC = metrics[1]
+BATCH_SIZE = 256 if METRIC == "FID" else 16
+model_path = "playground/ssuper_dcgan/ckpts/ssuper_dcgan-checkpoint-epoch36.pth"
 
 N_SAMPLES = 50000 # 50000
 
@@ -42,38 +38,35 @@ N_SAMPLES = 50000 # 50000
 mus = None
 sigmas = None
 
-ptu.set_gpu_mode(True)
 config = read_config(Config.SSUPERDCGAN)
 golden_age_config = read_config(Config.GOLDEN_AGE)
 
-net = SSuperDCGAN(config.backbone, 
-                    latent_dim=config.latent_dim, 
-                    embed_dim=config.embed_dim,
-                    use_lstm=config.use_lstm,
-                    seq_size=config.seq_size,
-                    gen_img_size=config.image_dim,
-                    lstm_hidden=config.lstm_hidden,
-                    lstm_dropout=config.lstm_dropout,
-                    fc_hidden_dims=config.fc_hidden_dims,
-                    fc_dropout=config.fc_dropout,
-                    num_lstm_layers=config.num_lstm_layers,
-                    masked_first=config.masked_first,
-                    ngpu = config.ngpu,
-                    ngf = config.ngf,
-                    ndf = config.ndf,
-                    nc = config.nc,
-                    image_size=config.image_dim).to(ptu.device) 
+net = SSuperDCGAN(backbone=config.backbone,
+                  embed_dim=config.embed_dim,
+                  latent_dim=config.latent_dim,
+                  img_size=config.img_size,
+                  use_lstm=config.use_lstm,
+                  gen_channels=config.gen_channels,
+                  local_disc_channels=config.local_disc_channels,
+                  seq_size=config.seq_size,
+                  lstm_bidirectional=config.lstm_bidirectional,
+                  lstm_hidden=config.lstm_hidden,
+                  lstm_dropout=config.lstm_dropout,
+                  fc_hidden_dims=config.fc_hidden_dims,
+                  fc_dropout=config.fc_dropout,
+                  num_lstm_layers=config.num_lstm_layers,
+                  masked_first=config.masked_first)
 
-
-print(os.listdir())
+if config.parallel:
+    net = nn.DataParallel(net)
 
 net.load_state_dict(torch.load(model_path)['model_state_dict'])
 net = net.cuda().eval()
 
 dataset = GoldenPanelsDataset(golden_age_config.panel_path,
                               golden_age_config.sequence_path, 
-                              golden_age_config.panel_dim,
-                              config.image_dim, 
+                              config.panel_size,
+                              config.img_size, 
                               augment=False, 
                               mask_val=1, # mask with white color for 1 and black color for 0
                               mask_all=False, # masks faces from all panels and returns all faces
@@ -89,7 +82,9 @@ if METRIC == "PSNR":
     psnrs, iter_cnt = 0, 0
     for x, y, z in tqdm(data_loader):
         with torch.no_grad():
-            _, _, _, y_recon, _ = net(x.cuda())
+            mu_z, _ = net(x.cuda(), f="seq_encode")
+            mu_z = mu_z.unsqueeze(-1).unsqueeze(-1)
+            y_recon = net(mu_z, f="generate")
         psnrs += PSNR.__call__(y_recon.cpu(), y, fit_range=True)
         iter_cnt += 1
     print("-- PSNR:", psnrs.item()/iter_cnt)

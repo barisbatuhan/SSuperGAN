@@ -105,15 +105,15 @@ def plot_panels_and_faces(panels_tensor, face_tensor, recon_face_tensor):
     f, ax = plt.subplots(hsize, wsize)
     f.set_size_inches(w*px, h*px)
     
-    ax[0].imshow(y)
-    ax[0].title.set_text("Original")
-    
-    ax[1].imshow(y_recon)
-    ax[1].title.set_text("Recon")
-    
     for i in range(len(panels)):
-        ax[i+2].imshow(panels[i])
-        ax[i+2].title.set_text("Panel" + str(i+1))
+        ax[i].imshow(panels[i])
+        ax[i].title.set_text("Panel" + str(i+1))
+        
+    ax[-2].imshow(y)
+    ax[-2].title.set_text("Original")
+    
+    ax[-1].imshow(y_recon)
+    ax[-1].title.set_text("Recon")
     
     plt.show()
     
@@ -124,7 +124,9 @@ def draw_saliency(model, imgs, y):
     fig.set_size_inches(5*w*px, 2.5*h*px)
     
     imgs.requires_grad_()
-    _, _, _, outs, _ = model(imgs.cuda())
+    mu_z, _ = model(imgs.cuda(), f="seq_encode")
+    mu_z = mu_z.unsqueeze(-1).unsqueeze(-1)
+    outs = model(mu_z, f="generate")
     out = outs.sum()
     out.backward()
     

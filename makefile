@@ -14,3 +14,6 @@ train_ssuper_dcgan:
 
 eval_ssupervae:
 	python3 playground/ssupervae/eval_ssupervae.py
+
+eval_ssuper_dcgan:
+	python3 playground/ssuper_dcgan/eval_ssuper_dcgan.py

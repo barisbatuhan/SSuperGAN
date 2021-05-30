@@ -224,8 +224,22 @@ use_lstm: True
 seq_size: 3
 
 # LSTM Encoder Parameters
+lstm_conv: False
+
+# if True, Set the Parameters Below
+# lstm_bidirectional: False
+# lstm_hidden:
+#     - 2048
+#     - 5
+#     - 1024 # this is the actual hidden size, et this one
+#     - 10
+#     - 10
+
+# if False, Set the Parameters Below
 lstm_hidden: 1024
 lstm_bidirectional: True
+
+# These do not change depending on Conv-LSTM
 lstm_dropout: 0
 fc_hidden_dims: []
 fc_dropout: 0
@@ -234,11 +248,14 @@ masked_first: True
 
 # DCGAN Parameters
 img_size: 64
+panel_size: 
+    - 300
+    - 300
 gen_channels: 64
 local_disc_channels: 64
 
 # Training Parameters
-batch_size: 24
+batch_size: 20
 train_epochs: 200
 lr: 0.0002
 weight_decay: 0.000025

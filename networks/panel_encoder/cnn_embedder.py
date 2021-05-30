@@ -10,10 +10,15 @@ from efficientnet_pytorch import EfficientNet
 
 class CNNEmbedder(nn.Module):
     
-    def __init__(self, backbone, embed_dim=256):
+    def __init__(self, backbone, use_linear=True, embed_dim=256):
         super(CNNEmbedder, self).__init__()
         
         self.embed_dim = embed_dim
+        self.use_linear = use_linear
+        self.backbone = backbone
+        
+        if not use_linear:
+            embed_dim = 1 # to reduce the memory size
  
         if backbone == "resnet50":
             self.model = torch.nn.Sequential(
@@ -28,5 +33,14 @@ class CNNEmbedder(nn.Module):
     def forward(self, x):
         B, S, C, H, W = x.shape
         # Retrieved the embeddings for each of the panels
-        outs = self.model(x.reshape(-1, C, H, W))
-        return outs.reshape(B, S, -1)
+        if self.use_linear:
+            outs = self.model(x.reshape(-1, C, H, W))
+            return outs.reshape(B, S, -1)
+        
+        else:
+            if "efficientnet" in self.backbone:
+                outs = self.model.extract_features(x.reshape(-1, C, H, W))
+            else:
+                outs = self.model[:-2](x.reshape(-1, C, H, W))
+            
+            return outs.reshape(B, S, *outs.shape[1:])

@@ -41,6 +41,7 @@ class SSuperModel(nn.Module):
                  seq_size: int=3,                  # number of sequential panels if plain encoder is used
                  
                  # seq. lstm enc. parameters
+                 lstm_conv: bool=False,            # if ConvLSTM module is wanted to be used instead of normal LSTM
                  lstm_bidirectional: bool=False,   # if LSTM is used, a flag for setting bidirectionality
                  lstm_hidden: int=256,             # h and c size of the lstm hidden. If bidirectional, then h size is the half
                  lstm_dropout: float=0,            # set to 0 if num_lstm_layers == 0
@@ -88,6 +89,7 @@ class SSuperModel(nn.Module):
             self.seq_encoder = LSTMSequentialEncoder(backbone,
                                                      latent_dim=latent_dim,
                                                      embed_dim=embed_dim,
+                                                     conv_lstm=lstm_conv,
                                                      lstm_hidden=lstm_hidden,
                                                      lstm_dropout=lstm_dropout,
                                                      lstm_bidirectional=lstm_bidirectional,

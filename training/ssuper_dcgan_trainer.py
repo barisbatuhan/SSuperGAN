@@ -132,12 +132,7 @@ class SSuperDCGANTrainer(BaseTrainer):
             labels = torch.ones(2*bs).cuda().view(-1)
             labels[bs:] = 0
             
-            # Discriminator Update   
-            with torch.no_grad():
-                mu_z, lg_std_z = self.model(x, f="seq_encode")
-                z = torch.distributions.Normal(mu_z, lg_std_z.exp()).rsample().unsqueeze(2).unsqueeze(3)
-                y_recon = self.model(z.detach(), f="generate")
-            
+            # Discriminator Update       
             disc_out = self.model(torch.cat([y, y_recon.detach()], dim=0), f="discriminate", local=True).view(-1)
             errD = nn.BCEWithLogitsLoss()(disc_out, labels).mean()
             out["disc_loss"] = errD
@@ -155,7 +150,6 @@ class SSuperDCGANTrainer(BaseTrainer):
             # Generator Update
             y_recon = self.model(z.detach(), f="generate")
             recon_loss = -reconstruction_loss_distributional(y, y_recon) / 10
-            
             fake_out = self.model(y_recon, f="discriminate", local=True).view(-1)
             errG = nn.BCEWithLogitsLoss()(fake_out, labels[:bs]).mean() + recon_loss
             out["gen_loss"] = errG
@@ -187,9 +181,9 @@ class SSuperDCGANTrainer(BaseTrainer):
                 pbar.update(x.shape[0])
 
         if self.parallel:
-            self.model.module.save_samples(10, self.save_dir + '/results/' + self.model_name + f'epoch{epoch}_samples.png')
+            self.model.module.save_samples(100, self.save_dir + '/results/' + self.model_name + f'epoch{epoch}_samples.png')
         else:
-            self.model.save_samples(10, self.save_dir + '/results/' + self.model_name + f'epoch{epoch}_samples.png')
+            self.model.save_samples(100, self.save_dir + '/results/' + self.model_name + f'epoch{epoch}_samples.png')
         
         if not self.quiet:
             pbar.close()

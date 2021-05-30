@@ -33,6 +33,7 @@ def train(data_loader, config, dataset, model_name='ssuper_dcgan',):
                       gen_channels=config.gen_channels,
                       local_disc_channels=config.local_disc_channels,
                       seq_size=config.seq_size,
+                      lstm_conv=config.lstm_conv,
                       lstm_bidirectional=config.lstm_bidirectional,
                       lstm_hidden=config.lstm_hidden,
                       lstm_dropout=config.lstm_dropout,
