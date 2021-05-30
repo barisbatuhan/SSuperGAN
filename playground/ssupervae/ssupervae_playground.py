@@ -42,11 +42,11 @@ def train(data_loader, config, model_name='plain_ssupervae', cont_epoch=-1, cont
                     fc_hidden_dims=config.fc_hidden_dims,
                     fc_dropout=config.fc_dropout,
                     num_lstm_layers=config.num_lstm_layers,
-                    masked_first=config.masked_first).to(ptu.device)
-    
+                    masked_first=config.masked_first).cuda()
+
     if config.parallel == True:
         net = nn.DataParallel(net)
-    
+
     criterion = elbo
 
     optimizer = optim.Adam(net.parameters(),

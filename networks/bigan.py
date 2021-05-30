@@ -146,6 +146,6 @@ class BiGAN(BaseGAN):
     # TODO: This might be improved
     @torch.no_grad()
     def interpolate(self, batchsize: int) -> Tensor:
-        intervals = torch.linspace(-1, 1, batchsize).to(ptu.device)
+        intervals = torch.linspace(-1, 1, batchsize).cuda()
         latents = torch.repeat_interleave(intervals, self.latent_dim)
         return self.generate(latents.view(batchsize, -1))

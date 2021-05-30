@@ -55,7 +55,7 @@ net = SSuperVAE(config.backbone,
                 fc_hidden_dims=config.fc_hidden_dims,
                 fc_dropout=config.fc_dropout,
                 num_lstm_layers=config.num_lstm_layers,
-                masked_first=config.masked_first).to(ptu.device) 
+                masked_first=config.masked_first).cuda() 
 
 net.load_state_dict(torch.load(model_path)['model_state_dict'])
 net = net.cuda().eval()

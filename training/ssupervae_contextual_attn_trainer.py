@@ -101,12 +101,12 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
         for batch in data_loader:
 
             if type(batch) == list and len(batch) == 2:
-                x, y = batch[0].to(ptu.device), batch[1].to(ptu.device)
+                x, y = batch[0].cuda(), batch[1].cuda()
             elif type(batch) == list and len(batch) == 4:
-                x, y, mask = batch[0].to(ptu.device), batch[1].to(ptu.device), batch[2].to(ptu.device)
+                x, y, mask = batch[0].cuda(), batch[1].cuda(), batch[2].cuda()
                 mask_coordinates = ptu.get_numpy(batch[3])
             else:
-                x, y = batch.to(ptu.device), None
+                x, y = batch.cuda(), None
 
             _, _, interim_face_size, _ = y.shape
 
@@ -151,12 +151,12 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
             # list length is 3
             # TODO: fix this
             if type(batch) == list and len(batch) == 2:
-                x, y = batch[0].to(ptu.device), batch[1].to(ptu.device)
+                x, y = batch[0].cuda(), batch[1].cuda()
             elif type(batch) == list and len(batch) == 4:
-                x, y, mask = batch[0].to(ptu.device), batch[1].to(ptu.device), batch[2].to(ptu.device)
+                x, y, mask = batch[0].cuda(), batch[1].cuda(), batch[2].cuda()
                 mask_coordinates = ptu.get_numpy(batch[3])
             else:
-                x, y = batch.to(ptu.device), None
+                x, y = batch.cuda(), None
 
             self.optimizer.zero_grad()
             _, _, interim_face_size, _ = y.shape

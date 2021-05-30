@@ -50,7 +50,7 @@ def train(data_loader,
                            ngf=config.ngf,
                            ndf=config.ndf,
                            nc=config.nc,
-                           image_size=config.image_dim).to(ptu.device)
+                           image_size=config.image_dim).cuda()
 
     encapsulating_net = SSuperGlobalLocalDiscriminating(base_net,
                                                         # Assuming that panels are square
@@ -60,7 +60,7 @@ def train(data_loader,
                                                         create_global_disc_lambda=
                                                         lambda: base_net.dcgan.create_generic_discriminator(
                                                             golden_age_config.panel_dim[0])) \
-        .to(ptu.device)
+        .cuda()
 
     g_params = list(base_net.encoder.parameters()) + list(
         base_net.dcgan.generator.parameters())

@@ -55,7 +55,7 @@ def train(data_loader,config,dataset, model_name='ssuper_dcgan',):
                     ngf = config.ngf,
                     ndf = config.ndf,
                     nc = config.nc,
-                    image_size=config.image_dim).to(ptu.device) 
+                    image_size=config.image_dim).cuda() 
     
     #print(net)
     

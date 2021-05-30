@@ -31,10 +31,10 @@ def ssuper_dcgan_discriminator_loss(real,
     #Train with all fake batch
     # Generate batch of latent vectors
 
-    noise = torch.randn(batch_size, self.model.nz, 1, 1).to(ptu.device)
+    noise = torch.randn(batch_size, self.model.nz, 1, 1).cuda()
     # Generate fake images
     fake = self.model.generator(noise)
-    label = torch.full((batch_size,), self.fake_label, dtype=torch.float).to(ptu.device)
+    label = torch.full((batch_size,), self.fake_label, dtype=torch.float).cuda()
     # Classify all fake bach with Discriminator
     output = self.model.discriminator(fake.detach()).view(-1)
     error_disc_fake = self.model.criterion(output, label)

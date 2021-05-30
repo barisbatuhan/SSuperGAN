@@ -98,9 +98,9 @@ class VAETrainer(BaseTrainer):
         for batch in data_loader:
 
             if type(batch) == list and len(batch) == 2:
-                x, y = batch[0].to(ptu.device), batch[1].to(ptu.device)
+                x, y = batch[0].cuda(), batch[1].cuda()
             else:
-                x, y = batch.to(ptu.device), None
+                x, y = batch.cuda(), None
 
             z, _, mu_z, mu_x, logstd_z = self.model(x)
             target = x if y is None else y
@@ -129,11 +129,11 @@ class VAETrainer(BaseTrainer):
             # list length is 3
             # TODO: fix this
             if type(batch) == list and len(batch) == 2:
-                x, y = batch[0].to(ptu.device), batch[1].to(ptu.device)
+                x, y = batch[0].cuda(), batch[1].cuda()
             elif type(batch) == list and len(batch) == 3:
-                x, y, mask = batch[0].to(ptu.device), batch[1].to(ptu.device),  batch[2].to(ptu.device)
+                x, y, mask = batch[0].cuda(), batch[1].cuda(),  batch[2].cuda()
             else:
-                x, y = batch.to(ptu.device), None
+                x, y = batch.cuda(), None
 
             self.optimizer.zero_grad()
             z, _, mu_z, mu_x, logstd_z = self.model(x)

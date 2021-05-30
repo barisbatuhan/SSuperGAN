@@ -44,12 +44,12 @@ def train(data_loader,
                          fc_hidden_dims=config.fc_hidden_dims,
                          fc_dropout=config.fc_dropout,
                          num_lstm_layers=config.num_lstm_layers,
-                         masked_first=config.masked_first).to(ptu.device)
+                         masked_first=config.masked_first).cuda()
 
     encapsulating_net = SSuperGlobalLocalDiscriminating(base_net,
                                                         # Assuming that panels are square
                                                         panel_img_size=golden_age_config.panel_dim[0],
-                                                        output_img_size=config.image_dim).to(ptu.device)
+                                                        output_img_size=config.image_dim).cuda()
 
     optimizer = optim.Adam(base_net.parameters(),
                            lr=config.lr,

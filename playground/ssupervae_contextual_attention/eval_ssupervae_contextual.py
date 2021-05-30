@@ -45,7 +45,7 @@ net = SSuperVAEContextualAttentional(config.backbone,
                                      embed_dim=config.embed_dim,
                                      seq_size=config.seq_size,
                                      decoder_channels=config.decoder_channels,
-                                     gen_img_size=config.image_dim).to(ptu.device)
+                                     gen_img_size=config.image_dim).cuda()
 
 net.load_state_dict(torch.load(model_path)['model_state_dict'])
 net = net.cuda().eval()
