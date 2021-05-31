@@ -129,7 +129,7 @@ class SSuperGlobalLocalDiscriminatingTrainer(BaseTrainer):
             # it is assumed that the image is square
             _, _, interim_face_size, _ = y.shape
             # TODO: If we divert from VAE, this part should be updated
-            z, _, mu_z, mu_x, logstd_z = self.model.forward(x)
+            z, _, mu_z, mu_x, logstd_z = self.model.forward(x=x)
             out = self.criterion(z, target, mu_z, mu_x, logstd_z)
             pred_global, gt_global = self.model.create_global_pred_gt_images(x,
                                                                              y,

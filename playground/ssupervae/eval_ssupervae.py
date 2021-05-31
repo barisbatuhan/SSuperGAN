@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 from torch import optim
 from torch.utils.data import DataLoader
+import torch.nn as nn
 
 from data.datasets.golden_panels import GoldenPanelsDataset
 from networks.ssupervae import SSuperVAE
@@ -24,7 +25,7 @@ from functional.metrics.fid import FID
 
 metrics = ["PSNR", "FID"]
 
-METRIC = metrics[1]
+METRIC = metrics[0]
 BATCH_SIZE = 256 if METRIC == "FID" else 64
 N_SAMPLES = 50000
 
@@ -32,7 +33,7 @@ N_SAMPLES = 50000
 # use_lstm = False
 
 # model_path = "/userfiles/comics_grp/pretrained_models/lstm_ssupervae_epoch99.pth"
-model_path = "playground/ssupervae/checkpoints/lstm_ssupervae_model-checkpoint-epoch80.pth"
+model_path = "/scratch/users/gsoykan20/projects/AF-GAN/playground/ssupervae/ckpts/lstm_ssupervae_model-checkpoint-epoch99.pth"
 use_lstm = True
 
 # Required for FID, if not given, then calculated from scratch
@@ -56,6 +57,9 @@ net = SSuperVAE(config.backbone,
                 fc_dropout=config.fc_dropout,
                 num_lstm_layers=config.num_lstm_layers,
                 masked_first=config.masked_first).cuda() 
+
+if config.parallel == True:
+        net = nn.DataParallel(net)
 
 net.load_state_dict(torch.load(model_path)['model_state_dict'])
 net = net.cuda().eval()

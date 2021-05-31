@@ -20,14 +20,15 @@ import torchvision.transforms.functional as TF
 metrics = ["PSNR", "FID"]
 
 METRIC = metrics[0]
-BATCH_SIZE = 128 if METRIC == "FID" else 32
-N_SAMPLES = 50000
+# use 128 for non contextual attn models
+BATCH_SIZE = 1 if METRIC == "FID" else 32
+N_SAMPLES = 5000
 
 # model_path = "/userfiles/comics_grp/pretrained_models/plain_ssupervae_epoch85.pth"
 # use_lstm = False
 
 # model_path = "/userfiles/comics_grp/pretrained_models/lstm_ssupervae_epoch99.pth"
-model_path = "/scratch/users/gsoykan20/projects/AF-GAN/playground/ssupervae/checkpoints/25-05-2021-00-01-41_model-checkpoint-epoch51.pth"
+model_path = "/scratch/users/gsoykan20/projects/AF-GAN/playground/ssupervae_contextual_attention/ckpts/26-05-2021-13-05-56_model-checkpoint-epoch99.pth"
 use_lstm = False
 
 # Required for FID, if not given, then calculated from scratch
@@ -54,16 +55,20 @@ dataset = GoldenPanelsDataset(golden_age_config.panel_path,
                               golden_age_config.sequence_path,
                               golden_age_config.panel_dim,
                               config.image_dim,
+                              shuffle=False,
                               augment=False,
                               mask_val=golden_age_config.mask_val,
                               mask_all=golden_age_config.mask_all,
-                              return_mask=golden_age_config.return_mask,
-                              return_mask_coordinates=golden_age_config.return_mask_coordinates,
+                              return_mask=True,
+                              return_mask_coordinates=True,
                               train_test_ratio=golden_age_config.train_test_ratio,
                               train_mode=False,
                               limit_size=-1)
 
-data_loader = DataLoader(dataset, batch_size=BATCH_SIZE, num_workers=4)
+data_loader = DataLoader(dataset,
+                         batch_size=BATCH_SIZE,
+                         num_workers=4,
+                         shuffle=False)
 
 # TEMP
 stds = torch.Tensor([0.229, 0.224, 0.225])
@@ -88,11 +93,23 @@ def convert_to_new_augmentation(img):
 if METRIC == "PSNR":
 
     psnrs, iter_cnt = 0, 0
-    for x, y, z, mask_coordinates in tqdm(data_loader):
-        x_plain = convert_to_old_augmentation(x)
+    for x, y, mask, mask_coordinates in tqdm(data_loader):
+        _, _, interim_face_size, _ = y.shape
+        x_plain = x
         with torch.no_grad():
-            _, _, _, y_recon, _ = net(x_plain.cuda())
-        psnrs += PSNR.__call__(convert_to_new_augmentation(y_recon).cpu(), y, fit_range=True)
+            _, _, _, mu_x, _ = net(x_plain.cuda()) 
+        _, _, _, \
+            _, \
+            fine_faces, _ = net.fine_generation_forward(x_plain.cuda(),
+                                                            y.cuda(),
+                                                            mask.cuda(),
+                                                            mu_x.cuda(),
+                                                            mask_coordinates,
+                                                            interim_face_size=interim_face_size)
+        # COARSE
+        # psnrs += PSNR.__call__(mu_x.cpu(), y, fit_range=True)
+        # FINE
+        psnrs += PSNR.__call__(fine_faces.cpu(), y, fit_range=True)
         iter_cnt += 1
     print("-- PSNR:", psnrs.item() / iter_cnt)
 
