@@ -12,6 +12,7 @@ from configs.base_config import *
 from functional.losses.elbo import *
 import torch.nn as nn
 
+
 def save_best_loss_model(model_name, model, best_loss):
     print('[INFO] Current best loss: ' + str(best_loss))
     torch.save(model, base_dir + 'playground/ssupervae_contextual_attention/weights/' + model_name + ".pth")
@@ -35,8 +36,8 @@ def train(data_loader,
                                          seq_size=config.seq_size,
                                          decoder_channels=config.decoder_channels,
                                          gen_img_size=config.image_dim).cuda()
-    
-    if config.parallel == True:
+
+    if getattr(config, 'parallel', False):
         train_net = nn.DataParallel(net)
     else:
         train_net = net
