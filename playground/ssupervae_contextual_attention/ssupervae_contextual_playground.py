@@ -134,5 +134,5 @@ if __name__ == '__main__':
                   cont_epoch=cont_epoch,
                   cont_model=cont_model,
                   panel_dim=panel_dim,
-                  elbo_criterion=elbo)
+                  elbo_criterion=ELBO())
     torch.save(model, base_dir + 'playground/ssupervae_contextual_attention/results/' + model_name + "_model.pth")
