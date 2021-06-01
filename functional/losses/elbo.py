@@ -50,4 +50,3 @@ class ELBO(nn.Module):
         return OrderedDict(loss=loss,
                            reconstruction_loss=reconstruction_loss,
                            kl_loss=kl_loss_value)
->>>>>>> 76b4ec1866967570f489cbb29ad05f649f3706e2
