@@ -1,9 +1,11 @@
 from copy import deepcopy
 
 import torch
+from torch import nn
 from torch.distributions.normal import Normal
 
 # Models
+from functional.losses.gradient_penalty import calculate_gradient_penalty
 from networks.base.base_vae import BaseVAE
 from networks.contextual_networks.fine_discriminators.global_discriminator import GlobalDis
 from networks.contextual_networks.fine_discriminators.local_discriminator import LocalDis
@@ -65,7 +67,7 @@ class SSuperVAEContextualAttentional(BaseVAE):
         real_pred, fake_pred = torch.split(batch_output, batch_size, dim=0)
         return real_pred, fake_pred
 
-    def forward(self, x):
+    def coarse_forward(self, x):
         mu, lg_std = self.encode(x)
         z = torch.distributions.Normal(mu, lg_std.exp()).rsample()
         x_recon = self.decode(z)
@@ -142,6 +144,66 @@ class SSuperVAEContextualAttentional(BaseVAE):
             x_stage_2[i, :, :, :] = last_panel_gts[i, :, :, :] * (1. - mask[i]) + x_stage_2[i, :, :, :] * mask[i]
 
         return x_stage_0, x_stage_1, x_stage_2, offset_flow, fine_faces, last_panel_gts
+
+    def forward(self,
+                x,
+                y,
+                target,
+                mask,
+                mask_coordinates,
+                interim_face_size,
+                criterion,
+                config_disc):
+        z, _, mu_z, mu_x, logstd_z = self.coarse_forward(x)
+        out = criterion(z, target, mu_z, mu_x, logstd_z)
+        x_stage_0, \
+        x_stage_1, \
+        x_stage_2, \
+        offset_flow, \
+        fine_faces, \
+        last_panel_gts = self.fine_generation_forward(x,
+                                                      y,
+                                                      mask,
+                                                      mu_x,
+                                                      mask_coordinates,
+                                                      interim_face_size=interim_face_size)
+        # wgan g loss
+        if config_disc.compute_g_loss:
+            # this does not exactly match with impl because they use l1 many times in different parts of the net
+            l1_loss = nn.L1Loss()
+            out['l1_fine'] = l1_loss(fine_faces, y) * config_disc.l1_loss_alpha
+
+            local_patch_real_pred, local_patch_fake_pred = self.dis_forward(is_local=True,
+                                                                            ground_truth=y,
+                                                                            generated=fine_faces)
+            global_real_pred, global_fake_pred = self.dis_forward(is_local=False,
+                                                                  ground_truth=last_panel_gts,
+                                                                  generated=x_stage_2)
+            # TODO: do not forget to use "backward" on this!
+            out['wgan_g'] = - torch.mean(local_patch_fake_pred) - \
+                            torch.mean(global_fake_pred) * config_disc.global_wgan_loss_alpha
+
+            out['loss'] = out['loss'] + out['wgan_g'] + out['l1_fine']
+
+        # D part
+        # wgan d loss
+        local_patch_real_pred, local_patch_fake_pred = self.dis_forward(is_local=True,
+                                                                        ground_truth=y,
+                                                                        generated=fine_faces)
+        global_real_pred, global_fake_pred = self.dis_forward(is_local=False,
+                                                              ground_truth=last_panel_gts,
+                                                              generated=x_stage_2)
+        # TODO: do not forget to use "backward" on this!
+        out['wgan_d'] = torch.mean(local_patch_fake_pred - local_patch_real_pred) + \
+                        torch.mean(global_fake_pred - global_real_pred) * config_disc.global_wgan_loss_alpha
+        # gradients penalty loss
+        local_penalty = calculate_gradient_penalty(
+            self.local_disc, y, fine_faces.detach())
+        global_penalty = calculate_gradient_penalty(self.global_disc,
+                                                    x_stage_0, x_stage_2.detach())
+        # TODO: do not forget to use "backward" on this!
+        out['wgan_gp'] = local_penalty + global_penalty
+        return out, fine_faces
 
     def encode(self, x):
         return self.encoder(x)

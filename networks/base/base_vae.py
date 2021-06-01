@@ -26,7 +26,7 @@ class BaseVAE(nn.Module):
         raise NotImplementedError
 
     @abstractmethod
-    def forward(self, inputs: Tensor) -> Any:
+    def forward(self, inputs: Tensor, **kwargs) -> Any:
         pass
 
     @abstractmethod
