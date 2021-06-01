@@ -152,8 +152,15 @@ class SSuperVAEContextualAttentional(BaseVAE):
                 mask,
                 mask_coordinates,
                 interim_face_size,
+                optimizer,
+                optimizer_disc,
                 criterion,
-                config_disc):
+                compute_g_loss,
+                l1_loss_alpha,
+                global_wgan_loss_alpha,
+                wgan_gp_lambda):
+        if self.training:
+            optimizer.zero_grad()
         z, _, mu_z, mu_x, logstd_z = self.coarse_forward(x)
         out = criterion(z, target, mu_z, mu_x, logstd_z)
         x_stage_0, \
@@ -168,10 +175,10 @@ class SSuperVAEContextualAttentional(BaseVAE):
                                                       mask_coordinates,
                                                       interim_face_size=interim_face_size)
         # wgan g loss
-        if config_disc.compute_g_loss:
+        if compute_g_loss:
             # this does not exactly match with impl because they use l1 many times in different parts of the net
             l1_loss = nn.L1Loss()
-            out['l1_fine'] = l1_loss(fine_faces, y) * config_disc.l1_loss_alpha
+            out['l1_fine'] = l1_loss(fine_faces, y) * l1_loss_alpha
 
             local_patch_real_pred, local_patch_fake_pred = self.dis_forward(is_local=True,
                                                                             ground_truth=y,
@@ -181,11 +188,15 @@ class SSuperVAEContextualAttentional(BaseVAE):
                                                                   generated=x_stage_2)
             # TODO: do not forget to use "backward" on this!
             out['wgan_g'] = - torch.mean(local_patch_fake_pred) - \
-                            torch.mean(global_fake_pred) * config_disc.global_wgan_loss_alpha
+                            torch.mean(global_fake_pred) * global_wgan_loss_alpha
 
             out['loss'] = out['loss'] + out['wgan_g'] + out['l1_fine']
 
+        if self.training:
+            out['loss'].backward(retain_graph=True)
         # D part
+        if self.training:
+            optimizer_disc.zero_grad()
         # wgan d loss
         local_patch_real_pred, local_patch_fake_pred = self.dis_forward(is_local=True,
                                                                         ground_truth=y,
@@ -195,7 +206,7 @@ class SSuperVAEContextualAttentional(BaseVAE):
                                                               generated=x_stage_2)
         # TODO: do not forget to use "backward" on this!
         out['wgan_d'] = torch.mean(local_patch_fake_pred - local_patch_real_pred) + \
-                        torch.mean(global_fake_pred - global_real_pred) * config_disc.global_wgan_loss_alpha
+                        torch.mean(global_fake_pred - global_real_pred) * global_wgan_loss_alpha
         # gradients penalty loss
         local_penalty = calculate_gradient_penalty(
             self.local_disc, y, fine_faces.detach())
@@ -203,6 +214,12 @@ class SSuperVAEContextualAttentional(BaseVAE):
                                                     x_stage_0, x_stage_2.detach())
         # TODO: do not forget to use "backward" on this!
         out['wgan_gp'] = local_penalty + global_penalty
+
+        # Update D
+        if self.training:
+            out['d'] = out['wgan_d'] + out['wgan_gp'] * wgan_gp_lambda
+            out['d'].backward()
+
         return out, fine_faces
 
     def encode(self, x):

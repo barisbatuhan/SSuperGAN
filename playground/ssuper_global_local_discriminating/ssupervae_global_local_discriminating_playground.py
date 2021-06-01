@@ -4,9 +4,7 @@ from torch.utils.data import DataLoader
 from data.datasets.golden_panels import GoldenPanelsDataset
 from networks.ssuper_global_local_discriminating import SSuperGlobalLocalDiscriminating
 from networks.ssupervae import SSuperVAE
-from networks.ssupervae_contextual_attentional import SSuperVAEContextualAttentional
 from training.ssuper_global_local_discriminating_trainer import SSuperGlobalLocalDiscriminatingTrainer
-from training.ssupervae_contextual_attn_trainer import SSuperVAEContextualAttentionalTrainer
 from utils.config_utils import read_config, Config
 from utils.plot_utils import *
 from utils.logging_utils import *

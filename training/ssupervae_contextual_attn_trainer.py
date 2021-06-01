@@ -4,7 +4,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from functional.losses.gradient_penalty import calculate_gradient_penalty
 from networks.ssupervae_contextual_attentional import SSuperVAEContextualAttentional
 from training.base_trainer import BaseTrainer
 from utils.structs.metric_recorder import *
@@ -115,8 +114,13 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
                                          mask,
                                          mask_coordinates,
                                          interim_face_size,
+                                         self.optimizer,
+                                         self.optimizer_disc,
                                          self.criterion,
-                                         self.config_disc)
+                                         self.config_disc.compute_g_loss,
+                                         self.config_disc.l1_loss_alpha,
+                                         self.config_disc.global_wgan_loss_alpha,
+                                         self.config_disc.wgan_gp_lambda)
 
             l1_loss = nn.L1Loss()
             out['l1_fine'] = l1_loss(fine_faces, y)
@@ -147,7 +151,6 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
             else:
                 raise AssertionError("mask and mask coordinate should be available")
 
-            self.optimizer.zero_grad()
             _, _, interim_face_size, _ = y.shape
             target = x if y is None else y
 
@@ -157,18 +160,13 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
                                          mask,
                                          mask_coordinates,
                                          interim_face_size,
+                                         self.optimizer,
+                                         self.optimizer_disc,
                                          self.criterion,
-                                         self.config_disc)
-
-            # TODO: Original Implementation Has not Retain Graph?
-            #   Possible reason: params of disc is included in optimizer loss although this
-            #       does not need to be the case
-            out['loss'].backward(retain_graph=True)
-
-            # Update D
-            self.optimizer_disc.zero_grad()
-            out['d'] = out['wgan_d'] + out['wgan_gp'] * self.config_disc.wgan_gp_lambda
-            out['d'].backward()
+                                         self.config_disc.compute_g_loss,
+                                         self.config_disc.l1_loss_alpha,
+                                         self.config_disc.global_wgan_loss_alpha,
+                                         self.config_disc.wgan_gp_lambda)
 
             if self.grad_clip:
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.grad_clip)
