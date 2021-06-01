@@ -84,9 +84,9 @@ class SSuperVAEContextualAttentional(BaseVAE):
         # Preparing for Fine Generator
         B, S, C, W, H = x.shape
         mask = mask.view(B, 1, W, H)
-        x_stage_0 = ptu.zeros(B, C, H, W)
-        last_panel_gts = ptu.zeros_like(x_stage_0)
-        x_stage_1 = ptu.zeros_like(x_stage_0)
+        x_stage_0 = ptu.zeros(B, C, H, W).cuda()
+        last_panel_gts = ptu.zeros_like(x_stage_0).cuda()
+        x_stage_1 = ptu.zeros_like(x_stage_0).cuda()
         for i in range(len(x)):
             last_panel = x[i, 2, :, :, :]
             output_merged_last_panel = deepcopy(last_panel)
@@ -162,7 +162,7 @@ class SSuperVAEContextualAttentional(BaseVAE):
         if self.training:
             optimizer.zero_grad()
         z, _, mu_z, mu_x, logstd_z = self.coarse_forward(x)
-        out = criterion(z.cuda(), target.cuda(), mu_z.cuda(), mu_x.cuda(), logstd_z.cuda())
+        out = criterion(z, target, mu_z, mu_x, logstd_z)
         x_stage_0, \
         x_stage_1, \
         x_stage_2, \
@@ -174,11 +174,20 @@ class SSuperVAEContextualAttentional(BaseVAE):
                                                       mu_x,
                                                       mask_coordinates,
                                                       interim_face_size=interim_face_size)
+        x_stage_0, \
+        x_stage_1, \
+        x_stage_2, \
+        fine_faces, \
+        last_panel_gts = x_stage_0.cuda(), \
+        x_stage_1.cuda(), \
+        x_stage_2.cuda(), \
+        fine_faces.cuda(), \
+        last_panel_gts.cuda()
         # wgan g loss
         if compute_g_loss:
             # this does not exactly match with impl because they use l1 many times in different parts of the net
-            l1_loss = nn.L1Loss()
-            out['l1_fine'] = l1_loss(fine_faces, y) * l1_loss_alpha
+            out['l1_fine'] = nn.functional.l1_loss(fine_faces, y) 
+            out['l1_fine'] = out['l1_fine'] * l1_loss_alpha
 
             local_patch_real_pred, local_patch_fake_pred = self.dis_forward(is_local=True,
                                                                             ground_truth=y,
@@ -218,7 +227,6 @@ class SSuperVAEContextualAttentional(BaseVAE):
         # Update D
         if self.training:
             out['d'] = out['wgan_d'] + out['wgan_gp'] * wgan_gp_lambda
-            out['d'].backward()
 
         return out, fine_faces
 

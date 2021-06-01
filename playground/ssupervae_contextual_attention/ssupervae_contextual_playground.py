@@ -109,10 +109,11 @@ if __name__ == '__main__':
     golden_age_config = read_config(Config.GOLDEN_AGE)
 
     panel_dim = golden_age_config.panel_dim[0]
+    initiate_logger()
 
     cont_epoch = -1
     cont_model = None  # "playground/ssupervae/weights/model-18.pth"
-    limit_size = 200
+    limit_size = -1
 
     # data = RandomDataset((3, 3, 360, 360), (3, config.image_dim, config.image_dim))
     data = GoldenPanelsDataset(golden_age_config.panel_path,
@@ -135,5 +136,5 @@ if __name__ == '__main__':
                   cont_epoch=cont_epoch,
                   cont_model=cont_model,
                   panel_dim=panel_dim,
-                  elbo_criterion=ELBO())
+                  elbo_criterion=elbo)
     torch.save(model, base_dir + 'playground/ssupervae_contextual_attention/results/' + model_name + "_model.pth")

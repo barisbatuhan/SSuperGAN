@@ -122,9 +122,6 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
                                          self.config_disc.global_wgan_loss_alpha,
                                          self.config_disc.wgan_gp_lambda)
 
-            l1_loss = nn.L1Loss()
-            out['l1_fine'] = l1_loss(fine_faces, y)
-
             for k, v in out.items():
                 total_losses[k] = total_losses.get(k, 0) + v.item() * x.shape[0]
 
@@ -185,7 +182,7 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
             for k, v in out.items():
                 if k not in losses:
                     losses[k] = []
-                losses[k].append(v.item())
+                losses[k].append(torch.mean(v).item())
                 avg = np.mean(losses[k][-50:])
                 desc += f', {k} {avg:.4f}'
 
