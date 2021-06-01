@@ -1,18 +1,9 @@
-from collections import OrderedDict
 from tqdm import tqdm
-import numpy as np
-import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
-import torch.utils.data as data
-import torch.optim as optim
-
 from networks.base.base_vae import BaseVAE
-from networks.generic_vae import GenericVAE
 from training.base_trainer import BaseTrainer
 from utils.structs.metric_recorder import *
 from utils.logging_utils import *
-from utils import pytorch_util as ptu
 from utils.image_utils import *
 
 
@@ -86,7 +77,7 @@ class VAETrainer(BaseTrainer):
                     "test_losses": test_losses
                 },
                     current_epoch=epoch)
-            
+
             metric_recorder.update_metrics(train_losses, test_losses)
             metric_recorder.save_recorder()
         return train_losses, test_losses
@@ -131,7 +122,7 @@ class VAETrainer(BaseTrainer):
             if type(batch) == list and len(batch) == 2:
                 x, y = batch[0].cuda(), batch[1].cuda()
             elif type(batch) == list and len(batch) == 3:
-                x, y, mask = batch[0].cuda(), batch[1].cuda(),  batch[2].cuda()
+                x, y, mask = batch[0].cuda(), batch[1].cuda(), batch[2].cuda()
             else:
                 x, y = batch.cuda(), None
 
@@ -159,9 +150,10 @@ class VAETrainer(BaseTrainer):
                 pbar.update(x.shape[0])
 
         self.scheduler.step()
-        
+
         if isinstance(self.model, nn.DataParallel):
-            self.model.module.save_samples(10, self.save_dir + '/results/' + self.model_name + f'epoch{epoch}_samples.png')
+            self.model.module.save_samples(10,
+                                           self.save_dir + '/results/' + self.model_name + f'epoch{epoch}_samples.png')
         else:
             self.model.save_samples(10, self.save_dir + '/results/' + self.model_name + f'epoch{epoch}_samples.png')
         if not self.quiet:
