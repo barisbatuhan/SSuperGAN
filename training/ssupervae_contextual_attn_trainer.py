@@ -195,7 +195,11 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
 
         self.scheduler.step()
         self.scheduler_disc.step()
-        self.model.save_samples(50, self.save_dir + '/results/' + self.model_name + f'epoch{epoch}_samples.png')
+        if isinstance(self.model, nn.DataParallel):
+            self.model.module.save_samples(50, self.save_dir + '/results/' + self.model_name + f'epoch{epoch}_samples.png')
+        else:
+            self.model.save_samples(50, self.save_dir + '/results/' + self.model_name + f'epoch{epoch}_samples.png')
+                                    
         if not self.quiet:
             pbar.close()
         return losses

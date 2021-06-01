@@ -162,7 +162,7 @@ class SSuperVAEContextualAttentional(BaseVAE):
         if self.training:
             optimizer.zero_grad()
         z, _, mu_z, mu_x, logstd_z = self.coarse_forward(x)
-        out = criterion(z, target, mu_z, mu_x, logstd_z)
+        out = criterion(z.cuda(), target.cuda(), mu_z.cuda(), mu_x.cuda(), logstd_z.cuda())
         x_stage_0, \
         x_stage_1, \
         x_stage_2, \

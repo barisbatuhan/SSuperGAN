@@ -39,6 +39,7 @@ def train(data_loader,
 
     if getattr(config, 'parallel', False):
         train_net = nn.DataParallel(net)
+        print("parallel true")
     else:
         train_net = net
 
