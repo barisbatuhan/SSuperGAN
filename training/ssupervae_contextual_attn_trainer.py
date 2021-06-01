@@ -164,11 +164,7 @@ class SSuperVAEContextualAttentionalTrainer(BaseTrainer):
             target = x if y is None else y
 
             out = self.criterion(z, target, mu_z, mu_x, logstd_z)
-
-            # TODO: add forward pass for fine_generator
-            # and add a basic loss such as l1
-            # next step is to add discriminators
-            # and getting loss from them
+                
             x_stage_0, \
             x_stage_1, \
             x_stage_2, \

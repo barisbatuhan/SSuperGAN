@@ -10,7 +10,7 @@ from utils.logging_utils import *
 from utils.image_utils import *
 from configs.base_config import *
 from functional.losses.elbo import *
-
+import torch.nn as nn
 
 def save_best_loss_model(model_name, model, best_loss):
     print('[INFO] Current best loss: ' + str(best_loss))
@@ -21,7 +21,7 @@ def train(data_loader,
           config,
           panel_dim,
           elbo_criterion,
-          model_name='plain_ssupervae',
+          model_name='ssupervae_contextual_attention',
           cont_epoch=-1,
           cont_model=None):
     # loading config
@@ -35,6 +35,11 @@ def train(data_loader,
                                          seq_size=config.seq_size,
                                          decoder_channels=config.decoder_channels,
                                          gen_img_size=config.image_dim).cuda()
+    
+    if config.parallel == True:
+        train_net = nn.DataParallel(net)
+    else:
+        train_net = net
 
     criterion = elbo_criterion
 
@@ -57,7 +62,7 @@ def train(data_loader,
                                                  lambda epoch: (config.train_epochs - epoch) / config.train_epochs,
                                                  last_epoch=-1)
     # init trainer
-    trainer = SSuperVAEContextualAttentionalTrainer(model=net,
+    trainer = SSuperVAEContextualAttentionalTrainer(model=train_net,
                                                     config_disc=config,
                                                     model_name=model_name,
                                                     criterion=criterion,
@@ -71,7 +76,7 @@ def train(data_loader,
                                                     grad_clip=config.g_clip,
                                                     best_loss_action=lambda m, l: save_best_loss_model(model_name, m,
                                                                                                        l),
-                                                    save_dir=base_dir + 'playground/ssupervae/',
+                                                    save_dir=base_dir + 'playground/ssupervae_contextual_attention/',
                                                     checkpoint_every_epoch=True
                                                     )
 
@@ -91,7 +96,7 @@ def train(data_loader,
     save_training_plot(train_losses['loss'],
                        test_losses['loss'],
                        "Plain_SSuperVAE Losses",
-                       base_dir + 'playground/supervae/' + f'results/ssupervae_plot.png'
+                       base_dir + 'playground/ssupervae_contextual_attention/' + f'results/ssupervae_plot.png'
                        )
     return net
 
@@ -105,7 +110,7 @@ if __name__ == '__main__':
 
     cont_epoch = -1
     cont_model = None  # "playground/ssupervae/weights/model-18.pth"
-    limit_size = 3000
+    limit_size = 200
 
     # data = RandomDataset((3, 3, 360, 360), (3, config.image_dim, config.image_dim))
     data = GoldenPanelsDataset(golden_age_config.panel_path,
