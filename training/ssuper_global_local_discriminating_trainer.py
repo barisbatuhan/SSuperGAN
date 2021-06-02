@@ -318,23 +318,27 @@ class SSuperGlobalLocalDiscriminatingTrainer(BaseTrainer):
             local_fake_label = torch.full((B,), fake_label, dtype=torch.float).cuda()
             global_fake_label = torch.full((B,), fake_label, dtype=torch.float).cuda()
 
-            global_label = torch.cat((global_fake_label, global_real_label), 0)
-            local_label = torch.cat((local_fake_label, local_real_label), 0)
+            # global_label = torch.cat((global_fake_label, global_real_label), 0)
+            # local_label = torch.cat((local_fake_label, local_real_label), 0)
 
-            local_pred = torch.cat((local_patch_fake_pred, local_patch_real_pred), 0)
-            global_pred = torch.cat((global_fake_pred, global_real_pred), 0)
+            # local_pred = torch.cat((local_patch_fake_pred, local_patch_real_pred), 0)
+            # global_pred = torch.cat((global_fake_pred, global_real_pred), 0)
 
             dc_local_criterion = nn.BCELoss()
             dc_global_criterion = nn.BCELoss()
             if self.disc_option is GlobalLocalDiscriminatingTrainerDiscOption.GLOBAL_AND_LOCAL:
-                out['dc_d_local'] = dc_local_criterion(local_pred, local_label)
-                out['dc_d_global'] = dc_global_criterion(global_pred, global_label)
+                out['dc_d_local'] = dc_local_criterion(local_patch_fake_pred, local_fake_label)
+                out['dc_d_local'] += dc_local_criterion(local_patch_real_pred, local_real_label)
+                out['dc_d_global'] = dc_global_criterion(global_fake_pred, global_fake_label)
+                out['dc_d_global'] += dc_global_criterion(global_real_pred, global_real_label)
                 out['d'] = out['dc_d_local'] + out['dc_d_global']
             elif self.disc_option is GlobalLocalDiscriminatingTrainerDiscOption.ONLY_LOCAL:
-                out['dc_d_local'] = dc_local_criterion(local_pred, local_label)
+                out['dc_d_local'] = dc_local_criterion(local_patch_fake_pred, local_fake_label)
+                out['dc_d_local'] += dc_local_criterion(local_patch_real_pred, local_real_label)
                 out['d'] = out['dc_d_local']
             elif self.disc_option is GlobalLocalDiscriminatingTrainerDiscOption.ONLY_GLOBAL:
-                out['dc_d_global'] = dc_global_criterion(global_pred, global_label)
+                out['dc_d_global'] = dc_global_criterion(global_fake_pred, global_fake_label)
+                out['dc_d_global'] += dc_global_criterion(global_real_pred, global_real_label)
                 out['d'] = out['dc_d_global']
             else:
                 raise NotImplementedError
