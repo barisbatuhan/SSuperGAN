@@ -267,7 +267,9 @@ class SSuperGlobalLocalDiscriminatingTrainer(BaseTrainer):
             dc_global_criterion = nn.BCELoss()
             if self.disc_option is GlobalLocalDiscriminatingTrainerDiscOption.GLOBAL_AND_LOCAL:
                 out['dc_g_local'] = dc_local_criterion(local_patch_fake_pred, local_label)
+                out['dc_g_local'] = self.clamp_gan_loss(out['dc_g_local'])
                 out['dc_g_global'] = dc_global_criterion(global_fake_pred, global_label)
+                out['dc_g_global'] = self.clamp_gan_loss(out['dc_g_global'])
                 out['loss'] = out['loss'] + out['dc_g_local'] + out['dc_g_global']
             elif self.disc_option is GlobalLocalDiscriminatingTrainerDiscOption.ONLY_LOCAL:
                 out['dc_g_local'] = dc_local_criterion(local_patch_fake_pred, local_label)
@@ -352,8 +354,10 @@ class SSuperGlobalLocalDiscriminatingTrainer(BaseTrainer):
             if self.disc_option is GlobalLocalDiscriminatingTrainerDiscOption.GLOBAL_AND_LOCAL:
                 out['dc_d_local'] = dc_local_criterion(local_patch_fake_pred, local_fake_label)
                 out['dc_d_local'] += dc_local_criterion(local_patch_real_pred, local_real_label)
+                out['dc_d_local'] = self.clamp_gan_loss(out['dc_d_local'])
                 out['dc_d_global'] = dc_global_criterion(global_fake_pred, global_fake_label)
                 out['dc_d_global'] += dc_global_criterion(global_real_pred, global_real_label)
+                out['dc_d_global'] = self.clamp_gan_loss(out['dc_d_global'])
                 out['d'] = out['dc_d_local'] + out['dc_d_global']
             elif self.disc_option is GlobalLocalDiscriminatingTrainerDiscOption.ONLY_LOCAL:
                 out['dc_d_local'] = dc_local_criterion(local_patch_fake_pred, local_fake_label)
@@ -367,3 +371,9 @@ class SSuperGlobalLocalDiscriminatingTrainer(BaseTrainer):
                 raise NotImplementedError
         else:
             raise NotImplementedError
+
+    def clamp_gan_loss(self, loss, threshold=0.5):
+        if loss.mean().item() < threshold:
+            return loss * 0
+        else:
+            return loss
