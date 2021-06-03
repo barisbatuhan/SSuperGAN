@@ -16,12 +16,21 @@ class BaseGlobalLocalDiscriminating(nn.Module):
         raise NotImplementedError
 
     def dis_forward(self, is_local, ground_truth, generated) -> Tuple[Tensor, Tensor]:
-        assert ground_truth.size() == generated.size()
-        batch_size = ground_truth.size(0)
-        batch_data = torch.cat([ground_truth, generated], dim=0)
-        batch_output = self.local_discriminator(batch_data) if is_local else self.global_discriminator(batch_data)
-        real_pred, fake_pred = torch.split(batch_output, batch_size, dim=0)
-        return real_pred, fake_pred
+        if ground_truth is None:
+            batch_data = generated
+            batch_output = self.local_discriminator(batch_data) if is_local else self.global_discriminator(batch_data)
+            return None, batch_output
+        elif generated is None:
+            batch_data = ground_truth
+            batch_output = self.local_discriminator(batch_data) if is_local else self.global_discriminator(batch_data)
+            return batch_output, None
+        else:
+            assert ground_truth.size() == generated.size()
+            batch_size = ground_truth.size(0)
+            batch_data = torch.cat([ground_truth, generated], dim=0)
+            batch_output = self.local_discriminator(batch_data) if is_local else self.global_discriminator(batch_data)
+            real_pred, fake_pred = torch.split(batch_output, batch_size, dim=0)
+            return real_pred, fake_pred
 
     def create_local_discriminator(self) -> nn.Module:
         raise NotImplementedError

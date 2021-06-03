@@ -225,14 +225,13 @@ class SSuperGlobalLocalDiscriminatingTrainer(BaseTrainer):
                                pred_global,
                                ):
         B = y.shape[0]
-        local_patch_real_pred, local_patch_fake_pred = self.model.dis_forward(is_local=True,
-                                                                              ground_truth=y,
-                                                                              generated=mu_x)
-        global_real_pred, global_fake_pred = self.model.dis_forward(is_local=False,
-                                                                    ground_truth=gt_global,
-                                                                    generated=pred_global)
-
         if self.disc_loss_type is GlobalLocalDiscriminatingLossType.WGAN_GP:
+            local_patch_real_pred, local_patch_fake_pred = self.model.dis_forward(is_local=True,
+                                                                                  ground_truth=y,
+                                                                                  generated=mu_x)
+            global_real_pred, global_fake_pred = self.model.dis_forward(is_local=False,
+                                                                        ground_truth=gt_global,
+                                                                        generated=pred_global)
             if self.disc_option is GlobalLocalDiscriminatingTrainerDiscOption.GLOBAL_AND_LOCAL:
                 out['wgan_g'] = - torch.mean(local_patch_fake_pred) - \
                                 torch.mean(global_fake_pred) * self.config_disc.global_wgan_loss_alpha
@@ -246,9 +245,20 @@ class SSuperGlobalLocalDiscriminatingTrainer(BaseTrainer):
             out['wgan_g'] = out['wgan_g'] * self.config_disc.gan_loss_alpha
             out['loss'] = out['loss'] + out['wgan_g']
         elif self.disc_loss_type is GlobalLocalDiscriminatingLossType.DC:
+            local_patch_real_pred, _ = self.model.dis_forward(is_local=True,
+                                                              ground_truth=y,
+                                                              generated=None)
+            _, local_patch_fake_pred = self.model.dis_forward(is_local=True,
+                                                              ground_truth=None,
+                                                              generated=mu_x)
+            global_real_pred, _ = self.model.dis_forward(is_local=False,
+                                                         ground_truth=gt_global,
+                                                         generated=None)
+            _, global_fake_pred = self.model.dis_forward(is_local=False,
+                                                         ground_truth=None,
+                                                         generated=pred_global)
             local_patch_real_pred, local_patch_fake_pred, global_real_pred, global_fake_pred = local_patch_real_pred.view(
                 B, ), local_patch_fake_pred.view(B, ), global_real_pred.view(B, ), global_fake_pred.view(B, )
-
             real_label = 1
             fake_label = 0
             local_label = torch.full((B,), real_label, dtype=torch.float).cuda()
@@ -280,13 +290,13 @@ class SSuperGlobalLocalDiscriminatingTrainer(BaseTrainer):
                                    pred_global):
         B, S, C, W, H = x.shape
         mask = mask.view(B, 1, W, H)
-        local_patch_real_pred, local_patch_fake_pred = self.model.dis_forward(is_local=True,
-                                                                              ground_truth=y,
-                                                                              generated=mu_x)
-        global_real_pred, global_fake_pred = self.model.dis_forward(is_local=False,
-                                                                    ground_truth=gt_global,
-                                                                    generated=pred_global)
         if self.disc_loss_type is GlobalLocalDiscriminatingLossType.WGAN_GP:
+            local_patch_real_pred, local_patch_fake_pred = self.model.dis_forward(is_local=True,
+                                                                                  ground_truth=y,
+                                                                                  generated=mu_x.detach())
+            global_real_pred, global_fake_pred = self.model.dis_forward(is_local=False,
+                                                                        ground_truth=gt_global,
+                                                                        generated=pred_global.detach())
             if self.disc_option is GlobalLocalDiscriminatingTrainerDiscOption.GLOBAL_AND_LOCAL:
                 out['wgan_d'] = torch.mean(local_patch_fake_pred - local_patch_real_pred) + \
                                 torch.mean(
@@ -308,6 +318,19 @@ class SSuperGlobalLocalDiscriminatingTrainer(BaseTrainer):
             out['wgan_gp'] = local_penalty + global_penalty
             out['d'] = out['wgan_d'] + out['wgan_gp'] * self.config_disc.wgan_gp_lambda
         elif self.disc_loss_type is GlobalLocalDiscriminatingLossType.DC:
+            local_patch_real_pred, _ = self.model.dis_forward(is_local=True,
+                                                              ground_truth=y,
+                                                              generated=None)
+            _, local_patch_fake_pred = self.model.dis_forward(is_local=True,
+                                                              ground_truth=None,
+                                                              generated=mu_x.detach())
+            global_real_pred, _ = self.model.dis_forward(is_local=False,
+                                                         ground_truth=gt_global,
+                                                         generated=None)
+            _, global_fake_pred = self.model.dis_forward(is_local=False,
+                                                         ground_truth=None,
+                                                         generated=pred_global.detach())
+
             local_patch_real_pred, local_patch_fake_pred, global_real_pred, global_fake_pred = local_patch_real_pred.view(
                 B, ), local_patch_fake_pred.view(B, ), global_real_pred.view(B, ), global_fake_pred.view(B, )
 
