@@ -257,7 +257,7 @@ class LogisticGANLoss(GANLoss):
 
     def preprocess_image(self, images, **_unused_kwargs):
         """Pre-process images."""
-        if lod != int(lod):
+        if self.lod != int(self.lod):
             downsampled_images = F.avg_pool2d(
                 images, kernel_size=2, stride=2, padding=0)
             upsampled_images = F.interpolate(
@@ -265,11 +265,11 @@ class LogisticGANLoss(GANLoss):
             alpha = self.lod - int(self.lod)
             images = images * (1 - alpha) + upsampled_images * alpha
         
-        if int(lod) == 0:
+        if int(self.lod) == 0:
             return images
         
         return F.interpolate(
-            images, scale_factor=(2 ** int(lod)), mode='nearest')
+            images, scale_factor=(2 ** int(self.lod)), mode='nearest')
 
     def compute_grad_penalty(self, images, scores):
         """Computes gradient penalty."""
@@ -284,7 +284,7 @@ class LogisticGANLoss(GANLoss):
     def dis_loss(self, real_samps, fake_samps):
         """Computes loss for discriminator."""
         
-        reals = self.preprocess_image(real_samps, lod=runner.lod)
+        reals = self.preprocess_image(real_samps, lod=self.lod)
         reals.requires_grad = True
 
         # TODO: Use random labels.
