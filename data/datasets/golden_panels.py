@@ -2,6 +2,7 @@ import os
 import json
 import copy
 import random
+import math
 from PIL import Image
 
 import numpy as np
@@ -23,6 +24,7 @@ class GoldenPanelsDataset(Dataset):
                  mask_val :float=1, # mask with white color for 1 and black color for 0
                  mask_all :bool=False, # masks faces from all panels and returns all faces
                  return_mask :bool=False, # returns last panel's masking information
+                 return_mask_coordinates :bool=False,
                  train_test_ratio :float=0.95, # ratio of train data
                  train_mode :bool=True,
                  limit_size :int=-1):
@@ -34,23 +36,28 @@ class GoldenPanelsDataset(Dataset):
         self.mask_val = min(1, max(0, mask_val))
         self.mask_all = mask_all
         self.return_mask = return_mask
+        self.return_mask_coordinates = return_mask_coordinates
         
         with open(annot_path, "r") as f:
             annots = json.load(f)
 
         self.data = []
         for k in annots.keys():
-            if 0 < limit_size < int(k):
-                break
+            self.data.append(annots[k])             
+            
+        data_len = len(self.data)
+        train_len = int(data_len * train_test_ratio)
+        
+        if limit_size < 1:
+            if train_mode:
+                self.data = self.data[:train_len]
             else:
-                self.data.append(annots[k])
-        
-        train_len = int(len(self.data) * train_test_ratio)
-        
-        if train_mode:
-            self.data = self.data[:train_len]
+                self.data = self.data[train_len:]
         else:
-            self.data = self.data[train_len:]
+            if train_mode:
+                self.data = self.data[:min(train_len, limit_size)]
+            else:
+                self.data = self.data[train_len:min(data_len, train_len + limit_size)]
         
         if shuffle:
             random.shuffle(self.data)
@@ -94,12 +101,13 @@ class GoldenPanelsDataset(Dataset):
                 if self.return_mask and i == len(annots[0]) - 1:
                     _, _, H, W = panel.shape
                     m_shifted = [ # after resize, these dims will be masked
-                        int(f_shifted[0] * self.panel_dim[0] / W),
-                        int(f_shifted[1] * self.panel_dim[1] / H),
-                        int(f_shifted[2] * self.panel_dim[0] / W),
-                        int(f_shifted[3] * self.panel_dim[1] / H),
+                        int(math.floor(f_shifted[0] * self.panel_dim[0] / W)),
+                        int(math.floor(f_shifted[1] * self.panel_dim[1] / H)),
+                        int(math.ceil(f_shifted[2] * self.panel_dim[0] / W)),
+                        int(math.ceil(f_shifted[3] * self.panel_dim[1] / H)),
                     ]
                     mask_data[m_shifted[1]:m_shifted[3], m_shifted[0]:m_shifted[2]] = 1
+                    mask_coordinates = np.array((m_shifted[1], m_shifted[3], m_shifted[0], m_shifted[2]))
                 
             
             panel = TF.resize(panel, [self.panel_dim[1], self.panel_dim[0]])
@@ -112,6 +120,12 @@ class GoldenPanelsDataset(Dataset):
             faces = normalize(faces[0])
 
         if self.return_mask:
-            return panels, faces, mask_data
+            if self.return_mask_coordinates:
+                return panels, faces, mask_data, mask_coordinates
+            else:
+                return panels, faces, mask_data
         else:
-            return panels, faces
+            if self.return_mask_coordinates:
+                return panels, faces, mask_coordinates
+            else:
+                return panels, faces

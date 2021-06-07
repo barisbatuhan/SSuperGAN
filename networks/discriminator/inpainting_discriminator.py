@@ -12,22 +12,26 @@ import numpy as np
 
 class InpaintingDiscriminator(nn.Module):  
     
-    """
-    Output will be in shape of (4*cnum, W/4, H/4)
-    """
-    
-    def __init__(self, input_dim, cnum):
-        super(DisConvModule, self).__init__()
+    def __init__(self, img_size, input_dim, cnum=32):
+        super(InpaintingDiscriminator, self).__init__()
+        layers_list = []
+        
         self.conv1 = dis_conv(input_dim, cnum, 5, 2, 2)
         self.conv2 = dis_conv(cnum, cnum * 2, 5, 2, 2)
         self.conv3 = dis_conv(cnum * 2, cnum * 4, 5, 2, 2)
-        self.conv4 = dis_conv(cnum * 4, cnum * 4, 5, 2, 2)
+        self.conv4 = dis_conv(cnum * 4, cnum * 8, 5, 2, 2)   
+        self.conv5 = dis_conv(cnum * 8, cnum * 8, 5, 2, 2)
+        self.fc    = nn.Sequential(nn.AdaptiveAvgPool2d((1, 1)),
+                                   nn.Flatten(),
+                                   nn.Linear(cnum * 8, 1))
 
     def forward(self, x):
         x = self.conv1(x)
         x = self.conv2(x)
         x = self.conv3(x)
         x = self.conv4(x)
+        x = self.conv5(x)
+        x = self.fc(x)
         return x
     
 def dis_conv(input_dim, output_dim, kernel_size=5, stride=2, padding=0, rate=1,

@@ -27,7 +27,7 @@ class FID:
     # https://github.com/rosinality/stylegan2-pytorch/raw/master/inception_ffhq.pkl
     
     def __init__(self, n_samples=50000, batch_size=64):
-        self.inception = InceptionV3([3], normalize_input=False).to(ptu.device)
+        self.inception = InceptionV3([3], normalize_input=False).cuda()
         self.inception.eval()
         self.n_samples = n_samples
         self.batch_size = batch_size
@@ -37,7 +37,7 @@ class FID:
         fids, iter_cnt = 0, 0
         
         for i in tqdm(range(0, self.n_samples, self.batch_size)):
-            imgs = model.sample(self.batch_size)
+            imgs = model(self.batch_size, f="sample")
             features = self.extract_features(imgs).cpu().numpy()
             sample_mean = np.mean(features, 0)
             sample_cov = np.cov(features, rowvar=False)
@@ -60,13 +60,13 @@ class FID:
             feature_list = []
             for img in imgs:
                 img = (torch.clamp(img, min=-1, max=1) + 1) / 2 # make [0, 1]
-                feature = self.inception(img.to(ptu.device))[0].view(img.shape[0], -1)
+                feature = self.inception(img)[0].view(img.shape[0], -1)
                 feature_list.append(feature)
             return torch.cat(feature_list, 0)
         
         else:
             imgs = (torch.clamp(imgs, min=-1, max=1) + 1) / 2 # make [0, 1]
-            return self.inception(imgs.to(ptu.device))[0].view(imgs.shape[0], -1)
+            return self.inception(imgs)[0].view(imgs.shape[0], -1)
 
     
     def calc_fid(self, sample_mean, sample_cov, real_mean, real_cov, eps=1e-6):

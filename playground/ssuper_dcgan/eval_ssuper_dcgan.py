@@ -28,9 +28,9 @@ from functional.metrics.fid import FID
 
 metrics = ["PSNR", "FID"]
 
-METRIC = metrics[1]
-BATCH_SIZE = 256 if METRIC == "FID" else 16
-model_path = "playground/ssuper_dcgan/ckpts/ssuper_dcgan-checkpoint-epoch36.pth"
+METRIC = metrics[0]
+BATCH_SIZE = 256 if METRIC == "FID" else 64
+model_path = "playground/ssuper_dcgan/ckpts/ssuper_dcgan-checkpoint-epoch6.pth"
 
 N_SAMPLES = 50000 # 50000
 
@@ -49,6 +49,7 @@ net = SSuperDCGAN(backbone=config.backbone,
                   gen_channels=config.gen_channels,
                   local_disc_channels=config.local_disc_channels,
                   seq_size=config.seq_size,
+                  lstm_conv=config.lstm_conv,
                   lstm_bidirectional=config.lstm_bidirectional,
                   lstm_hidden=config.lstm_hidden,
                   lstm_dropout=config.lstm_dropout,
@@ -71,7 +72,7 @@ dataset = GoldenPanelsDataset(golden_age_config.panel_path,
                               mask_val=1, # mask with white color for 1 and black color for 0
                               mask_all=False, # masks faces from all panels and returns all faces
                               return_mask=True,
-                              train_test_ratio=0.01,
+                              train_test_ratio=golden_age_config.train_test_ratio,
                               train_mode=False,
                               limit_size=-1)
 
@@ -97,7 +98,7 @@ elif METRIC == "FID":
     if mus is None or sigmas is None:
         iter_cnt = 0
         for _, y, _ in tqdm(data_loader):
-            original_features = metric.extract_features(y).cpu().numpy()
+            original_features = metric.extract_features(y.cuda()).cpu().numpy()
             mu = np.mean(original_features, axis=0)
             sigma = np.cov(original_features, rowvar=False)
             

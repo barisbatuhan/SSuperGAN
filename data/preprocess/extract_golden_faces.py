@@ -61,10 +61,10 @@ def extract_faces(annots, golden_dir, save_dir):
             x2, y2 = min(w, x2), min(h, y2) 
             # calculate the centers
             cx, cy = int((x1 + x2) / 2), int((y1 + y2) / 2)
-            cy -= int((y2 - y1) / 6) # to get a better center, having hair info also
+            # cy -= int((y2 - y1) / 6) # to get a better center, having hair info also
             
             radius = max(x2-x1, y2-y1) / 2
-            radius += radius / 2 # add margin length
+            # radius += radius / 2 # add margin length
             radius = int(radius) # floor to the closest integer
             
             if int(min(w, h) / 2) < radius:
@@ -105,9 +105,9 @@ def extract_faces(annots, golden_dir, save_dir):
 if __name__ == '__main__':
     golden_dir = "/datasets/COMICS/raw_panel_images/"
     annot_dir = "/userfiles/comics_grp/golden_age/golden_annot_new/"
-    save_dir = "./golden_faces/"
-    conf_thold = 0.85
-    face_thold = 96
+    save_dir = "./golden_faces_no_margin/"
+    conf_thold = 0.95
+    face_thold = 64
     annots = read_golden_annots(annot_dir, conf_thold=conf_thold, face_thold=face_thold)
     extract_faces(annots, golden_dir, save_dir)
     

@@ -86,10 +86,10 @@ def show_samples(samples, fname=None, nrow=10, title='Samples'):
         plt.show()
         
 
-def plot_panels_and_faces(panels_tensor, face_tensor, recon_face_tensor):
+def plot_panels_and_faces(panels_tensor, face_tensor, recon_face_tensor, global_recon_tensor):
     
+    global_recon_tensor = get_PIL_image(global_recon_tensor[0,:,:,:])
     y_recon = get_PIL_image(recon_face_tensor[0,:,:,:])
-    
     y = get_PIL_image(face_tensor[0,:,:,:])
     
     panels = []
@@ -97,7 +97,7 @@ def plot_panels_and_faces(panels_tensor, face_tensor, recon_face_tensor):
         panels.append(get_PIL_image(panels_tensor[0,i,:,:,:]))
     
     w, h = panels[0].size
-    wsize, hsize = panels_tensor.shape[1] + 2, 1
+    wsize, hsize = panels_tensor.shape[1] + 3, 1
     w = (w + 100) * wsize
     h = (h + 50) * hsize
     
@@ -108,14 +108,18 @@ def plot_panels_and_faces(panels_tensor, face_tensor, recon_face_tensor):
     for i in range(len(panels)):
         ax[i].imshow(panels[i])
         ax[i].title.set_text("Panel" + str(i+1))
-        
-    ax[-2].imshow(y)
-    ax[-2].title.set_text("Original")
+    
+    ax[-3].imshow(y)
+    ax[-3].title.set_text("Original")
+    
+    ax[-2].imshow(global_recon_tensor)
+    ax[-2].title.set_text("Global Recon")
     
     ax[-1].imshow(y_recon)
     ax[-1].title.set_text("Recon")
     
     plt.show()
+    return plt
     
 def draw_saliency(model, imgs, y):
     h, w = imgs.shape[-2:]

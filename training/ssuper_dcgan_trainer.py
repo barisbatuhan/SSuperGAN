@@ -129,12 +129,14 @@ class SSuperDCGANTrainer(BaseTrainer):
             self.optimizers["optimizer_encoder"].step()
             
             # Label set before GAN update
-            labels = torch.ones(2*bs).cuda().view(-1)
-            labels[bs:] = 0
+            real_labels = torch.ones(bs).cuda().view(-1)
+            fake_labels = torch.zeros(bs).cuda().view(-1)
             
             # Discriminator Update       
-            disc_out = self.model(torch.cat([y, y_recon.detach()], dim=0), f="discriminate", local=True).view(-1)
-            errD = nn.BCEWithLogitsLoss()(disc_out, labels).mean()
+            disc_out_real = self.model(y, f="discriminate", local=True).view(-1)
+            disc_out_fake = self.model(y_recon.detach(), f="discriminate", local=True).view(-1)
+            errD = nn.BCEWithLogitsLoss()(disc_out_real, real_labels).mean() 
+            errD += nn.BCEWithLogitsLoss()(disc_out_fake, fake_labels).mean()
             out["disc_loss"] = errD
             
             self.optimizers["optimizer_discriminator"].zero_grad()
@@ -151,7 +153,7 @@ class SSuperDCGANTrainer(BaseTrainer):
             y_recon = self.model(z.detach(), f="generate")
             recon_loss = -reconstruction_loss_distributional(y, y_recon) / 10
             fake_out = self.model(y_recon, f="discriminate", local=True).view(-1)
-            errG = nn.BCEWithLogitsLoss()(fake_out, labels[:bs]).mean() + recon_loss
+            errG = nn.BCEWithLogitsLoss()(fake_out, real_labels).mean() + recon_loss
             out["gen_loss"] = errG
             
             self.optimizers["optimizer_generator"].zero_grad()

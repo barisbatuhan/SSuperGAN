@@ -4,29 +4,39 @@ import numpy as np
 
 class DCGANGenerator(nn.Module):
     
-    def __init__(self, image_size, nc, nz, ngf):
-        super().__init__()
-        self.model = nn.Sequential(
-            nn.ConvTranspose2d(nz, out_channels=ngf*8, kernel_size=4, stride=1, padding=0, bias=False),
-            nn.BatchNorm2d(ngf*8),
-            nn.ReLU(),
-            # state size. (ngf*8) x 4 x 4
-            nn.ConvTranspose2d(ngf*8, ngf*4, kernel_size=4, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(ngf*4),
-            nn.ReLU(),
-            # state size. (ngf*4) x 8 x 8
-            nn.ConvTranspose2d(ngf*4, ngf*2, kernel_size=4, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(ngf*2),
-            nn.ReLU(),
-            # state size. (ngf*2) x 16 x 16
-            nn.ConvTranspose2d(ngf*2, ngf, kernel_size=4, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(ngf),
-            nn.ReLU(),
-            # state size. (ngf) x 32 x 32
-            nn.ConvTranspose2d(ngf, nc, kernel_size=4, stride=2, padding=1, bias=False),
-            nn.Tanh(),
-            # state size. (nc) x 64 x 64
-            )
+    def __init__(self, image_size, nc, nz, ngf, leaky=0.2):
+        super().__init__()  
+        
+        if leaky == 0:
+            activ = nn.ReLU()
+        else:
+            activ = nn.LeakyReLU(leaky, inplace=True)
+        
+        layers = []
+        mult_coeffs = {1024:8, 512:8, 216:8, 128:8, 64:8, 32:4, 16:2, 8:1}
+        
+        layers.append(nn.ConvTranspose2d(nz, 
+                                         ngf * mult_coeffs[image_size], 
+                                         kernel_size=4, stride=1, padding=0, bias=False)) 
+        
+        layers.append(nn.BatchNorm2d(ngf*8))
+        layers.append(activ)
+        image_size = image_size // 2
+        
+        while image_size > 4:
+            layers.append(nn.ConvTranspose2d(ngf * mult_coeffs[image_size * 2], 
+                                             ngf * mult_coeffs[image_size], 
+                                             kernel_size=4, stride=2, padding=1, bias=False))
+            
+            layers.append(nn.BatchNorm2d(ngf * mult_coeffs[image_size]))
+            layers.append(activ)
+            image_size = image_size // 2
+        
+        layers.append(nn.ConvTranspose2d(ngf * mult_coeffs[image_size * 2], 
+                                         nc, kernel_size=4, stride=2, padding=1, bias=False))
+        layers.append(nn.Tanh())
+        
+        self.model = nn.Sequential(*layers)
         self.model.apply(self.weights_init)
     
     def weights_init(self, m):

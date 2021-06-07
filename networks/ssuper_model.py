@@ -12,13 +12,16 @@ from copy import deepcopy
 # Models
 from networks.panel_encoder.plain_sequential_encoder import PlainSequentialEncoder
 from networks.panel_encoder.lstm_sequential_encoder import LSTMSequentialEncoder
+
 from networks.encoder.introvae_encoder import IntroVAEEncoder
+
 from networks.generator.dcgan_generator import DCGANGenerator
 from networks.generator.introvae_generator import IntroVAEGenerator
+from networks.generator.stylegan2_generator import StyleGAN2Generator
+
 from networks.discriminator.dcgan_discriminator import DCGANDiscriminator
 from networks.discriminator.inpainting_discriminator import InpaintingDiscriminator
-
-from functional.losses.elbo import elbo
+from networks.discriminator.stylegan2_discriminator import StyleGAN2Discriminator
 
 class SSuperModel(nn.Module):
     
@@ -32,9 +35,9 @@ class SSuperModel(nn.Module):
                  use_lstm: bool=False,             # flag for using plain concat or lstm in sequential encoder
                  use_seq_enc: bool=True,           # Set to False of you only want to run pure generation module
                  enc_choice=None,                  # options: ["vae", None]. If "vae", then gen. should be also vae
-                 gen_choice="dcgan",               # options: ["dcgan", "vae"]
-                 local_disc_choice="dcgan",        # options: ["dcgan", "inpainting", None]
-                 global_disc_choice="dcgan",       # options: ["dcgan", "inpainting", None]
+                 gen_choice="dcgan",               # options: ["dcgan", "stylegan2", "vae"]
+                 local_disc_choice="dcgan",        # options: ["dcgan", "stylegan2", inpainting", None]
+                 global_disc_choice="dcgan",       # options: ["dcgan", "stylegan2", "inpainting", None]
                  gen_channels=64,                  # pass integer for DCGAN and [64, 128, 256, 512] for VAE,
                  
                  # seq. plain enc. parameters
@@ -59,12 +62,12 @@ class SSuperModel(nn.Module):
         
         # Input correctness checks
         assert enc_choice in ["vae", None]
-        assert gen_choice in ["dcgan", "vae"]
-        assert local_disc_choice in ["dcgan", "inpainting", None]
-        assert global_disc_choice in ["dcgan", "inpainting", None]
+        assert gen_choice in ["dcgan", "stylegan2", "vae"]
+        assert local_disc_choice in ["dcgan", "stylegan2", "inpainting", None]
+        assert global_disc_choice in ["dcgan", "stylegan2", "inpainting", None]
         
         if type(gen_channels) == int:
-            assert gen_choice == "dcgan"
+            assert gen_choice in ["dcgan", "stylegan2"]
         else:
             assert gen_choice == "vae"
         
@@ -115,6 +118,17 @@ class SSuperModel(nn.Module):
         elif gen_choice == "dcgan":
             self.generator = DCGANGenerator(img_size, 3, latent_dim, gen_channels)
         
+        elif gen_choice == "stylegan2":
+            self.generator = StyleGAN2Generator(
+                img_size,
+                z_space_dim=latent_dim,
+                w_space_dim=latent_dim,
+                image_channels=3,
+                final_tanh=False,
+                const_input=True,
+                architecture='origin'
+            )
+        
         # Local Discriminator Module Declaration
         if local_disc_choice is None:
             self.local_discriminator = None
@@ -122,7 +136,11 @@ class SSuperModel(nn.Module):
             self.local_discriminator = DCGANDiscriminator(
                 img_size, 3, latent_dim, local_disc_channels)
         elif local_disc_choice == "inpainting":
-            raise NotImplementedError
+            self.local_discriminator = InpaintingDiscriminator(
+                (img_size, img_size), 3, local_disc_channels)
+        elif local_disc_choice == "stylegan2":
+            self.local_discriminator = StyleGAN2Discriminator(
+                img_size, image_channels=3, architecture='origin')
             
         # Global Discriminator Module Declaration
         if global_disc_choice is None:
@@ -132,13 +150,15 @@ class SSuperModel(nn.Module):
                 panel_size, 3, latent_dim, global_disc_channels)
         elif global_disc_choice == "inpainting":
             self.global_discriminator = InpaintingDiscriminator(
-                panel_size, global_disc_channels)
+                panel_size, 3, global_disc_channels)
+        elif global_disc_choice == "stylegan2":
+            self.global_discriminator = StyleGAN2Discriminator(
+                panel_size[0], image_channels=3, architecture='origin')
         
         self.latent_dist = Normal(
             torch.FloatTensor([0.0]).cuda(),
             torch.FloatTensor([1.0]).cuda()
-        )
-        
+        )     
         
     def forward(self, x, f=None, **kwargs):
         func = getattr(self, f)
@@ -167,6 +187,22 @@ class SSuperModel(nn.Module):
             return self.global_discriminator(x)
     
     
+    def grad_clip(self, gclip, part=None):
+        
+        if part == "local_discriminator":
+            torch.nn.utils.clip_grad_norm_(self.local_discriminator.parameters(), gclip)
+        elif part == "global_discriminator":
+            torch.nn.utils.clip_grad_norm_(self.global_discriminator.parameters(), gclip)
+        elif part == "generator":
+            torch.nn.utils.clip_grad_norm_(self.generator.parameters(), gclip)
+        elif part == "seq_encoder":
+            torch.nn.utils.clip_grad_norm_(self.seq_encoder.parameters(), gclip)
+        elif part == "encoder":
+            torch.nn.utils.clip_grad_norm_(self.encoder.parameters(), gclip)
+        else:
+            raise NotImplementedError
+        
+    
     def create_global_images(self, panels, r_faces, f_faces, mask_coordinates):
         # Preparing for Fine Generator
         B, S, C, W, H = panels.shape
@@ -179,22 +215,36 @@ class SSuperModel(nn.Module):
             last_panel_output_face = f_faces[i, :, :, :]
 
             y1, y2, x1, x2 = mask_coordinates[i]
+            x1, y1 = max(0, x1), max(0, y1)
             w, h = abs(x1 - x2), abs(y1 - y2)
 
             # inserting original face to last panel
             modified = last_panel_face.view(1, *last_panel_face.size())
             interpolated_last_panel_face_batch = torch.nn.functional.interpolate(modified,
                                                                                  size=(h, w))
-            interpolated_last_panel_face = interpolated_last_panel_face_batch[0]
-            last_panel[:, y1:y2, x1:x2] = interpolated_last_panel_face
+            interpolated_last_panel_face = interpolated_last_panel_face_batch[0,:,:,:]
+            _, p_h, p_w = interpolated_last_panel_face.shape
+            _, l_h, l_w = last_panel.shape
+            
+            sel_h = min(y1 + p_h, l_h)
+            sel_w = min(x1 + p_w, l_w)
+            
+            last_panel[:, y1:sel_h, x1:sel_w] = interpolated_last_panel_face[:,:sel_h-y1, :sel_w-x1]
             last_panel_gts[i, :, :, :] = last_panel
 
             # inserting output face to last panel
             modified = last_panel_output_face.view(1, *last_panel_output_face.size())
             interpolated_last_panel_face_batch = torch.nn.functional.interpolate(modified,
                                                                                  size=(h, w))
-            interpolated_last_panel_face = interpolated_last_panel_face_batch[0]
-            output_merged_last_panel[:, y1:y2, x1:x2] = interpolated_last_panel_face
+            interpolated_last_panel_face = interpolated_last_panel_face_batch[0,:,:,:]
+            
+            _, p_h, p_w = interpolated_last_panel_face.shape
+            _, l_h, l_w = output_merged_last_panel.shape
+            
+            sel_h = min(y1 + p_h, l_h)
+            sel_w = min(x1 + p_w, l_w)
+            
+            output_merged_last_panel[:, y1:sel_h, x1:sel_w] = interpolated_last_panel_face[:,:sel_h-y1, :sel_w-x1]
             panel_with_generation[i, :, :, :] = output_merged_last_panel
 
         return panel_with_generation, last_panel_gts
