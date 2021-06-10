@@ -16,6 +16,7 @@ class Config(Enum):
     SSUPERDCGAN = 9
     VAE_CONTEXT_ATTN = 10
     GLOBAL_LOCAL_DISC = 11
+    SORT_SEQUENCE = 12
 
 
 def read_config(config: Config):
@@ -41,6 +42,8 @@ def read_config(config: Config):
         path = base_dir + 'configs/vae_context_attn_config.yaml'
     elif config == Config.GLOBAL_LOCAL_DISC:
         path = base_dir + 'configs/global_local_disc_config.yaml'
+    elif config == Config.SORT_SEQUENCE:
+        path = base_dir + 'configs/sort_sequence_config.yaml'
     else:
         raise NotImplementedError
     with open(path) as file:

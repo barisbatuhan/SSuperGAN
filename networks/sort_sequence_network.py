@@ -13,16 +13,17 @@ from networks.panel_encoder.cnn_embedder import CNNEmbedder
 class SortSequenceNetwork(nn.Module):
     def __init__(self,
                  embedder: CNNEmbedder,
-                 pairwise_extraction_in_size:int,
+                 pairwise_extraction_in_size: int,
                  num_elements_in_sequence: int):
         super(SortSequenceNetwork, self).__init__()
+        self.pairwise_extraction_in_size = pairwise_extraction_in_size
         self.num_elements_in_sequence = num_elements_in_sequence
         self.num_pairs = len(list(itertools.combinations(list(range(0, num_elements_in_sequence)), 2)))
         self.order_choices = list(itertools.permutations(list(range(0, num_elements_in_sequence))))
         self.embed_dim = embedder.embed_dim
 
         self.feature_extractor = embedder
-        self.pairwise_feature_extraction = nn.Linear(in_features=pairwise_extraction_in_size, out_features=embed_dim)
+        self.pairwise_feature_extraction = nn.Linear(in_features=pairwise_extraction_in_size, out_features=self.embed_dim)
 
         # impl order prediction layer
         self.order_prediction_layer = nn.Linear(in_features=self.num_pairs * self.embed_dim,
@@ -55,9 +56,7 @@ class SortSequenceNetwork(nn.Module):
             shuffled_seq = copy.deepcopy(original_seq)
             random.shuffle(shuffled_seq)
             shuffled_x = copy.deepcopy(x[b])
-
             labels.append(self.order_choices.index(tuple(shuffled_seq)))
-
             for count, i in enumerate(shuffled_seq):
                 shuffled_x[count] = x[b, i]
             x[b] = shuffled_x

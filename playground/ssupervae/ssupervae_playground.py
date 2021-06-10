@@ -1,7 +1,3 @@
-import os
-import sys
-import json
-
 from torch import optim
 from torch.utils.data import DataLoader
 import torch.nn as nn
