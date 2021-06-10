@@ -12,6 +12,8 @@ import torch.nn as nn
 
 from data.datasets.golden_panels import GoldenPanelsDataset
 from networks.ssuper_global_local_discriminating import SSuperGlobalLocalDiscriminating
+from networks.ssuper_dcgan import SSuperDCGAN
+
 
 from networks.ssupervae import SSuperVAE
 
@@ -27,15 +29,15 @@ from functional.metrics.fid import FID
 
 metrics = ["PSNR", "FID"]
 
-METRIC = metrics[0]
-BATCH_SIZE = 256 if METRIC == "FID" else 64
+METRIC = metrics[1]
+BATCH_SIZE = 256 if METRIC == "FID" else 256
 N_SAMPLES = 50000
 
 # model_path = "/userfiles/comics_grp/pretrained_models/plain_ssupervae_epoch85.pth"
 # use_lstm = False
 
 # model_path = "/userfiles/comics_grp/pretrained_models/lstm_ssupervae_epoch99.pth"
-model_path = "/scratch/users/gsoykan20/projects/AF-GAN/playground/ssuper_global_local_discriminating/ckpts/27-05-2021-12-06-08_model-checkpoint-epoch75.pth"
+model_path = "/scratch/users/gsoykan20/projects/AF-GAN/playground/ssuper_global_local_discriminating/ckpts/04-06-2021-06-29-46_model-checkpoint-epoch52.pth"
 
 use_lstm = True
 
@@ -43,11 +45,19 @@ use_lstm = True
 mus = None
 sigmas = None
 
+"""
 config = read_config(Config.SSUPERVAE)
 golden_age_config = read_config(Config.GOLDEN_AGE)
 disc_config = read_config(Config.GLOBAL_LOCAL_DISC)
 ptu.set_gpu_mode(True)
+"""
 
+config = read_config(Config.SSUPERDCGAN)
+golden_age_config = read_config(Config.GOLDEN_AGE)
+disc_config = read_config(Config.GLOBAL_LOCAL_DISC)
+ptu.set_gpu_mode(True)
+
+"""
 base_net = SSuperVAE(config.backbone,
                          latent_dim=config.latent_dim,
                          embed_dim=config.embed_dim,
@@ -66,9 +76,39 @@ net = SSuperGlobalLocalDiscriminating(base_net,
                                                         # Assuming that panels are square
                                                         panel_img_size=golden_age_config.panel_dim[0],
                                                         output_img_size=config.image_dim).cuda()
+"""
+
+base_net = SSuperDCGAN(config.backbone,
+                           latent_dim=config.latent_dim,
+                           embed_dim=config.embed_dim,
+                           use_lstm=config.use_lstm,
+                           seq_size=config.seq_size,
+                           gen_img_size=config.image_dim,
+                           lstm_hidden=config.lstm_hidden,
+                           lstm_dropout=config.lstm_dropout,
+                           fc_hidden_dims=config.fc_hidden_dims,
+                           fc_dropout=config.fc_dropout,
+                           num_lstm_layers=config.num_lstm_layers,
+                           masked_first=config.masked_first,
+                           ngpu=config.ngpu,
+                           ngf=config.ngf,
+                           ndf=config.ndf,
+                           nc=config.nc,
+                           image_size=config.image_dim).cuda()
+
+net = SSuperGlobalLocalDiscriminating(base_net,
+                                                        # Assuming that panels are square
+                                                        panel_img_size=golden_age_config.panel_dim[0],
+                                                        output_img_size=config.image_dim,
+                                                        create_local_disc_lambda=lambda: base_net.dcgan.discriminator,
+                                                        create_global_disc_lambda=
+                                                        lambda: base_net.dcgan.create_generic_discriminator(
+                                                            golden_age_config.panel_dim[0])) \
+        .cuda()
 
 
-if config.parallel == True:
+
+if getattr(config, 'parallel', False):
         net = nn.DataParallel(net)
 
 net.load_state_dict(torch.load(model_path)['model_state_dict'])
@@ -120,7 +160,8 @@ elif METRIC == "FID":
             
         mus /= iter_cnt
         sigmas /= iter_cnt
-        
-    fid = metric.__call__(net, real_mean=mus, real_cov=sigmas)
-    print("-- FID:", fid, "on", N_SAMPLES, "samples.")
+    
+    with torch.no_grad():
+        fid = metric.__call__(net, real_mean=mus, real_cov=sigmas)
+        print("-- FID:", fid, "on", N_SAMPLES, "samples.")
 

@@ -6,6 +6,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 from tqdm import tqdm
+import gc
 from functional.metrics.psnr import PSNR
 from functional.metrics.fid import FID
 
@@ -21,14 +22,15 @@ metrics = ["PSNR", "FID"]
 
 METRIC = metrics[0]
 # use 128 for non contextual attn models
-BATCH_SIZE = 1 if METRIC == "FID" else 32
+BATCH_SIZE = 1 if METRIC == "FID" else 1
 N_SAMPLES = 5000
 
 # model_path = "/userfiles/comics_grp/pretrained_models/plain_ssupervae_epoch85.pth"
 # use_lstm = False
 
 # model_path = "/userfiles/comics_grp/pretrained_models/lstm_ssupervae_epoch99.pth"
-model_path = "/scratch/users/gsoykan20/projects/AF-GAN/playground/ssupervae_contextual_attention/ckpts/26-05-2021-13-05-56_model-checkpoint-epoch99.pth"
+model_path = "/scratch/users/gsoykan20/projects/AF-GAN/playground/ssupervae_contextual_attention/ckpts/02-06-2021-12-13-54_model-checkpoint-epoch67.pth"
+
 use_lstm = False
 
 # Required for FID, if not given, then calculated from scratch
@@ -97,7 +99,7 @@ if METRIC == "PSNR":
         _, _, interim_face_size, _ = y.shape
         x_plain = x
         with torch.no_grad():
-            _, _, _, mu_x, _ = net(x_plain.cuda()) 
+            _, _, _, mu_x, _ = net.coarse_forward(x_plain.cuda()) 
         _, _, _, \
             _, \
             fine_faces, _ = net.fine_generation_forward(x_plain.cuda(),
@@ -111,6 +113,8 @@ if METRIC == "PSNR":
         # FINE
         psnrs += PSNR.__call__(fine_faces.cpu(), y, fit_range=True)
         iter_cnt += 1
+        gc.collect()
+        torch.cuda.empty_cache()
     print("-- PSNR:", psnrs.item() / iter_cnt)
 
 
@@ -119,7 +123,7 @@ elif METRIC == "FID":
     metric = FID(n_samples=N_SAMPLES, batch_size=BATCH_SIZE)
 
     if mus is None or sigmas is None:
-        iter_cnt = 0
+        iter_cnt = 0    
         for _, y, _, mask_coordinates in tqdm(data_loader):
             original_features = metric.extract_features(y).cpu().numpy()
             mu = np.mean(original_features, axis=0)

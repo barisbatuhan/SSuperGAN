@@ -119,7 +119,8 @@ if __name__ == '__main__':
         model_name = "lstm_ssupervae_model"
     else:
         model_name = "plain_ssupervae_model"
+    model_name = model_name + '_' + get_dt_string()
 
     model = train(data_loader, config, model_name, cont_epoch=cont_epoch, cont_model=cont_model)
 
-    torch.save(model, base_dir + 'playground/ssupervae/results/' + "ssuper_vae_model.pth")
+    torch.save(model, base_dir + 'playground/ssupervae/results/' + model_name + ".pth")

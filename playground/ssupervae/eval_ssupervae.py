@@ -25,9 +25,9 @@ from functional.metrics.fid import FID
 
 metrics = ["PSNR", "FID"]
 
-METRIC = metrics[0]
-BATCH_SIZE = 256 if METRIC == "FID" else 64
-N_SAMPLES = 50000
+METRIC = metrics[1]
+BATCH_SIZE = 512 if METRIC == "FID" else 64
+N_SAMPLES = 10000
 
 # model_path = "/userfiles/comics_grp/pretrained_models/plain_ssupervae_epoch85.pth"
 # use_lstm = False
@@ -62,6 +62,10 @@ if config.parallel == True:
         net = nn.DataParallel(net)
 
 net.load_state_dict(torch.load(model_path)['model_state_dict'])
+
+if getattr(config, 'parallel', False):
+    net = net.module
+    
 net = net.cuda().eval()
 
 dataset = GoldenPanelsDataset(golden_age_config.panel_path,
