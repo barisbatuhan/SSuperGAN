@@ -147,6 +147,8 @@ class GoldenPanelsDataset(Dataset):
             returns = panels, faces
 
         if self.return_gt_last_panel:
-            return *returns, last_panel_gt[0]
+            returns = list(returns)
+            returns.append(last_panel_gt[0])
+            return returns
 
         return returns

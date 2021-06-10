@@ -9,7 +9,6 @@ from networks.sort_sequence_network import SortSequenceNetwork
 
 from networks.ssupervae import SSuperVAE
 from training.sort_sequence_trainer import SortSequenceTrainer
-from training.vae_trainer import VAETrainer
 from utils.config_utils import read_config, Config
 from utils.plot_utils import *
 from utils.logging_utils import *
@@ -92,7 +91,7 @@ if __name__ == '__main__':
     golden_age_config = read_config(Config.GOLDEN_AGE)
     cont_epoch = -1
     cont_model = None  # "playground/ssupervae/weights/model-18.pth"
-    limit_size = 512
+    limit_size = 10000
     data = GoldenPanelsDataset(golden_age_config.panel_path,
                                golden_age_config.sequence_path,
                                golden_age_config.panel_dim,
