@@ -23,7 +23,8 @@ class SortSequenceNetwork(nn.Module):
         self.embed_dim = embedder.embed_dim
 
         self.feature_extractor = embedder
-        self.pairwise_feature_extraction = nn.Linear(in_features=pairwise_extraction_in_size, out_features=self.embed_dim)
+        self.pairwise_feature_extraction = nn.Linear(in_features=pairwise_extraction_in_size,
+                                                     out_features=self.embed_dim)
 
         # impl order prediction layer
         self.order_prediction_layer = nn.Linear(in_features=self.num_pairs * self.embed_dim,
@@ -47,8 +48,7 @@ class SortSequenceNetwork(nn.Module):
         result = self.order_prediction_layer(order_features.view(B, -1))
         return result
 
-    def shuffle_forward_loss(self, x):
-        # Shuffle and generate labels
+    def shuffle_forward(self, x):
         B, S, C, H, W = x.shape
         labels = []
         for b in range(B):
@@ -62,6 +62,10 @@ class SortSequenceNetwork(nn.Module):
             x[b] = shuffled_x
         labels = torch.Tensor(labels).long().cuda()
         output = self.forward(x)
+        return output, labels
+
+    def shuffle_forward_loss(self, x):
+        output, labels = self.shuffle_forward(x)
         loss = nn.CrossEntropyLoss()
         loss_val = loss(output, labels)
         return loss_val
