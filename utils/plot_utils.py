@@ -9,6 +9,7 @@ from torchvision.utils import make_grid
 from torchvision.utils import save_image
 
 from data.augment import get_PIL_image
+from networks.panel_encoder.cnn_embedder import CNNEmbedder
 
 
 def savefig(fname, show_figure=True):
@@ -187,3 +188,33 @@ def draw_backbone_saliency(model, img, idx):
     
     plt.tight_layout()
     plt.show() 
+
+
+def draw_cnn_embedder_saliency(model: CNNEmbedder, img, idx):
+    c, h, w = img.shape[-3:]
+    px = 1 / plt.rcParams['figure.dpi']
+    fig, ax = plt.subplots(1, 3)
+    fig.set_size_inches(3 * w * px, 1.2 * h * px)
+
+    img.requires_grad_()
+    outs = model.model.extract_features(img.cuda().reshape(-1, c, h, w))
+    out = outs.sum()
+    out.backward()
+
+    g_img = img.grad
+
+    saliency, _ = torch.max(g_img[0, idx, :, :, :].data.abs(), dim=0)
+    saliency = saliency.reshape(h, w)
+
+    # Visualize the image and the saliency map
+    init_img = get_PIL_image(img[0, idx, :, :, :])
+    ax[0].imshow(init_img)
+    ax[0].axis('off')
+    ax[1].imshow(saliency.cpu(), cmap='hot')
+    ax[1].axis('off')
+    ax[2].imshow(init_img)
+    ax[2].imshow(saliency.cpu(), cmap='hot', alpha=0.7)
+    ax[2].axis('off')
+
+    plt.tight_layout()
+    plt.show()

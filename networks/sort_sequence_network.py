@@ -31,6 +31,31 @@ class SortSequenceNetwork(nn.Module):
                                                 out_features=len(self.order_choices))
 
     def forward(self, x):
+        return self.shuffle_forward(x)
+    
+    def shuffle_forward(self, x):
+        B, S, C, H, W = x.shape
+        labels = []
+        for b in range(B):
+            original_seq = list(range(0, S))
+            shuffled_seq = copy.deepcopy(original_seq)
+            random.shuffle(shuffled_seq)
+            shuffled_x = copy.deepcopy(x[b])
+            labels.append(self.order_choices.index(tuple(shuffled_seq)))
+            for count, i in enumerate(shuffled_seq):
+                shuffled_x[count] = x[b, i]
+            x[b] = shuffled_x
+        labels = torch.Tensor(labels).long().cuda()
+        output = self.plain_forward(x)
+        return output, labels
+
+    def shuffle_forward_loss(self, x):
+        output, labels = self.shuffle_forward(x)
+        loss = nn.CrossEntropyLoss()
+        loss_val = loss(output, labels)
+        return loss_val
+    
+    def plain_forward(self, x):
         B, S, C, H, W = x.shape
         embeddings = self.feature_extractor.model.extract_features(x.reshape(-1, C, H, W))
         embeddings = embeddings.reshape(B, S, -1)
@@ -47,28 +72,6 @@ class SortSequenceNetwork(nn.Module):
         order_features = torch.cat(pair_features, dim=1)
         result = self.order_prediction_layer(order_features.view(B, -1))
         return result
-
-    def shuffle_forward(self, x):
-        B, S, C, H, W = x.shape
-        labels = []
-        for b in range(B):
-            original_seq = list(range(0, S))
-            shuffled_seq = copy.deepcopy(original_seq)
-            random.shuffle(shuffled_seq)
-            shuffled_x = copy.deepcopy(x[b])
-            labels.append(self.order_choices.index(tuple(shuffled_seq)))
-            for count, i in enumerate(shuffled_seq):
-                shuffled_x[count] = x[b, i]
-            x[b] = shuffled_x
-        labels = torch.Tensor(labels).long().cuda()
-        output = self.forward(x)
-        return output, labels
-
-    def shuffle_forward_loss(self, x):
-        output, labels = self.shuffle_forward(x)
-        loss = nn.CrossEntropyLoss()
-        loss_val = loss(output, labels)
-        return loss_val
 
 
 if __name__ == '__main__':

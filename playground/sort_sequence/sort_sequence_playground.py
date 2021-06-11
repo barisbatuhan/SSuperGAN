@@ -73,6 +73,7 @@ def train(data_loader,
     else:
         epoch, losses = None, {}
 
+    initiate_logger()
     train_losses, test_losses = trainer.train_epochs(starting_epoch=epoch, losses=losses)
 
     print("[INFO] Completed training!")

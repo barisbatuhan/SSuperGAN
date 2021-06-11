@@ -91,7 +91,9 @@ class SortSequenceTrainer(BaseTrainer):
             x = batch[0].cuda()
             last_panel_gt = batch[2].cuda()
             x[:, -1] = last_panel_gt
-            loss = self.model.shuffle_forward_loss(x)
+            output, labels = self.model(x)
+            loss_fn = nn.CrossEntropyLoss()
+            loss = loss_fn(output, labels)
             out = OrderedDict(loss=loss)
             for k, v in out.items():
                 total_losses[k] = total_losses.get(k, 0) + v.item() * x.shape[0]
@@ -116,7 +118,9 @@ class SortSequenceTrainer(BaseTrainer):
             last_panel_gt = batch[2].cuda()
             x[:, -1] = last_panel_gt
             # Think something for DataParallel if isinstance(self.model, nn.DataParallel):
-            loss = self.model.shuffle_forward_loss(x)
+            output, labels = self.model(x)
+            loss_fn = nn.CrossEntropyLoss()
+            loss = loss_fn(output, labels)
             out = OrderedDict(loss=loss)
             out['loss'].backward()
 
