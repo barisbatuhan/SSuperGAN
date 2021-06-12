@@ -141,7 +141,7 @@ class GoldenPanelsDataset(Dataset):
 
         if self.return_mask and self.return_mask_coordinates:
             returns = panels, faces, mask_data, mask_coordinates
-        if self.return_mask:
+        elif self.return_mask:
             returns = panels, faces, mask_data
         else:
             returns = panels, faces
