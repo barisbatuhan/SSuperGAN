@@ -11,13 +11,17 @@ from efficientnet_pytorch import EfficientNet
 
 class CNNEmbedder(nn.Module):
 
-    def _init_(self, backbone, use_linear=True, embed_dim=256):
-        super(CNNEmbedder, self)._init_()
+    def __init__(self,
+                 backbone,
+                 use_linear=True,
+                 embed_dim=256,
+                 use_old=True):
+        super(CNNEmbedder, self).__init__()
 
         self.embed_dim = embed_dim
         self.use_linear = use_linear
         self.backbone = backbone
-        self.use_old = True
+        self.use_old = use_old
 
         if not use_linear:
             embed_dim = 1  # to reduce the memory size

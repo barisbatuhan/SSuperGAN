@@ -4,6 +4,7 @@ import torch.nn as nn
 
 from data.datasets.random_dataset import RandomDataset
 from data.datasets.golden_panels import GoldenPanelsDataset
+from networks.sort_sequence_network import SortSequenceNetwork
 
 from networks.ssupervae import SSuperVAE
 from training.vae_trainer import VAETrainer
@@ -21,7 +22,14 @@ def save_best_loss_model(model_name, model, best_loss):
     torch.save(model, base_dir + 'playground/ssupervae/weights/' + model_name + ".pth")
 
 
-def train(data_loader, config, model_name='plain_ssupervae', cont_epoch=-1, cont_model=None):
+def train(data_loader,
+          config,
+          panel_dim,
+          model_name='plain_ssupervae',
+          cont_epoch=-1,
+          cont_model=None,
+          use_pretrained_embedder=False,
+          pretrained_embedder_path=None):
     # loading config
     print("[INFO] Initiate training...")
 
@@ -39,6 +47,24 @@ def train(data_loader, config, model_name='plain_ssupervae', cont_epoch=-1, cont
                     fc_dropout=config.fc_dropout,
                     num_lstm_layers=config.num_lstm_layers,
                     masked_first=config.masked_first).cuda()
+
+    if use_pretrained_embedder:
+        assert pretrained_embedder_path is not None, "Pretrained embedder path is needed"
+        embedder_config = read_config(Config.SORT_SEQUENCE)
+        cnn_embedder = CNNEmbedder(backbone=embedder_config.backbone,
+                                   embed_dim=embedder_config.embed_dim)
+        son_net = SortSequenceNetwork(embedder=cnn_embedder,
+                                      num_elements_in_sequence=config.seq_size,
+                                      pairwise_extraction_in_size=(panel_dim ** 2) * 4).cuda()
+        if getattr(embedder_config, 'parallel', False):
+            son_net = nn.DataParallel(son_net)
+        son_net.load_state_dict(torch.load(pretrained_embedder_path)['model_state_dict'])
+
+        if getattr(config, 'parallel', False):
+            son_net = son_net.module
+
+        cnn_embedder = son_net.feature_extractor
+        net.encoder.embedder = cnn_embedder
 
     if config.parallel == True:
         net = nn.DataParallel(net)
@@ -117,6 +143,14 @@ if __name__ == '__main__':
         model_name = "plain_ssupervae_model"
     model_name = model_name + '_' + get_dt_string()
 
-    model = train(data_loader, config, model_name, cont_epoch=cont_epoch, cont_model=cont_model)
+    model = train(data_loader,
+                  config,
+                  golden_age_config.panel_dim[0],
+                  model_name,
+                  cont_epoch=cont_epoch,
+                  cont_model=cont_model,
+                  use_pretrained_embedder=True,
+                  pretrained_embedder_path="/scratch/users/gsoykan20/projects/AF-GAN/playground/sort_sequence/ckpts/sort_sequence_10-06-2021-23-36-41-checkpoint-epoch9.pth "
+                  )
 
     torch.save(model, base_dir + 'playground/ssupervae/results/' + model_name + ".pth")
