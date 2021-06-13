@@ -25,15 +25,15 @@ from functional.metrics.fid import FID
 
 metrics = ["PSNR", "FID"]
 
-METRIC = metrics[1]
+METRIC = metrics[0]
 BATCH_SIZE = 512 if METRIC == "FID" else 64
-N_SAMPLES = 10000
+N_SAMPLES = 50000
 
 # model_path = "/userfiles/comics_grp/pretrained_models/plain_ssupervae_epoch85.pth"
 # use_lstm = False
 
 # model_path = "/userfiles/comics_grp/pretrained_models/lstm_ssupervae_epoch99.pth"
-model_path = "/scratch/users/gsoykan20/projects/AF-GAN/playground/ssupervae/ckpts/lstm_ssupervae_model-checkpoint-epoch99.pth"
+model_path = "/scratch/users/gsoykan20/projects/AF-GAN/playground/ssupervae/ckpts/lstm_ssupervae_model_09-06-2021-08-11-28-checkpoint-epoch99.pth"
 use_lstm = True
 
 # Required for FID, if not given, then calculated from scratch

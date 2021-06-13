@@ -79,6 +79,8 @@ def train(data_loader,
     scheduler = optim.lr_scheduler.LambdaLR(optimizer,
                                             lambda epoch: (config.train_epochs - epoch) / config.train_epochs,
                                             last_epoch=-1)
+    
+    initiate_logger()
     # init trainer
     trainer = VAETrainer(model=net,
                          model_name=model_name,
@@ -149,8 +151,8 @@ if __name__ == '__main__':
                   model_name,
                   cont_epoch=cont_epoch,
                   cont_model=cont_model,
-                  use_pretrained_embedder=True,
-                  pretrained_embedder_path="/scratch/users/gsoykan20/projects/AF-GAN/playground/sort_sequence/ckpts/sort_sequence_10-06-2021-23-36-41-checkpoint-epoch9.pth "
+                  use_pretrained_embedder=False,
+                  pretrained_embedder_path="/scratch/users/gsoykan20/projects/AF-GAN/playground/sort_sequence/ckpts/sort_sequence_10-06-2021-23-36-41-checkpoint-epoch9.pth"
                   )
 
     torch.save(model, base_dir + 'playground/ssupervae/results/' + model_name + ".pth")
