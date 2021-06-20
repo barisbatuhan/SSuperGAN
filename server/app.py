@@ -1,32 +1,20 @@
 import base64
+from io import BytesIO
 
 import flask
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import torchvision
-import torchvision.models as models
 from flask import request, jsonify
-from torch.utils.data import DataLoader
-import numpy as np
-import matplotlib.pyplot as plt
-from copy import deepcopy
-
-import os
 import sys
 
 from torchvision.transforms import transforms
 
-from data.datasets.random_dataset import RandomDataset
-from data.datasets.golden_panels import GoldenPanelsDataset
-from data.augment import get_PIL_image, normalize
-
+from data.augment import normalize, get_PIL_image
 from networks.ssupervae import SSuperVAE
-from training.vae_trainer import VAETrainer
 from utils.config_utils import read_config, Config
-from utils.logging_utils import *
 from utils.plot_utils import *
 from utils import pytorch_util as ptu
+from utils.image_utils import *
 
 from configs.base_config import *
 import numpy as np
@@ -72,14 +60,15 @@ def init():
 def predict():
     panels = list(map(read_image_from_request, ['panel1', 'panel2', 'panel3']))
     output_img = get_model_output(panels[0], panels[1], panels[2])
-    img_base64 = base64.b64encode(output_img.tobytes())
-    return jsonify({'status': str(img_base64)})
+    buffered = BytesIO()
+    output_img.save(buffered, format="JPEG")
+    img_str = base64.b64encode(buffered.getvalue())
+    return jsonify({'status': str(img_str)})
 
 
 def read_image_from_request(img_name):
     file = request.files[img_name].read()  ## byte file
-    npimg = np.fromstring(file, np.uint8)
-    img = Image.fromarray(np.uint8(npimg)).convert('RGB')
+    img = Image.open(BytesIO(file)).convert('RGB')
     img = transforms.ToTensor()(img).unsqueeze(0)
     normalize(img)
     img = img.resize_(3, 256, 256)
