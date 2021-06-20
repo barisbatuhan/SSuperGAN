@@ -16,7 +16,7 @@ def elbo(z,
          l1_recon=False):
     kl_loss_value = kl_loss(z, mu_z, torch.exp(logstd_z))
     if not l1_recon:
-        reconstruction_loss = -recon_loss_weight * reconstruction_loss_distributional(mu_x, x, logstd_x)
+        reconstruction_loss = -recon_loss_weight * reconstruction_loss_distributional(x, mu_x, logstd_x)
     else:
         reconstruction_loss = recon_loss_weight * l1_loss(mu_x, x)
     loss = reconstruction_loss + kl_loss_weight * kl_loss_value

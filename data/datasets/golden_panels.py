@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 import torchvision.transforms.functional as TF
-
+from utils.image_utils import *
 from data.augment import *
 
 sort_golden_panel_dataset = True
@@ -27,6 +27,7 @@ class GoldenPanelsDataset(Dataset):
                  mask_all: bool = False,  # masks faces from all panels and returns all faces
                  return_mask: bool = False,  # returns last panel's masking information
                  return_mask_coordinates=False,  # returns coordinates of the masked area
+                 return_gt_last_panel=False,
                  train_test_ratio: float = 0.95,  # ratio of train data
                  train_mode: bool = True,
                  limit_size: int = -1):
@@ -39,6 +40,7 @@ class GoldenPanelsDataset(Dataset):
         self.mask_all = mask_all
         self.return_mask = return_mask
         self.return_mask_coordinates = return_mask_coordinates
+        self.return_gt_last_panel = return_gt_last_panel
 
         with open(annot_path, "r") as f:
             annots = json.load(f)
@@ -80,6 +82,9 @@ class GoldenPanelsDataset(Dataset):
         annots = self.data[idx]
         panels, faces = [], []
 
+        if self.return_gt_last_panel:
+            last_panel_gt = None
+
         if self.return_mask:
             mask_data = torch.zeros(self.panel_dim[1], self.panel_dim[0])
 
@@ -99,6 +104,8 @@ class GoldenPanelsDataset(Dataset):
             panel = transforms.ToTensor()(panel).unsqueeze(0)
 
             if self.mask_all or i == len(annots[0]) - 1:
+                if self.return_gt_last_panel:
+                    last_panel_gt = copy.deepcopy(panel)
                 # get face
                 face = copy.deepcopy(panel[:, :, f_shifted[1]:f_shifted[3], f_shifted[0]:f_shifted[2]])
                 face = TF.resize(face, [self.face_dim, self.face_dim])
@@ -119,6 +126,10 @@ class GoldenPanelsDataset(Dataset):
                     mask_data[m_shifted[1]:m_shifted[3], m_shifted[0]:m_shifted[2]] = 1
                     mask_coordinates = np.array((m_shifted[1], m_shifted[3], m_shifted[0], m_shifted[2]))
 
+            if self.return_gt_last_panel and last_panel_gt is not None:
+                last_panel_gt = TF.resize(last_panel_gt, [self.panel_dim[1], self.panel_dim[0]])
+                last_panel_gt = normalize(last_panel_gt)
+
             panel = TF.resize(panel, [self.panel_dim[1], self.panel_dim[0]])
             panels.append(panel)
 
@@ -129,8 +140,15 @@ class GoldenPanelsDataset(Dataset):
             faces = normalize(faces[0])
 
         if self.return_mask and self.return_mask_coordinates:
-            return panels, faces, mask_data, mask_coordinates
-        if self.return_mask:
-            return panels, faces, mask_data
+            returns = panels, faces, mask_data, mask_coordinates
+        elif self.return_mask:
+            returns = panels, faces, mask_data
         else:
-            return panels, faces
+            returns = panels, faces
+
+        if self.return_gt_last_panel:
+            returns = list(returns)
+            returns.append(last_panel_gt[0])
+            return returns
+
+        return returns
