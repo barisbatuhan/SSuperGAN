@@ -42,7 +42,6 @@ The whole panel data is processed by a cartoon Face Detector model (which can be
 ### USING GOLDEN AGE DATA
 
 - In order to run the module 'golden_age_config.yaml' file should be created under configs.
-- Example Config:
 
 ```yaml
 # For directly face generation task
@@ -61,10 +60,9 @@ train_test_ratio: 0.95
 train_mode: True
 ```
 
-### SSuper Global DCGAN Module
+### Parameters of a Sample Model Module
 
-- In order to run the module 'ssuper_dcgan_config.yaml' file should be created under configs.
-- Example Config:
+- In order to run a model, a subset of the hyper-parameters below has to be set depending on the model type. Add the file to `configs` directory and set correct paths in the `utils/config_utils.py`.
 
 ```yaml
 # Encoder Parameters
@@ -94,6 +92,11 @@ panel_size:
     - 300
     - 300
 gen_channels: 64
+enc_channels: 
+    - 64
+    - 128
+    - 256
+    - 512
 local_disc_channels: 64
 global_disc_channels: 64
 
@@ -112,74 +115,6 @@ disc_mom: 0.9
 
 # Parallelization Parameters
 parallel: True
-```
-
-### VAE-GAN Module
-
-- In order to run the module 'vaegan_config.yaml' file should be created under configs.
-- Example Config:
-
-```yaml
-latent_dim: 512
-
-# DCGAN Parameters
-img_size: 64
-gen_channels: 64
-enc_channels: 
-    - 64
-    - 128
-    - 256
-    - 512
-local_disc_channels: 64
-
-# Training Parameters
-batch_size: 64
-train_epochs: 200
-lr: 0.0002
-weight_decay: 0.000025
-beta_1: 0.5
-beta_2: 0.999
-g_clip: 100
-
-local_disc_lr: 0.0002
-
-# Parallelization Parameters
-parallel: True
-```
-
-### Plain SsuperVAE Module
-
-- To train the PlainSSuperVAE network, you have to specify the following parameters in the `ssupervae_config.yaml` file under the *configs* folder. To use the LSTM structure, simply set the flag `use_lstm` to `True`.
-
-```yaml
-# Fill with new parameters
-```
-
-### VAE Module
-
-- In order to run the module 'vae_config.yaml' file should be created under configs.
-- Example Config:
-
-```yaml
-# Fill with new parameters
-```
-
-### Intro-VAE Module
-
-- In order to run the module 'intro_vae_config.yaml' file should be created under configs.
-- Example Config:
-
-```yaml
-# Fill with new parameters
-```
-
-### DCGAN Module
-
-- In order to run the module 'dcgan_config.yaml' file should be created under configs.
-- Example Config:
-
-```yaml
-# Fill with new parameters
 ```
 
 ### Project Based Configuration
