@@ -30,7 +30,7 @@ The whole panel data is processed by a cartoon Face Detector model (which can be
 
 ### Metric Results
 
-![WIP](./images/readme_images/Results.JPG)
+![WIP](./images/readme_images/Results.PNG)
 
 ## Pretrained Models and Links
 
