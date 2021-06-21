@@ -12,7 +12,7 @@ This repository is not fully completed!
 
 The whole panel data is processed by a cartoon Face Detector model (which can be found in [here](https://github.com/barisbatuhan/FaceDetector)) by using `mixed_r50` weights and by setting `confidence threshold` to 0.9 and `nms threshold` to 0.2. The following statistics are retrieved from the data:
 
-- ** Total files:** 1229664
+- **Total files:** 1229664
 - **Panel Height:** mean=510.0328 / median=475 / mode=445
 - **Panel Width:** mean=508.4944 / median=460 / mode=460
 
