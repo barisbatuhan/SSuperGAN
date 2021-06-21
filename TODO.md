@@ -1,75 +1,54 @@
 
 # TO DO
 
-### ROADMAP and MODELS
+## Future Works
 
-- [+] AutoEncoder Like Structure 
-- VAE Like Structure ( with/out LSTM or Simple Concating )
-- VAE Like Structure With a GAN
-- VAE like Structure With a BiGAN or GAN and a separete enconding of face 
-- Inpainting Baseline
-- Possible Combo of All of these
+- DCGAN Loss yapısını WGAN Loss tarzına çevirmek
+- DINO / BYOL gibi 
+- Inpainting yapısı ile pretrain yapmak.
+- Binary person classifier eğitme yapılabilir EfficientNet kullanarak.
 
+## 21.06.2021
 
-### NEW TASKS 20-27.05.2021
-
-- **[Barış]** DCGAN yapısı düzgün çalışacak hale getirilmeli, genel yüz yapısı, face orientation, color info falan tutturulmalı
-- **[Gürkan]** Inpainting içindeki Fine Pass çıkartılarak Global ve Local Discr. Coarse generator'a bağlanmalı, reconstruction kalitesi
-- **[Çağhan]** StyleGAN implementasyonu bizim yapıya benzetip golden yüz datasıyla eğitmek e.g. [Style-Based-GAN](https://github.com/rosinality/style-based-gan-pytorch).
-- **[Barış & Çağhan]** DCGAN Loss yapısını WGAN Loss tarzına çevirmek
 - **[Gürkan]** Grid-/RandomSearch tarzında bir yapı ile doğru hyper-parameter arama.
+- **[Gürkan]** Model yapısını PyTorch Lightning ile çevirme (başlangış SSuperVAE).
+- **[Barış]** VAE-GAN yapısı iyice eğitilip KL loss ile düzgün çalışır hale getirilmeye çalışılacak. Sonrasında Sequential Encoder yapısı ile bu modül bağlanacak.
+- **[Barış & Çağhan]** StyleGAN implementasyonu bizim yapıya benzetip golden yüz datasıyla eğitmek e.g. 
+	- [Style-Based-GAN](https://github.com/rosinality/style-based-gan-pytorch)
+	- [In-Domain Inversion](https://github.com/genforce/idinvert_pytorch)
 
+- **[Çağhan]** Jigsaw model epitimini tamamla ve yardımcı olabilir mi bak.
+- **[Çağhan]** Düz panel resimleri döndüren bir Dataset yapısı oluşturulacak, sequence length bir parametre olacak ona göre return edilecek.
+- **[Herkes]** [AE Tutorial](https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial9/AE_CIFAR10.html) oku, tartış.
 
-## CNN Backbone Yapısı Eğitimi
+## 20.05.2021
 
-- **[Barış]** Binary person classifier eğitme yapılabilir EfficientNet kullanarak.
-- **[Gürkan]** DINO / BYOL gibi 
-- **[Gürkan]** Inpainting yapısı ile pretrain yapmak.
+- **[+]** DCGAN yapısı düzgün çalışacak hale getirilmeli, genel yüz yapısı, face orientation, color info falan tutturulmalı
+- **[+]** Inpainting içindeki Fine Pass çıkartılarak Global ve Local Discr. Coarse generator'a bağlanmalı, reconstruction kalitesi
 
 ## Golden Dataset Üzerine Geliştirmeler
 
-- **[+]** Bir preprocess ile şu yapı çıkartılacak: 
-
-```python
-{
-    1: [
-        ["img1.jpg", "img2.jpg", "..."],
-        [
-            ["<img1_panel_coords>", "<img1_face_coords>"],
-            ["<img2_panel_coords>", "<img2_face_coords>"],
-            "..."
-        ]
-        
-    ],
-    
-    2: "..."
-}
-```
-
+- **[+]** Bir preprocess ile sequential panel yapısı ve panel/face annotation yapısını geliştir. 
 - **[+]** Daha sade ve sadece crop & augment olan bir dataset çıkartılacak.
 
 ## Model Geliştirmeleri
 
-- **[Çağhan]** GAN yapısı oluşturup (DCGAN gibi ve daha da advanced 1 tane - [In-Domain Inversion](https://github.com/genforce/idinvert_pytorch)) yüz datasıyla eğitme.
-- Global discriminator yapısı ekleme ve onunla modeli eğitme.
-- **[Gürkan]** Weight save ettikten sonra o saved weight ile training sürecine devam ettirmek. [+]
-- **[İleri Seviye]** LSTM oluşturma.
+- **[+]** GAN yapısı oluşturup (DCGAN) yüz datasıyla eğitme.
+- **[+]** Global discriminator yapısı ekleme ve onunla modeli eğitme.
+- **[+]** Weight save ettikten sonra o saved weight ile training sürecine devam ettirmek. [+]
+- **[+]** LSTM oluşturma.
 
+## 01.05.2021
 
-### NEW TASKS 1-9.05.2021
+- **[+]** Dataset teki sequential panelleri bulalım - hard data processing 
+- **[+]** Data Okuma => DataLoader yapıcaz => X: [B, P(panel sayısı), 3, W, H], Y: Masklenmiş yüz, [B, 1 (single face), 3, W, H], (Yüzleri keserken square kesicez yüzü içeren ve 64 * 64 e resize edicez), y resize edilmiş image olarak verilecek. 
+	- **[+]** Yüz keserken minimum edge 32 olsun, daha küçük olunca yok olmuş olacak
+	- **[+]** DataLoader yapılıcak.
+	- **[+]** Average Aspect Ratio bulucaz dataset içinde daha sonra image kesmeyi buna göre yapabiliriz. ve bunu center crop yaparak daha sonra image larda kullanıcaz. 
+- **[+]** CNN LSTM networku kurma
+- **[+]** Latent alındığı zaman generator discriminator yapısını oluşturma
 
-- [+] Dataset teki sequential panelleri bulalım - hard data processing 
-- [+] Data Okuma => DataLoader yapıcaz => X: [B, P(panel sayısı), 3, W, H], Y: Masklenmiş yüz, [B, 1 (single face), 3, W, H], (Yüzleri keserken square kesicez yüzü içeren ve 64 * 64 e resize edicez), y resize edilmiş image olarak verilecek. 
-	- [+] Yüz keserken minimum edge 32 olsun, daha küçük olunca yok olmuş olacak
-	- [+] DataLoader yapılıcak.
-	- [+] Average Aspect Ratio bulucaz dataset içinde daha sonra image kesmeyi buna göre yapabiliriz. ve bunu center crop yaparak daha sonra image larda kullanıcaz. 
-- [+] CNN LSTM networku kurma
-- [+] Latent alındığı zaman generator discriminator yapısını oluşturma
-
-
-
-
-### **Network Oluşturma:**  [+]
+## **[+]** **Network Oluşturma:**
 
 Gürkan bakacak, yararlı bazı çalışmalar:
 
@@ -84,9 +63,7 @@ Gürkan bakacak, yararlı bazı çalışmalar:
 - [Measure Face Similarity Based on Deep Learning](http://www.diva-portal.se/smash/get/diva2:1361888/FULLTEXT01.pdf)
 
 
-## Siamese
-
-### **Data Okuma:** [+]
+## **[+]** **Siamese - Data Okuma**
 
 Gürkan hazırlayacak, DataLoader yapısı kullanılabilir 
 - iCartoonFace: https://github.com/luxiangju-PersonAI/iCartoonFace
