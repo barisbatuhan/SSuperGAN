@@ -17,11 +17,11 @@ def determine_env() -> Environment:
     cwd = os.getcwd()
     if "/home/gsoykan20/Desktop/AF-GAN/" in cwd:
         return Environment.G_LOCAL
-    elif "/kuacc/users/gsoykan20/" in cwd or '/scratch/users/gsoykan20/' in cwd:
+    elif "/users/gsoykan20/" in cwd:
         return Environment.G_CLUSTER
     elif "/users/baristopal20/" in cwd:
         return Environment.B_CLUSTER
-    elif "/kuacc/users/ckoksal20" in cwd or '/scratch/users/ckoksal20/' in cwd: 
+    elif "/users/ckoksal20/" in cwd: 
         return Environment.C_CLUSTER
     elif "/home/ckoksal20/Desktop/COMP547/SSuperGAN/" in cwd:
         return Environment.C_LOCAL

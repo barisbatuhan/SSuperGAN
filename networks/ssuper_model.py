@@ -17,11 +17,9 @@ from networks.encoder.introvae_encoder import IntroVAEEncoder
 
 from networks.generator.dcgan_generator import DCGANGenerator
 from networks.generator.introvae_generator import IntroVAEGenerator
-from networks.generator.stylegan2_generator import StyleGAN2Generator
 
 from networks.discriminator.dcgan_discriminator import DCGANDiscriminator
 from networks.discriminator.inpainting_discriminator import InpaintingDiscriminator
-from networks.discriminator.stylegan2_discriminator import StyleGAN2Discriminator
 
 class SSuperModel(nn.Module):
     
@@ -34,11 +32,13 @@ class SSuperModel(nn.Module):
                  img_size: int=64,                 # generated face image size (shape is square)
                  use_lstm: bool=False,             # flag for using plain concat or lstm in sequential encoder
                  use_seq_enc: bool=True,           # Set to False of you only want to run pure generation module
-                 enc_choice=None,                  # options: ["vae", None]. If "vae", then gen. should be also vae
-                 gen_choice="dcgan",               # options: ["dcgan", "stylegan2", "vae"]
-                 local_disc_choice="dcgan",        # options: ["dcgan", "stylegan2", inpainting", None]
-                 global_disc_choice="dcgan",       # options: ["dcgan", "stylegan2", "inpainting", None]
-                 gen_channels=64,                  # pass integer for DCGAN and [64, 128, 256, 512] for VAE,
+                 enc_choice=None,                  # options: ["vae", None]. If "vae", then gen. should be also vae, 
+                                                   # "stylegan" provides the mapping module from z -> w
+                 gen_choice="dcgan",               # options: ["dcgan", "vae"]
+                 local_disc_choice="dcgan",        # options: ["dcgan", inpainting", None]
+                 global_disc_choice="dcgan",       # options: ["dcgan", "inpainting", None]
+                 gen_channels=64,                  # pass integer for DCGAN
+                 enc_channels=[64, 128, 256, 512, 512, 512], # encoder channels with default values of IntroVAE
                  
                  # seq. plain enc. parameters
                  seq_size: int=3,                  # number of sequential panels if plain encoder is used
@@ -62,17 +62,9 @@ class SSuperModel(nn.Module):
         
         # Input correctness checks
         assert enc_choice in ["vae", None]
-        assert gen_choice in ["dcgan", "stylegan2", "vae"]
-        assert local_disc_choice in ["dcgan", "stylegan2", "inpainting", None]
-        assert global_disc_choice in ["dcgan", "stylegan2", "inpainting", None]
-        
-        if type(gen_channels) == int:
-            assert gen_choice in ["dcgan", "stylegan2"]
-        else:
-            assert gen_choice == "vae"
-        
-        if enc_choice == "vae":
-            assert gen_choice == "vae"
+        assert gen_choice in ["dcgan", "vae", None]
+        assert local_disc_choice in ["dcgan", "inpainting", None]
+        assert global_disc_choice in ["dcgan", "inpainting", None]
         
         self.latent_dim = latent_dim
         self.gen_choice = gen_choice
@@ -106,28 +98,17 @@ class SSuperModel(nn.Module):
             self.encoder = None
         elif enc_choice == "vae":
             self.encoder = IntroVAEEncoder(
-                hdim=latent_dim, channels=decoder_channels, image_size=img_size)
+                hdim=latent_dim, channels=enc_channels, image_size=img_size)
         else:
             raise NotImplementedError
         
         # Generator Module Declaration
         if gen_choice == "vae":
             self.generator = IntroVAEGenerator(
-                hdim=latent_dim, channels=decoder_channels, image_size=img_size)
+                hdim=latent_dim, channels=enc_channels, image_size=img_size)
         
         elif gen_choice == "dcgan":
             self.generator = DCGANGenerator(img_size, 3, latent_dim, gen_channels)
-        
-        elif gen_choice == "stylegan2":
-            self.generator = StyleGAN2Generator(
-                img_size,
-                z_space_dim=latent_dim,
-                w_space_dim=latent_dim,
-                image_channels=3,
-                final_tanh=False,
-                const_input=True,
-                architecture='origin'
-            )
         
         # Local Discriminator Module Declaration
         if local_disc_choice is None:
@@ -138,9 +119,6 @@ class SSuperModel(nn.Module):
         elif local_disc_choice == "inpainting":
             self.local_discriminator = InpaintingDiscriminator(
                 (img_size, img_size), 3, local_disc_channels)
-        elif local_disc_choice == "stylegan2":
-            self.local_discriminator = StyleGAN2Discriminator(
-                img_size, image_channels=3, architecture='origin')
             
         # Global Discriminator Module Declaration
         if global_disc_choice is None:
@@ -150,15 +128,7 @@ class SSuperModel(nn.Module):
                 panel_size, 3, latent_dim, global_disc_channels)
         elif global_disc_choice == "inpainting":
             self.global_discriminator = InpaintingDiscriminator(
-                panel_size, 3, global_disc_channels)
-        elif global_disc_choice == "stylegan2":
-            self.global_discriminator = StyleGAN2Discriminator(
-                panel_size[0], image_channels=3, architecture='origin')
-        
-        self.latent_dist = Normal(
-            torch.FloatTensor([0.0]).cuda(),
-            torch.FloatTensor([1.0]).cuda()
-        )     
+                panel_size, 3, global_disc_channels)  
         
     def forward(self, x, f=None, **kwargs):
         func = getattr(self, f)
@@ -187,6 +157,15 @@ class SSuperModel(nn.Module):
             return self.global_discriminator(x)
     
     
+    def reparameterize(self, data):
+        # creates z from mean and log variance
+        mu, logvar = data
+        std = logvar.mul(0.5).exp_() 
+        eps = torch.cuda.FloatTensor(std.size()).normal_()       
+        # eps = torch.Tensor(eps).cuda()
+        return eps.mul(std).add_(mu)
+
+
     def grad_clip(self, gclip, part=None):
         
         if part == "local_discriminator":
@@ -250,12 +229,15 @@ class SSuperModel(nn.Module):
         return panel_with_generation, last_panel_gts
     
     
+    @torch.no_grad()
+    def sample_z(self, size :int):
+        return torch.zeros(size, self.latent_dim).normal_(0, 1).cuda() 
+        
+    
     # Samples <size> many images 
     @torch.no_grad()
     def sample(self, size :int):
-        z = self.latent_dist.rsample((size, self.latent_dim)).squeeze(-1)
-        if self.gen_choice == "dcgan":
-            z = z.unsqueeze(2).unsqueeze(3)
+        z = self(size, f="sample_z")     
         return self.generate(z, clamp=True)
     
     @torch.no_grad()

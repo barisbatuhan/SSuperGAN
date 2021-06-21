@@ -4,7 +4,7 @@ import numpy as np
 
 class DCGANGenerator(nn.Module):
     
-    def __init__(self, image_size, nc, nz, ngf, leaky=0.2):
+    def __init__(self, image_size, nc, nz, ngf, leaky=0):
         super().__init__()  
         
         if leaky == 0:
@@ -50,4 +50,7 @@ class DCGANGenerator(nn.Module):
             nn.init.constant_(m.bias.data, 0)
 
     def forward(self, x):
+        if len(x.shape) < 4:
+            for _ in range(len(x.shape), 4):
+                x = x.unsqueeze(-1)
         return self.model(x)

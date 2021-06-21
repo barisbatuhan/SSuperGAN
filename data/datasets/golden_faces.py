@@ -23,17 +23,17 @@ class GoldenFacesDataset(Dataset):
         self.augment = augment
         self.files = []
         
+        train_series_limit = int(3958 * train_test_ratio) # 3958 is th total number of series
+        
         for folder in os.listdir(folder_path):
+            series_no = int(folder)
+            if train_mode and series_no > train_series_limit:
+                continue
+            elif not train_mode and series_no <= train_series_limit:
+                continue
+                
             for file in os.listdir(os.path.join(folder_path, folder)):
                 self.files.append(os.path.join(folder_path, folder, file))
-        
-        
-        train_len = int(len(self.files) * train_test_ratio)
-        
-        if train_mode:
-            self.files = self.files[:train_len]
-        else:
-            self.files = self.files[train_len:]
         
         if shuffle:
             random.shuffle(self.files)    

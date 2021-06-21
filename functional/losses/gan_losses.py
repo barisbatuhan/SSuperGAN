@@ -6,6 +6,11 @@ import torch.nn.functional as F
 from torch.nn import BCEWithLogitsLoss
 
 
+__all__ = ['StandardGAN', 'WGAN_GP', 'LogisticGANLoss']
+
+apply_loss_scaling = lambda x: x * torch.exp(x * np.log(2.0))
+undo_loss_scaling = lambda x: x * torch.exp(-x * np.log(2.0))
+
 # =============================================================
 # Interface for the losses
 # =============================================================
@@ -238,14 +243,7 @@ class RelativisticAverageHingeGAN(GANLoss):
         return (torch.mean(torch.nn.ReLU()(1 + r_f_diff))
                 + torch.mean(torch.nn.ReLU()(1 - f_r_diff)))
 
-
-__all__ = ['LogisticGANLoss']
-
-apply_loss_scaling = lambda x: x * torch.exp(x * np.log(2.0))
-undo_loss_scaling = lambda x: x * torch.exp(-x * np.log(2.0))
-
-
-class LogisticGANLoss(GANLoss):
+class LogisticGAN(GANLoss):
     """Contains the class to compute logistic GAN loss."""
 
     def __init__(self, dis, d_gamma=10, g_gamma=0, lod=0, local=True):

@@ -18,7 +18,7 @@ from functional.metrics.psnr import PSNR
 from functional.losses.elbo import elbo
 from functional.losses.kl_loss import *
 from functional.losses.reconstruction_loss import *
-from functional.losses.gan_losses import *
+from functional.losses.gan_losses import StandardGAN, WGAN_GP
 from configs.base_config import *
 from data.augment import get_PIL_image
 
@@ -134,8 +134,6 @@ class SSuperGlobalDCGANTrainer(BaseTrainer):
         
         for epoch in range(starting_epoch, self.epochs):
             self.model.train()
-            if self.parallel:
-                self.model.module.train()
             train_loss = self.train_model(epoch)
             if self.test_loader is not None:
                 test_loss = self.eval_model(epoch)
@@ -179,24 +177,10 @@ class SSuperGlobalDCGANTrainer(BaseTrainer):
             
             bs, out = x.shape[0], {}
             
-            # Seq. Encoder Update
-            mu_z, lg_std_z = self.model(x, f="seq_encode")
-            z = torch.distributions.Normal(mu_z, lg_std_z.exp()).rsample().unsqueeze(2).unsqueeze(3)
-            y_recon = self.model(z, f="generate")
-            
-            # errRecon = reconstruction_loss_distributional(y, y_recon)
-            errRecon = reconstruction_loss(y_recon, y) * self.criterion["recon_ratio"]
-            errKL = kl_loss(mu_z, lg_std_z)
-            out["Recon"], out["KL"] = errRecon, errKL
-            
-            self.optimizers["seq_encoder"].zero_grad()
-            errE = errRecon + errKL
-            errE.backward()
-            
-            if self.grad_clip:
-                self.model(self.grad_clip, f="grad_clip", part="seq_encoder") 
-            
-            self.optimizers["seq_encoder"].step()   
+            # Forward Pass
+
+            w, _ = self.model(x, f="seq_encode")
+            y_recon = self.model(w, f="generate")
             
             # Local & Global Discriminator Update
             recon_global, gt_global = self.model(x, f="create_global_images", 
@@ -218,36 +202,34 @@ class SSuperGlobalDCGANTrainer(BaseTrainer):
                 self.optimizers["local_discriminator"].zero_grad()
             
             self.optimizers["global_discriminator"].zero_grad()
-            if self.criterion["loss_type"] != "basic" or errD_global > -2*np.log(0.8):
+            if self.criterion["loss_type"] != "basic" or errD_global > -np.log(0.8):
                 errD_global.backward()           
                 if self.grad_clip:
                     self.model(self.grad_clip, f="grad_clip", part="global_discriminator")           
                 self.optimizers["global_discriminator"].step() 
             
-            
             # Generator Update
-            y_recon = self.model(z.detach(), f="generate")
             
-            recon_global, _ = self.model(x, f="create_global_images", 
-                                         r_faces=y, 
-                                         f_faces=y_recon, 
-                                         mask_coordinates=coords)
+            errRecon = reconstruction_loss(y, y_recon) * self.criterion["recon_ratio"]
+            out["Recon"] = errRecon
             
             errG_local = self.local_gan_loss.gen_loss(None, y_recon)
             errG_global = self.global_gan_loss.gen_loss(None, recon_global)  
             
             out["Gen"] = errG_global + errG_local
             errG = self.criterion["gen_global_ratio"] * errG_global + errG_local
-            errG += reconstruction_loss(y_recon, y) * self.criterion["recon_ratio"]
-            
+            errG += errRecon
+
             self.optimizers["generator"].zero_grad()
+            self.optimizers["seq_encoder"].zero_grad()
             if self.criterion["loss_type"] != "basic" or errG > -2*np.log(0.8):
                 errG.backward()
                 if self.grad_clip:
                     self.model(self.grad_clip, f="grad_clip", part="generator")
+                    self.model(self.grad_clip, f="grad_clip", part="seq_encoder") 
                 
-                self.optimizers["generator"].step()        
-            
+                self.optimizers["generator"].step() 
+                self.optimizers["seq_encoder"].step()          
             
             desc = f'Epoch {epoch}'
             for k, v in out.items():

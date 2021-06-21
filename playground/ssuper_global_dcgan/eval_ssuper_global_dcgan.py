@@ -29,8 +29,8 @@ from functional.metrics.fid import FID
 metrics = ["PSNR", "FID"]
 
 METRIC = metrics[1]
-BATCH_SIZE = 256 if METRIC == "FID" else 64
-model_path = "playground/ssuper_global_dcgan/ckpts/lstm_ssuper_global_dcgan_model-checkpoint-epoch20.pth"
+BATCH_SIZE = 256 if METRIC == "FID" else 128
+model_path = "playground/ssuper_global_dcgan/ckpts/lstm_ssuper_global_dcgan_model-checkpoint-epoch99.pth"
 
 N_SAMPLES = 50000 # 50000
 

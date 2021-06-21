@@ -6,7 +6,7 @@ from configs.base_config import *
 
 class Config(Enum):
     FACE_RECOGNITION = 1
-    BiGAN = 2
+    VAEGAN = 2
     GOLDEN_AGE = 3
     SSUPERGAN = 4
     VAE = 5
@@ -16,12 +16,10 @@ class Config(Enum):
     SSUPERDCGAN = 9
     SSUPERGLOBALDCGAN = 10
 
-
 def read_config(config: Config):
+    
     if config == Config.FACE_RECOGNITION:
         path = base_dir + 'configs/face_recognition_config.yaml'
-    elif config == Config.BiGAN:
-        path = base_dir + 'configs/bigan_config.yaml'
     elif config == Config.SSUPERGAN:
         path = base_dir + 'configs/ssupergan_config.yaml'
     elif config == Config.SSUPERVAE:
@@ -38,9 +36,11 @@ def read_config(config: Config):
         path = base_dir + 'configs/ssuper_dcgan_config.yaml'
     elif config == Config.SSUPERGLOBALDCGAN:
         path = base_dir + 'configs/ssuper_global_dcgan_config.yaml'
-
+    elif config == Config.VAEGAN:
+        path = base_dir + 'configs/vaegan_config.yaml'
     else:
         raise NotImplementedError
+    
     with open(path) as file:
         configs = yaml.load(file, Loader=yaml.FullLoader)
     configs = namedtuple("Config", configs.keys())(*configs.values())

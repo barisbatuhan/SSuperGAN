@@ -18,7 +18,7 @@ from configs.base_config import *
 
 def train(tr_data_loader, val_data_loader, config, model_name='ssuper_global_dcgan', cont_model=None):
     
-    print("[INFO] Initiating training...")
+    print("\n[INFO] Initiating training...")
     
     net = SSuperGlobalDCGAN(
         backbone=config.backbone,
@@ -42,30 +42,37 @@ def train(tr_data_loader, val_data_loader, config, model_name='ssuper_global_dcg
     
     if config.parallel:
         net = nn.DataParallel(net).cuda() # all GPU devices available are used by default
-#         optimizerD_glo = optim.Adam(net.module.global_discriminator.parameters(), lr=config.lr, betas=(config.beta_1, config.beta_2))
-#         optimizerD_loc = optim.Adam(net.module.local_discriminator.parameters(), lr=config.lr, betas=(config.beta_1, config.beta_2))
-        optimizerD_glo = optim.SGD(net.module.global_discriminator.parameters(), lr=config.disc_lr)
-        optimizerD_loc = optim.SGD(net.module.local_discriminator.parameters(), lr=config.disc_lr)
+        optimizerD_glo = optim.SGD(net.module.global_discriminator.parameters(), lr=config.global_disc_lr)
+        optimizerD_loc = optim.Adam(net.module.local_discriminator.parameters(), lr=config.local_disc_lr,
+                                    betas=(config.beta_1, config.beta_2))
         optimizerG = optim.Adam(net.module.generator.parameters(), lr=config.lr, betas=(config.beta_1, config.beta_2))
-        optimizerE = optim.Adam(net.module.seq_encoder.parameters(), lr=config.lr, betas=(config.beta_1, config.beta_2))
+        optimizerESeq = optim.Adam(net.module.seq_encoder.parameters(), lr=config.lr, betas=(config.beta_1, config.beta_2))
     else:
         net = net.to(ptu.device) 
-#         optimizerD_glo = optim.Adam(net.global_discriminator.parameters(), lr=config.lr, betas=(config.beta_1, config.beta_2))
-#         optimizerD_loc = optim.Adam(net.local_discriminator.parameters(), lr=config.lr, betas=(config.beta_1, config.beta_2))
-        optimizerD_glo = optim.SGD(net.global_discriminator.parameters(), lr=config.disc_lr)
-        optimizerD_loc = optim.SGD(net.local_discriminator.parameters(), lr=config.disc_lr)
+        optimizerD_glo = optim.SGD(net.global_discriminator.parameters(), lr=config.global_disc_lr)
+        optimizerD_loc = optim.Adam(net.local_discriminator.parameters(), lr=config.local_disc_lr,
+                                    betas=(config.beta_1, config.beta_2))
         optimizerG = optim.Adam(net.generator.parameters(), lr=config.lr, betas=(config.beta_1, config.beta_2))
-        optimizerE = optim.Adam(net.seq_encoder.parameters(), lr=config.lr, betas=(config.beta_1, config.beta_2))
+        optimizerESeq = optim.Adam(net.seq_encoder.parameters(), lr=config.lr, betas=(config.beta_1, config.beta_2))
     
     
     if cont_model is not None:
         model_dict = torch.load(cont_model)
         net.load_state_dict(model_dict["model_state_dict"])
-        # optimizerD_loc.load_state_dict(model_dict["local_discriminator"])
-        # optimizerD_glo.load_state_dict(model_dict["global_discriminator"])
+        
+        optimizerD_loc.load_state_dict(model_dict["local_discriminator"])
+        for g in optimizerD_loc.param_groups:
+            g['lr'] = config.local_disc_lr
+
+        optimizerD_glo.load_state_dict(model_dict["global_discriminator"])
+        for l in optimizerD_glo.param_groups:
+            l['lr'] = config.global_disc_lr
+        
         optimizerG.load_state_dict(model_dict["generator"])
-        optimizerE.load_state_dict(model_dict["seq_encoder"])
+        optimizerESeq.load_state_dict(model_dict["seq_encoder"])
+        optimizerE.load_state_dict(model_dict["encoder"])
         cont_epoch = model_dict["epoch"] + 1
+
     else:
         cont_epoch = None
     
@@ -75,22 +82,19 @@ def train(tr_data_loader, val_data_loader, config, model_name='ssuper_global_dcg
     trainer = SSuperGlobalDCGANTrainer(
         model=net,
         model_name=model_name,
-        # available loss types: wgan, basic
         criterion={
             "loss_type": "basic",
-            "alpha": 0.001,
-            "use_gp": True,
-            "gen_global_ratio": 0.02,
-            "recon_ratio": 0.05,
+            "gen_global_ratio": 0.005,
+            "recon_ratio": 0.1,
         },
         train_loader=tr_data_loader,
         test_loader=val_data_loader,
         epochs=config.train_epochs,
         optimizers={
-            "seq_encoder": optimizerE,
             "generator": optimizerG,
             "local_discriminator": optimizerD_loc,
-            "global_discriminator": optimizerD_glo
+            "global_discriminator": optimizerD_glo,
+            "seq_encoder": optimizerESeq,
         },
         grad_clip=config.g_clip,
         save_dir=base_dir + 'playground/ssuper_global_dcgan/',
@@ -107,7 +111,8 @@ if __name__ == '__main__':
     
     config = read_config(Config.SSUPERGLOBALDCGAN)
     golden_age_config = read_config(Config.GOLDEN_AGE)
-    cont_model = "playground/ssuper_global_dcgan/ckpts/lstm_ssuper_global_dcgan_model-checkpoint-epoch20.pth"
+    # cont_model = "playground/ssuper_global_dcgan/ckpts/lstm_ssuper_global_dcgan_model-checkpoint-epoch99.pth"
+    cont_model = None
     
     tr_data = GoldenPanelsDataset(
         golden_age_config.panel_path,
@@ -139,6 +144,10 @@ if __name__ == '__main__':
     
     tr_data_loader = DataLoader(tr_data, batch_size=config.batch_size, shuffle=True, num_workers=4)
     val_data_loader = DataLoader(val_data, batch_size=config.batch_size, shuffle=False, num_workers=4)
+    
+    print("\nGolden Age Config:", golden_age_config)
+    print("\nModel Config:", config)
+    
     
     if config.use_lstm:
         model_name ="lstm_ssuper_global_dcgan_model"

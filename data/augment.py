@@ -10,7 +10,7 @@ def read_image(img_path, augment=True, resize_len=[128, 128]):
     
     if augment:
         img = distort_color(img)
-        # img = horizontal_flip(img, box)
+        # img = horizontal_flip(img)
 
     img = resize(img, resize_len)
     img = normalize(transforms.ToTensor()(img))
@@ -24,16 +24,16 @@ def normalize(img, means=0.5, stds=0.5):
 
 def distort_color(img):
     if np.random.rand() > 0.5:
-        br_strength = np.random.randint(4, 21) / 10
+        br_strength = np.random.randint(8, 17) / 10
         img = TF.adjust_brightness(img, br_strength) # 0.4 - 2.0 range
     if np.random.rand() > 0.5:
-        con_strength = np.random.randint(4, 31) / 10
+        con_strength = np.random.randint(8, 21) / 10
         img = TF.adjust_contrast(img, con_strength) # 0.4 - 3.0 range
     if np.random.rand() > 0.5:
-        hue_strength = np.random.randint(-5, 5) / 10
+        hue_strength = np.random.randint(-2.5, 2.5) / 10
         img = TF.adjust_hue(img, hue_strength) # -0.4 - 0.4 range 
     if np.random.rand() > 0.5:
-        sat_strength = np.random.randint(-1, 20) / 10
+        sat_strength = np.random.randint(0, 10) / 10
         img = TF.adjust_saturation(img, sat_strength) # 0.0 - 2.0 range
     return img
 

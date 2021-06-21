@@ -20,17 +20,10 @@ def reconstruction_loss_distributional(x, x_recon, log_scale=None):
     return log_pxz.sum(dim=(1, 2, 3)).mean()
 
 
-def reconstruction_loss(prediction, target, size_average=True):        
-    error = (prediction - target).view(prediction.size(0), -1)
-    error = error**2
-    error = torch.sum(error, dim=-1)
-    
-    if size_average:
-        error = error.mean()
-    else:
-        error = error.sum()
-           
-    return error
+def reconstruction_loss(x, x_recon, size_average=False):        
+    bs = x.shape[0]
+    reduction = "sum" if not size_average else "mean"
+    return F.mse_loss(x_recon, x, reduction=reduction).div(bs)
 
 
 def l1_loss(x, x_recon):

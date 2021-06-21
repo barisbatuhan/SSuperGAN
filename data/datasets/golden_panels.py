@@ -38,26 +38,27 @@ class GoldenPanelsDataset(Dataset):
         self.return_mask = return_mask
         self.return_mask_coordinates = return_mask_coordinates
         
+        
+        train_series_limit = int(3958 * train_test_ratio) # 3958 is th total number of series
+        
+        # panel information extraction
         with open(annot_path, "r") as f:
             annots = json.load(f)
 
         self.data = []
         for k in annots.keys():
-            self.data.append(annots[k])             
-            
+            # train test split
+            series_no = int(annots[k][0][0].split("/")[0])
+            if train_mode and series_no > train_series_limit:
+                continue
+            elif not train_mode and series_no <= train_series_limit:
+                continue
+            # data reading
+            self.data.append(annots[k])  
+               
         data_len = len(self.data)
-        train_len = int(data_len * train_test_ratio)
-        
-        if limit_size < 1:
-            if train_mode:
-                self.data = self.data[:train_len]
-            else:
-                self.data = self.data[train_len:]
-        else:
-            if train_mode:
-                self.data = self.data[:min(train_len, limit_size)]
-            else:
-                self.data = self.data[train_len:min(data_len, train_len + limit_size)]
+        if limit_size > 0:
+            self.data = self.data[:min(data_len, limit_size)]
         
         if shuffle:
             random.shuffle(self.data)

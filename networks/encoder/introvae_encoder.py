@@ -42,7 +42,7 @@ class IntroVAEEncoder(nn.Module):
                  hdim=512,
                  channels=[64, 128, 256, 512, 512, 512],
                  image_size=256):
-        super(Encoder, self).__init__()
+        super().__init__()
 
         assert (2 ** len(channels)) * 4 == image_size
 
@@ -67,5 +67,5 @@ class IntroVAEEncoder(nn.Module):
     def forward(self, x):
         y = self.main(x).view(x.size(0), -1)
         y = self.fc(y)
-        mu, logstd = torch.chunk(y, 2, dim=1)
+        mu, log_std = torch.chunk(y, 2, dim=1)
         return mu, log_std 
