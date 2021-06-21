@@ -24,9 +24,9 @@ The whole panel data is processed by a cartoon Face Detector model (which can be
 
 ### Visual Results
 
-![Result 1](./images/readme_images/res1.PNG)
+![Result 1](./images/readme_images/res1.png)
 
-![Result 2](./images/readme_images/res2.PNG)
+![Result 2](./images/readme_images/res2.png)
 
 ### Metric Results
 
