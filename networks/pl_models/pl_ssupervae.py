@@ -98,10 +98,7 @@ class SSuperVAE(SSuperModel):
                                betas=(self.hparams.beta_1, self.hparams.beta_2),
                                weight_decay=self.hparams.weight_decay)
 
-        scheduler = optim.lr_scheduler.LambdaLR(optimizer,
-                                                lambda epoch: (
-                                                                      self.hparams.train_epochs - epoch) / self.hparams.train_epochs,
-                                                last_epoch=-1)
+        scheduler = optim.lr_scheduler.LambdaLR(optimizer, lambda_lr_func, last_epoch=-1)
 
         return [optimizer], [scheduler]
 
@@ -109,6 +106,9 @@ class SSuperVAE(SSuperModel):
         super(SSuperModel, self).optimizer_step(*args, **kwargs)
         # hacky way of exploting optimizer step - self.lr_scheduler.step()  # Step per iteration
 
+# TODO: Let's keep it like this for now, it raises some issues with lambda functions otherwise
+def lambda_lr_func(epoch):
+    return (200 - epoch) / 200
 
 def train_ssupervae(train_loader,
                     val_loader,
@@ -121,6 +121,7 @@ def train_ssupervae(train_loader,
     trainer = pl.Trainer(default_root_dir=root_dir,
                          callbacks=[ModelCheckpoint(save_weights_only=True, mode="max", monitor="val_psnr")],
                          gpus=torch.cuda.device_count(),
+                         accelerator='dp',
                          max_epochs=max_epochs,
                          gradient_clip_val=2,
                          progress_bar_refresh_rate=1)
