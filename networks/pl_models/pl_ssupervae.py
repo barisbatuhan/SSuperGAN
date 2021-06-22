@@ -21,9 +21,6 @@ from utils.datetime_utils import get_dt_string
 
 class SSuperVAE(SSuperModel):
     def __init__(self, **kwargs):
-        self.config = kwargs['config']
-        self.save_dir = kwargs['save_dir']
-        self.model_name = kwargs['model_name']
         super().__init__(use_seq_enc=True, enc_choice=None, gen_choice="vae",
                          local_disc_choice=None, global_disc_choice=None, **kwargs)
 

@@ -27,6 +27,10 @@ import pytorch_lightning as pl
 class SSuperModel(pl.LightningModule):
 
     def __init__(self,
+                 # params to run with pl
+                 config,
+                 save_dir,
+                 model_name,
                  # required parameters
                  backbone="efficientnet-b5",  # options: ["resnet50", "efficientnet-bX"]
                  embed_dim: int = 256,  # size of the embedding vectors of the panels taken from CNN
@@ -62,6 +66,10 @@ class SSuperModel(pl.LightningModule):
                  # same with the gen_channels but for global discr.
                  **kwargs
                  ):
+
+        self.config = config
+        self.save_dir = save_dir
+        self.model_name = model_name
 
         super(SSuperModel, self).__init__()
         self.save_hyperparameters()
