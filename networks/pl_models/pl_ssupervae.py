@@ -90,13 +90,13 @@ class SSuperVAE(SSuperModel):
 
     def validation_step(self, batch, batch_idx):
         _ = self._calculate_loss(batch, mode="val")
-        if batch_idx == 0:
-            self.generate_recons(batch)
+        # if batch_idx == 0:
+        #    self.generate_recons(batch)
 
     def test_step(self, batch, batch_idx):
         _ = self._calculate_loss(batch, mode="test")
-        if batch_idx == 0:
-            self.generate_recons(batch)
+        # if batch_idx == 0:
+        #     self.generate_recons(batch)
 
     # https://pytorch-lightning.readthedocs.io/en/latest/common/optimizers.html
     def configure_optimizers(self):
