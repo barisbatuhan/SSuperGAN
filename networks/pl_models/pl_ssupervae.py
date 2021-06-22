@@ -21,11 +21,11 @@ from utils.datetime_utils import get_dt_string
 
 class SSuperVAE(SSuperModel):
     def __init__(self, **kwargs):
-        self.config = kwargs['config'] 
+        self.config = kwargs['config']
+        self.save_dir = kwargs['save_dir']
         del kwargs['config']
         super().__init__(use_seq_enc=True, enc_choice=None, gen_choice="vae",
                          local_disc_choice=None, global_disc_choice=None, **kwargs)
-        
 
     def process_batch(self, batch):
         if type(batch) == list and len(batch) == 2:
@@ -196,6 +196,7 @@ if __name__ == '__main__':
         experiment_name="SSuperVAE" + get_dt_string(),
         checkpoint_path=base_dir + "playground/ssupervae/",
         config=config,
+        save_dir=base_dir + "playground/ssupervae/",
         backbone=config.backbone,
         latent_dim=config.latent_dim,
         embed_dim=config.embed_dim,
