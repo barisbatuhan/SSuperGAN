@@ -58,11 +58,13 @@ class SSuperModel(pl.LightningModule):
 
                  # GAN parameters
                  local_disc_channels=64,  # same with the gen_channels but for local discr.
-                 global_disc_channels=64,  # same with the gen_channels but for global discr.
+                 global_disc_channels=64,
+                 # same with the gen_channels but for global discr.
+                 **kwargs
                  ):
 
         super(SSuperModel, self).__init__()
-
+        self.save_hyperparameters()
         # Input correctness checks
         assert enc_choice in ["vae", None]
         assert gen_choice in ["dcgan", "vae", None]
