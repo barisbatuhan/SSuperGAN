@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader
 from configs.base_config import base_dir
 from data.augment import get_PIL_image
 from data.datasets.golden_panels import GoldenPanelsDataset
+from functional.losses.elbo import elbo
 from networks.pl_ssuper_model import SSuperModel
 from functional.metrics.psnr import PSNR
 import pytorch_lightning as pl
@@ -45,7 +46,7 @@ class SSuperVAE(SSuperModel):
 
         psnr = PSNR.__call__(mu_x, y, fit_range=True)
         l1 = torch.abs(y - mu_x).mean()
-        out = self.criterion(z, y, mu_z, mu_x, logstd_z)
+        out = elbo(z, y, mu_z, mu_x, logstd_z)
 
         self.log_dict(out, prog_bar=True)
         self.log("%s_psnr" % mode, psnr, on_step=False, on_epoch=True)
