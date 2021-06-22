@@ -74,3 +74,25 @@ def get_PIL_image(img_tensor, means=0.5, stds=0.5):
         return transforms.ToPILImage()(img)
     else:
         return transforms.ToPILImage()(img * stds + means)
+
+def panel_sqrtize(pw, ph, w_h_ratio = 1):
+    if pw / ph >= w_h_ratio:
+        w, h = int(ph * w_h_ratio), int(ph)
+    elif pw / ph < w_h_ratio:
+        w, h = int(pw), int(pw / w_h_ratio)
+        
+    area = [pw/2 - w/2, ph/2 - h/2, pw/2 + w/2, ph/2 + h/2]
+    return area
+
+def panel_transforms(panel, panel_dim, augment):
+    # Calculate square coordinates
+    p_area = panel_sqrtize(*panel.size)
+    if augment:
+        panel = distort_color(panel)
+    # Crop to square size
+    panel = TF.crop(panel, p_area[1], p_area[0], p_area[3]-p_area[1], p_area[2]-p_area[0])
+    # Scale 0-1
+    panel = transforms.ToTensor()(panel).unsqueeze(0)
+    #Resizes
+    panel = TF.resize(panel, [panel_dim[1], panel_dim[0]])
+    return panel
