@@ -62,9 +62,8 @@ class SSuperModel(pl.LightningModule):
 
                  # GAN parameters
                  local_disc_channels=64,  # same with the gen_channels but for local discr.
-                 global_disc_channels=64,
+                 global_disc_channels=64
                  # same with the gen_channels but for global discr.
-                 **kwargs
                  ):
 
         self.config = config
