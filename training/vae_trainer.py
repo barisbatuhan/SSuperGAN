@@ -95,7 +95,10 @@ class VAETrainer(BaseTrainer):
             else:
                 x, y = batch.cuda(), batch.cuda()
 
-            z, _, mu_z, mu_x, logstd_z = self.model(x)
+            mu_z, logstd_z = self.model.forward(x, f='encode')
+            z = torch.distributions.Normal(mu_z, logstd_z.exp()).rsample()
+            mu_x = self.model.forward(z, f='generate')
+
             target = x if y is None else y
             out = self.criterion(z, target, mu_z, mu_x, logstd_z)
 
@@ -128,7 +131,11 @@ class VAETrainer(BaseTrainer):
                 x, y = batch.cuda(), batch.cuda()
 
             self.optimizer.zero_grad()
-            z, _, mu_z, mu_x, logstd_z = self.model(x)
+
+            mu_z, logstd_z = self.model.forward(x, f='encode')
+            z = torch.distributions.Normal(mu_z, logstd_z.exp()).rsample()
+            mu_x = self.model.forward(z, f='generate')
+
             target = x if y is None else y
 
             out = self.criterion(z, target, mu_z, mu_x, logstd_z)
