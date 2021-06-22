@@ -69,6 +69,7 @@ def train(tr_data_loader,
                          test_loader=val_data_loader,
                          epochs=config.train_epochs,
                          optimizer=optimizer,
+                         parallel=config.parallel,
                          scheduler=scheduler,
                          grad_clip=config.g_clip,
                          best_loss_action=lambda m, l: save_best_loss_model(model_name, m, l),
@@ -117,7 +118,7 @@ if __name__ == '__main__':
         return_mask_coordinates=golden_age_config.return_mask_coordinates,
         train_test_ratio=golden_age_config.train_test_ratio,
         train_mode=True,
-        limit_size=-1)
+        limit_size=1000)
 
     val_data = GoldenPanelsDataset(
         golden_age_config.panel_path,
@@ -131,7 +132,7 @@ if __name__ == '__main__':
         return_mask_coordinates=golden_age_config.return_mask_coordinates,
         train_test_ratio=golden_age_config.train_test_ratio,
         train_mode=False,
-        limit_size=-1)
+        limit_size=100)
 
     tr_data_loader = DataLoader(tr_data, batch_size=config.batch_size, shuffle=True, num_workers=4)
     val_data_loader = DataLoader(val_data, batch_size=config.batch_size, shuffle=False, num_workers=4)
