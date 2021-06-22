@@ -134,7 +134,7 @@ class VAETrainer(BaseTrainer):
                 ax[0, 0].title.set_text("Original")
                 ax[0, 1].title.set_text("Recon")
 
-                plt.savefig(self.save_dir + 'results/' + f'_epoch{epoch}_recons.png')
+                plt.savefig(self.save_dir + 'results/' + self.model_name + f'_epoch{epoch}_recons.png')
 
         print("\n\n-- Epoch:", epoch,
               " --> PSNR:", psnrs.item() / iter_cnt,
@@ -196,9 +196,10 @@ class VAETrainer(BaseTrainer):
         self.scheduler.step()
 
         if self.parallel:
-            self.model.module.save_samples(100, self.save_dir + 'results/' + f'_epoch{epoch}_samples.png')
+            self.model.module.save_samples(100,
+                                           self.save_dir + 'results/' + self.model_name + f'_epoch{epoch}_samples.png')
         else:
-            self.model.save_samples(100, self.save_dir + 'results/' + f'_epoch{epoch}_samples.png')
+            self.model.save_samples(100, self.save_dir + 'results/' + self.model_name + f'_epoch{epoch}_samples.png')
 
         if not self.quiet:
             pbar.close()
