@@ -94,13 +94,13 @@ class SSuperVAE(SSuperModel):
     # https://pytorch-lightning.readthedocs.io/en/latest/common/optimizers.html
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(),
-                               lr=self.config.lr,
-                               betas=(self.config.beta_1, self.config.beta_2),
-                               weight_decay=self.config.weight_decay)
+                               lr=self.hparams.lr,
+                               betas=(self.hparams.beta_1, self.hparams.beta_2),
+                               weight_decay=self.hparams.weight_decay)
 
         scheduler = optim.lr_scheduler.LambdaLR(optimizer,
                                                 lambda epoch: (
-                                                                      self.config.train_epochs - epoch) / self.config.train_epochs,
+                                                                      self.hparams.train_epochs - epoch) / self.hparams.train_epochs,
                                                 last_epoch=-1)
 
         return [optimizer], [scheduler]
@@ -200,7 +200,12 @@ if __name__ == '__main__':
         local_disc_choice=None,
         global_disc_choice=None,
 
-        config=config,
+        lr=config.lr,
+        beta_1=config.beta_1,
+        beta_2=config.beta_2,
+        weight_decay=config.weight_decay,
+        train_epochs=config.train_epochs,
+
         save_dir=base_dir + "playground/ssupervae/",
         model_name=experiment_name,
         backbone=config.backbone,
