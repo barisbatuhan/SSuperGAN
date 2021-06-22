@@ -20,9 +20,11 @@ from utils.datetime_utils import get_dt_string
 
 class SSuperVAE(SSuperModel):
     def __init__(self, **kwargs):
+        self.config = kwargs['config'] 
+        del kwargs['config']
         super().__init__(use_seq_enc=True, enc_choice=None, gen_choice="vae",
                          local_disc_choice=None, global_disc_choice=None, **kwargs)
-        self.config = kwargs['config']
+        
 
     def process_batch(self, batch):
         if type(batch) == list and len(batch) == 2:
