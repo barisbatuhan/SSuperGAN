@@ -23,8 +23,10 @@ class SSuperVAE(SSuperModel):
     def __init__(self, **kwargs):
         self.config = kwargs['config']
         self.save_dir = kwargs['save_dir']
+        self.model_name = kwargs['model_name']
         del kwargs['config']
         del kwargs['save_dir']
+        del kwargs['model_name']
         super().__init__(use_seq_enc=True, enc_choice=None, gen_choice="vae",
                          local_disc_choice=None, global_disc_choice=None, **kwargs)
 
@@ -191,13 +193,16 @@ if __name__ == '__main__':
     tr_data_loader = DataLoader(tr_data, batch_size=config.batch_size, shuffle=True, num_workers=4)
     val_data_loader = DataLoader(val_data, batch_size=config.batch_size, shuffle=False, num_workers=4)
 
+    experiment_name = "SSuperVAE" + get_dt_string()
+
     anomaly_model, anomaly_result = train_ssupervae(
         train_loader=tr_data_loader,
         val_loader=val_data_loader,
-        experiment_name="SSuperVAE" + get_dt_string(),
+        experiment_name=experiment_name,
         checkpoint_path=base_dir + "playground/ssupervae/",
         config=config,
         save_dir=base_dir + "playground/ssupervae/",
+        model_name=experiment_name,
         backbone=config.backbone,
         latent_dim=config.latent_dim,
         embed_dim=config.embed_dim,
