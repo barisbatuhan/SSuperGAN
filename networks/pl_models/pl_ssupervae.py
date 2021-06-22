@@ -132,7 +132,7 @@ def train_ssupervae(train_loader,
         print("Found pretrained model, loading...")
         model = SSuperVAE.load_from_checkpoint(pretrained_filename)
     else:
-        model = SSuperVAE(max_iters=trainer.max_epochs * len(train_loader), **kwargs)
+        model = SSuperVAE(**kwargs)
         trainer.fit(model, train_loader, val_loader)
         model = SSuperVAE.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
 
