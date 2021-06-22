@@ -85,7 +85,7 @@ class SSuperVAE(SSuperModel):
         self.logger.experiment.add_figure(tag='epoch{epoch}_recons', figure=saved_fig)
 
     def training_step(self, batch, batch_idx):
-        loss, _ = self._calculate_loss(batch, mode="train")
+        loss = self._calculate_loss(batch, mode="train")
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -113,7 +113,7 @@ class SSuperVAE(SSuperModel):
         return [optimizer], [scheduler]
 
     def optimizer_step(self, *args, **kwargs):
-        super().optimizer_step(*args, **kwargs)
+        super(SSuperModel, self).optimizer_step(*args, **kwargs)
         # hacky way of exploting optimizer step - self.lr_scheduler.step()  # Step per iteration
 
 
