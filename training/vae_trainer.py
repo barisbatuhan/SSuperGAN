@@ -1,24 +1,15 @@
-from collections import OrderedDict
 from tqdm import tqdm
-import numpy as np
 import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader
-import torch.utils.data as data
-import torch.optim as optim
 
-from networks.base.base_vae import BaseVAE
-from networks.generic_vae import GenericVAE
 from training.base_trainer import BaseTrainer
 from utils.structs.metric_recorder import *
 from utils.logging_utils import *
-from utils import pytorch_util as ptu
 from utils.image_utils import *
 
 
 class VAETrainer(BaseTrainer):
     def __init__(self,
-                 model: BaseVAE,
+                 model,
                  model_name: str,
                  criterion,
                  train_loader,
@@ -50,9 +41,7 @@ class VAETrainer(BaseTrainer):
     def train_epochs(self, starting_epoch=None, losses={}):
         metric_recorder = MetricRecorder(experiment_name=self.model_name,
                                          save_dir=self.save_dir + '/results/')
-        # TODO: becareful about best loss here this might override the actual best loss
-        #  in case of continuation of training
-        best_loss = 99999999
+        best_loss = float('inf')
 
         train_losses = losses.get("train_losses", OrderedDict())
         test_losses = losses.get("test_losses", OrderedDict())
@@ -86,7 +75,7 @@ class VAETrainer(BaseTrainer):
                     "test_losses": test_losses
                 },
                     current_epoch=epoch)
-            
+
             metric_recorder.update_metrics(train_losses, test_losses)
             metric_recorder.save_recorder()
         return train_losses, test_losses
@@ -98,9 +87,13 @@ class VAETrainer(BaseTrainer):
         for batch in data_loader:
 
             if type(batch) == list and len(batch) == 2:
-                x, y = batch[0].to(ptu.device), batch[1].to(ptu.device)
+                x, y = batch[0].cuda(), batch[1].cuda()
+            elif type(batch) == list and len(batch) == 3:
+                x, y, mask = batch[0].cuda(), batch[1].cuda(), batch[2].cuda()
+            elif type(batch) == list and len(batch) == 4:
+                x, y, mask, coords = batch[0].cuda(), batch[1].cuda(), batch[2].cuda(), batch[3].cuda()
             else:
-                x, y = batch.to(ptu.device), None
+                x, y = batch.cuda(), batch.cuda()
 
             z, _, mu_z, mu_x, logstd_z = self.model(x)
             target = x if y is None else y
@@ -126,9 +119,13 @@ class VAETrainer(BaseTrainer):
         for batch in self.train_loader:
 
             if type(batch) == list and len(batch) == 2:
-                x, y = batch[0].to(ptu.device), batch[1].to(ptu.device)
+                x, y = batch[0].cuda(), batch[1].cuda()
+            elif type(batch) == list and len(batch) == 3:
+                x, y, mask = batch[0].cuda(), batch[1].cuda(), batch[2].cuda()
+            elif type(batch) == list and len(batch) == 4:
+                x, y, mask, coords = batch[0].cuda(), batch[1].cuda(), batch[2].cuda(), batch[3].cuda()
             else:
-                x, y = batch.to(ptu.device), None
+                x, y = batch.cuda(), batch.cuda()
 
             self.optimizer.zero_grad()
             z, _, mu_z, mu_x, logstd_z = self.model(x)
