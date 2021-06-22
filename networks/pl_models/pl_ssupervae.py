@@ -189,7 +189,7 @@ if __name__ == '__main__':
 
     experiment_name = "SSuperVAE" + get_dt_string()
 
-    anomaly_model, anomaly_result = train_ssupervae(
+    model, result = train_ssupervae(
         train_loader=tr_data_loader,
         val_loader=val_data_loader,
         experiment_name=experiment_name,
