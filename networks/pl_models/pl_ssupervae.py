@@ -113,6 +113,7 @@ class SSuperVAE(SSuperModel):
 def train_ssupervae(train_loader,
                     val_loader,
                     checkpoint_path,
+                    max_epochs,
                     experiment_name="SSuperVAE" + get_dt_string(),
                     **kwargs):
     root_dir = os.path.join(checkpoint_path, experiment_name)
@@ -120,7 +121,7 @@ def train_ssupervae(train_loader,
     trainer = pl.Trainer(default_root_dir=root_dir,
                          callbacks=[ModelCheckpoint(save_weights_only=True, mode="max", monitor="val_psnr")],
                          gpus=torch.cuda.device_count(),
-                         max_epochs=1,
+                         max_epochs=max_epochs,
                          gradient_clip_val=2,
                          progress_bar_refresh_rate=1)
     trainer.logger._default_hp_metric = None  # Optional logging argument that we don't need
@@ -167,7 +168,7 @@ if __name__ == '__main__':
         return_mask_coordinates=golden_age_config.return_mask_coordinates,
         train_test_ratio=golden_age_config.train_test_ratio,
         train_mode=True,
-        limit_size=1000)
+        limit_size=-1)
 
     val_data = GoldenPanelsDataset(
         golden_age_config.panel_path,
@@ -181,7 +182,7 @@ if __name__ == '__main__':
         return_mask_coordinates=golden_age_config.return_mask_coordinates,
         train_test_ratio=golden_age_config.train_test_ratio,
         train_mode=False,
-        limit_size=100)
+        limit_size=-1)
 
     tr_data_loader = DataLoader(tr_data, batch_size=config.batch_size, shuffle=True, num_workers=4)
     val_data_loader = DataLoader(val_data, batch_size=config.batch_size, shuffle=False, num_workers=4)
@@ -193,7 +194,8 @@ if __name__ == '__main__':
         val_loader=val_data_loader,
         experiment_name=experiment_name,
         checkpoint_path=base_dir + "playground/ssupervae/",
-
+        max_epochs=config.train_epochs,
+        
         use_seq_enc=True,
         enc_choice=None,
         gen_choice="vae",
