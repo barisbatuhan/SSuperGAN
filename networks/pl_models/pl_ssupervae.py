@@ -121,7 +121,7 @@ def train_ssupervae(train_loader,
     trainer = pl.Trainer(default_root_dir=root_dir,
                          callbacks=[ModelCheckpoint(save_weights_only=True, mode="max", monitor="val_psnr")],
                          gpus=torch.cuda.device_count(),
-                         max_epochs=100,
+                         max_epochs=1,
                          gradient_clip_val=2,
                          progress_bar_refresh_rate=1)
     trainer.logger._default_hp_metric = None  # Optional logging argument that we don't need
