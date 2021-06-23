@@ -17,6 +17,8 @@ import pytorch_lightning as pl
 
 from utils.config_utils import read_config, Config
 from utils.datetime_utils import get_dt_string
+from ray.tune.integration.pytorch_lightning import TuneReportCallback
+from ray import tune
 
 
 class SSuperVAE(SSuperModel):
@@ -98,33 +100,115 @@ class SSuperVAE(SSuperModel):
                                betas=(self.hparams.beta_1, self.hparams.beta_2),
                                weight_decay=self.hparams.weight_decay)
 
-        scheduler = optim.lr_scheduler.LambdaLR(optimizer, lambda_lr_func, last_epoch=-1)
+        # Apparently This was not needed since model learns within 20 epoch
+        # scheduler = optim.lr_scheduler.LambdaLR(optimizer, lambda_lr_func, last_epoch=-1)
 
-        return [optimizer], [scheduler]
+        return optimizer
 
     def optimizer_step(self, *args, **kwargs):
         super(SSuperModel, self).optimizer_step(*args, **kwargs)
         # hacky way of exploting optimizer step - self.lr_scheduler.step()  # Step per iteration
 
+
 # TODO: Let's keep it like this for now, it raises some issues with lambda functions otherwise
 def lambda_lr_func(epoch):
     return (200 - epoch) / 200
+
+
+"""
+config = {
+    "layer_1": tune.choice([32, 64, 128]),
+    "layer_2": tune.choice([64, 128, 256]),
+    "lr": tune.loguniform(1e-4, 1e-1),
+    "batch_size": tune.choice([32, 64, 128]),
+}
+
+trainable = tune.with_parameters(
+    train_mnist,
+    data_dir=data_dir,
+    num_epochs=num_epochs,
+    num_gpus=gpus_per_trial)
+
+analysis = tune.run(
+    trainable,
+    resources_per_trial={
+        "cpu": 1,
+        "gpu": gpus_per_trial
+    },
+    metric="loss",
+    mode="min",
+    config=config,
+    num_samples=num_samples,
+    name="tune_mnist")
+
+print(analysis.best_config)
+"""
+
+
+def search_hyperparams(train_loader,
+                       val_loader,
+                       checkpoint_path,
+                       max_epochs,
+                       experiment_name="SSuperVAE" + get_dt_string(),
+                       search_hyperparameters=False,
+                       **kwargs):
+    config = {
+        "lr": tune.loguniform(1e-4, 1e-1)
+    }
+    trainable = tune.with_parameters(
+        train_ssupervae,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        checkpoint_path=checkpoint_path,
+        max_epochs=max_epochs,
+        experiment_name=experiment_name,
+        search_hyperparameters=True
+    )
+
+    analysis = tune.run(
+        trainable,
+        resources_per_trial={
+            "cpu": 1,
+            "gpu": torch.cuda.device_count()
+        },
+        metric="loss",
+        mode="min",
+        config=config,
+        num_samples=10,
+        name="tune_ssupervae")
+
 
 def train_ssupervae(train_loader,
                     val_loader,
                     checkpoint_path,
                     max_epochs,
                     experiment_name="SSuperVAE" + get_dt_string(),
+                    search_hyperparameters=False,
                     **kwargs):
     root_dir = os.path.join(checkpoint_path, experiment_name)
     os.makedirs(root_dir, exist_ok=True)
-    trainer = pl.Trainer(default_root_dir=root_dir,
-                         callbacks=[ModelCheckpoint(save_weights_only=True, mode="max", monitor="val_psnr")],
-                         gpus=torch.cuda.device_count(),
-                         accelerator='dp',
-                         max_epochs=max_epochs,
-                         gradient_clip_val=2,
-                         progress_bar_refresh_rate=1)
+    trainer = None
+    if search_hyperparameters:
+        metrics = {"psnr": "val_psnr", "l1": "val_l1"}
+        callbacks = [
+            TuneReportCallback(metrics, on="validation_end"),
+            ModelCheckpoint(save_weights_only=True, mode="max", monitor="val_psnr")
+        ]
+        trainer = pl.Trainer(default_root_dir=root_dir,
+                             callbacks=callbacks,
+                             gpus=torch.cuda.device_count(),
+                             accelerator='dp',
+                             max_epochs=max_epochs,
+                             gradient_clip_val=2,
+                             progress_bar_refresh_rate=1)
+    else:
+        trainer = pl.Trainer(default_root_dir=root_dir,
+                             callbacks=[ModelCheckpoint(save_weights_only=True, mode="max", monitor="val_psnr")],
+                             gpus=torch.cuda.device_count(),
+                             accelerator='dp',
+                             max_epochs=max_epochs,
+                             gradient_clip_val=2,
+                             progress_bar_refresh_rate=1)
     trainer.logger._default_hp_metric = None  # Optional logging argument that we don't need
 
     # Check whether pretrained model exists. If yes, load it and skip training
@@ -148,7 +232,7 @@ def train_ssupervae(train_loader,
     return model, result
 
 
-if __name__ == '__main__':
+def run_training(search_hyperparameters=False):
     config = read_config(Config.SSUPERVAE)
 
     # Data Loading
@@ -191,12 +275,14 @@ if __name__ == '__main__':
     experiment_name = "SSuperVAE" + get_dt_string()
 
     model, result = train_ssupervae(
+        search_hyperparameters=search_hyperparameters,
+
         train_loader=tr_data_loader,
         val_loader=val_data_loader,
         experiment_name=experiment_name,
         checkpoint_path=base_dir + "playground/ssupervae/",
         max_epochs=config.train_epochs,
-        
+
         use_seq_enc=True,
         enc_choice=None,
         gen_choice="vae",
@@ -224,3 +310,7 @@ if __name__ == '__main__':
         fc_dropout=config.fc_dropout,
         num_lstm_layers=config.num_lstm_layers,
         masked_first=config.masked_first)
+
+
+if __name__ == '__main__':
+    run_training(search_hyperparameters=True)
