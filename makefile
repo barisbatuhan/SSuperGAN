@@ -12,6 +12,9 @@ train_ssupervae:
 train_vaegan:
 	python3 playground/vae_gan/train.py
 
+train_seq_vaegan:
+	python3 playground/seq_vae_gan/train.py
+
 train_ssuper_dcgan:
 	python3 playground/ssuper_dcgan/ssuper_dcgan_play.py
 

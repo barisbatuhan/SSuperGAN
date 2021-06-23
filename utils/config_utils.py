@@ -46,6 +46,11 @@ def read_config(config: Config):
     configs = namedtuple("Config", configs.keys())(*configs.values())
     return configs
 
+def read_config_from_path(path):
+    with open(path) as file:
+        configs = yaml.load(file, Loader=yaml.FullLoader)
+    configs = namedtuple("Config", configs.keys())(*configs.values())
+    return configs
 
 if __name__ == '__main__':
     res = read_config(Config.BiGAN)

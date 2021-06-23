@@ -20,6 +20,11 @@ class VAEGAN(SSuperModel):
         super().__init__(use_seq_enc=False, enc_choice="vae", gen_choice="dcgan",
                          local_disc_choice="dcgan", global_disc_choice=None, **kwargs)
 
+class SeqVAEGAN(SSuperModel):
+    def __init__(self, **kwargs): 
+        super().__init__(use_seq_enc=True, enc_choice="vae", gen_choice="dcgan",
+                         local_disc_choice=None, global_disc_choice=None, **kwargs)
+        
 class SSuperDCGAN(SSuperModel):
     def __init__(self, **kwargs):
         super().__init__(use_seq_enc=True, enc_choice=None, gen_choice="dcgan",
