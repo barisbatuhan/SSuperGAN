@@ -20,6 +20,7 @@ from utils.datetime_utils import get_dt_string
 from ray.tune.integration.pytorch_lightning import TuneReportCallback
 from ray import tune
 
+os.environ["SLURM_JOB_NAME"] = "bash"
 
 class SSuperVAE(SSuperModel):
     def __init__(self, **kwargs):
@@ -152,11 +153,10 @@ def search_hyperparams(train_loader,
                        experiment_name="SSuperVAE" + get_dt_string(),
                        search_hyperparameters=False,
                        **kwargs):
-    config = {
-        "lr": tune.loguniform(1e-4, 1e-1)
-    }
+    kwargs['lr'] = tune.loguniform(1e-4, 1e-1)
+    
     trainable = tune.with_parameters(
-        train_ssupervae,
+        train_ssupervae_trainable,
         train_loader=train_loader,
         val_loader=val_loader,
         checkpoint_path=checkpoint_path,
@@ -171,13 +171,69 @@ def search_hyperparams(train_loader,
             "cpu": 1,
             "gpu": torch.cuda.device_count()
         },
-        metric="loss",
+        metric="l1",
         mode="min",
-        config=config,
-        num_samples=10,
+        config=kwargs,
+        num_samples=2,
         name="tune_ssupervae")
 
 
+def train_ssupervae_trainable(config,
+                              train_loader=None,
+                    val_loader=None,
+                    checkpoint_path=None,
+                    max_epochs=None,
+                    experiment_name="SSuperVAE" + get_dt_string(),
+                    search_hyperparameters=False):
+    root_dir = os.path.join(checkpoint_path, experiment_name)
+    os.makedirs(root_dir, exist_ok=True)
+    trainer = None
+    if search_hyperparameters:
+        metrics = {"psnr": "val_psnr", "l1": "val_l1"}
+        callbacks = [
+            TuneReportCallback(metrics, on="validation_end"),
+            ModelCheckpoint(save_weights_only=True, mode="max", monitor="val_psnr")
+        ]
+        trainer = pl.Trainer(default_root_dir=root_dir,
+                             callbacks=callbacks,
+                             gpus=torch.cuda.device_count(),
+                             accelerator='dp',
+                             max_epochs=max_epochs,
+                             gradient_clip_val=2,
+                             progress_bar_refresh_rate=1)
+        model = SSuperVAE(**config)
+        trainer.fit(model, train_loader, val_loader)
+        return model, None
+    else:
+        trainer = pl.Trainer(default_root_dir=root_dir,
+                             callbacks=[ModelCheckpoint(save_weights_only=True, mode="max", monitor="val_psnr")],
+                             gpus=torch.cuda.device_count(),
+                             accelerator='dp',
+                             max_epochs=max_epochs,
+                             gradient_clip_val=2,
+                             progress_bar_refresh_rate=1)
+        trainer.logger._default_hp_metric = None  # Optional logging argument that we don't need
+        # Check whether pretrained model exists. If yes, load it and skip training
+        pretrained_filename = os.path.join(checkpoint_path, experiment_name + ".ckpt")
+        if os.path.isfile(pretrained_filename):
+            print("Found pretrained model, loading...")
+            model = SSuperVAE.load_from_checkpoint(pretrained_filename)
+        else:
+            model = SSuperVAE(**config)
+            trainer.fit(model, train_loader, val_loader)
+            model = SSuperVAE.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
+
+        # Test best model on validation and test set
+        train_result = trainer.test(model, test_dataloaders=train_loader, verbose=False)
+        val_result = trainer.test(model, test_dataloaders=val_loader, verbose=False)
+        result = {"val_psnr": val_result[0]["test_psnr"],
+                  "train_psnr": train_result[0]["test_psnr"]}
+
+        device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
+        model = model.to(device)
+        return model, result
+
+    
 def train_ssupervae(train_loader,
                     val_loader,
                     checkpoint_path,
@@ -201,6 +257,9 @@ def train_ssupervae(train_loader,
                              max_epochs=max_epochs,
                              gradient_clip_val=2,
                              progress_bar_refresh_rate=1)
+        model = SSuperVAE(**kwargs)
+        trainer.fit(model, train_loader, val_loader)
+        return model, None
     else:
         trainer = pl.Trainer(default_root_dir=root_dir,
                              callbacks=[ModelCheckpoint(save_weights_only=True, mode="max", monitor="val_psnr")],
@@ -209,27 +268,26 @@ def train_ssupervae(train_loader,
                              max_epochs=max_epochs,
                              gradient_clip_val=2,
                              progress_bar_refresh_rate=1)
-    trainer.logger._default_hp_metric = None  # Optional logging argument that we don't need
+        trainer.logger._default_hp_metric = None  # Optional logging argument that we don't need
+        # Check whether pretrained model exists. If yes, load it and skip training
+        pretrained_filename = os.path.join(checkpoint_path, experiment_name + ".ckpt")
+        if os.path.isfile(pretrained_filename):
+            print("Found pretrained model, loading...")
+            model = SSuperVAE.load_from_checkpoint(pretrained_filename)
+        else:
+            model = SSuperVAE(**kwargs)
+            trainer.fit(model, train_loader, val_loader)
+            model = SSuperVAE.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
 
-    # Check whether pretrained model exists. If yes, load it and skip training
-    pretrained_filename = os.path.join(checkpoint_path, experiment_name + ".ckpt")
-    if os.path.isfile(pretrained_filename):
-        print("Found pretrained model, loading...")
-        model = SSuperVAE.load_from_checkpoint(pretrained_filename)
-    else:
-        model = SSuperVAE(**kwargs)
-        trainer.fit(model, train_loader, val_loader)
-        model = SSuperVAE.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
+        # Test best model on validation and test set
+        train_result = trainer.test(model, test_dataloaders=train_loader, verbose=False)
+        val_result = trainer.test(model, test_dataloaders=val_loader, verbose=False)
+        result = {"val_psnr": val_result[0]["test_psnr"],
+                  "train_psnr": train_result[0]["test_psnr"]}
 
-    # Test best model on validation and test set
-    train_result = trainer.test(model, test_dataloaders=train_loader, verbose=False)
-    val_result = trainer.test(model, test_dataloaders=val_loader, verbose=False)
-    result = {"val_psnr": val_result[0]["test_psnr"],
-              "train_psnr": train_result[0]["test_psnr"]}
-
-    device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
-    model = model.to(device)
-    return model, result
+        device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
+        model = model.to(device)
+        return model, result
 
 
 def run_training(search_hyperparameters=False):
@@ -241,6 +299,9 @@ def run_training(search_hyperparameters=False):
     # cont_model = "playground/ssuper_global_dcgan/ckpts/lstm_ssuper_global_dcgan_model-checkpoint-epoch99.pth"
     cont_model = None
 
+    tr_limit_size = 80
+    val_limit_size = 8
+    
     tr_data = GoldenPanelsDataset(
         golden_age_config.panel_path,
         golden_age_config.sequence_path,
@@ -253,7 +314,7 @@ def run_training(search_hyperparameters=False):
         return_mask_coordinates=golden_age_config.return_mask_coordinates,
         train_test_ratio=golden_age_config.train_test_ratio,
         train_mode=True,
-        limit_size=-1)
+        limit_size=tr_limit_size)
 
     val_data = GoldenPanelsDataset(
         golden_age_config.panel_path,
@@ -267,49 +328,89 @@ def run_training(search_hyperparameters=False):
         return_mask_coordinates=golden_age_config.return_mask_coordinates,
         train_test_ratio=golden_age_config.train_test_ratio,
         train_mode=False,
-        limit_size=-1)
+        limit_size=val_limit_size)
 
     tr_data_loader = DataLoader(tr_data, batch_size=config.batch_size, shuffle=True, num_workers=4)
     val_data_loader = DataLoader(val_data, batch_size=config.batch_size, shuffle=False, num_workers=4)
 
     experiment_name = "SSuperVAE" + get_dt_string()
+    
+    if search_hyperparameters:
+        search_hyperparams( 
+            
+                    tr_data_loader,
+                       val_data_loader,
+                       base_dir + "playground/ssupervae/",
+                       config.train_epochs,
+                       experiment_name,
+                       search_hyperparameters,
 
-    model, result = train_ssupervae(
-        search_hyperparameters=search_hyperparameters,
+            use_seq_enc=True,
+            enc_choice=None,
+            gen_choice="vae",
+            local_disc_choice=None,
+            global_disc_choice=None,
 
-        train_loader=tr_data_loader,
-        val_loader=val_data_loader,
-        experiment_name=experiment_name,
-        checkpoint_path=base_dir + "playground/ssupervae/",
-        max_epochs=config.train_epochs,
+            lr=config.lr,
+            beta_1=config.beta_1,
+            beta_2=config.beta_2,
+            weight_decay=config.weight_decay,
+            train_epochs=config.train_epochs,
 
-        use_seq_enc=True,
-        enc_choice=None,
-        gen_choice="vae",
-        local_disc_choice=None,
-        global_disc_choice=None,
+            save_dir=base_dir + "playground/ssupervae/",
+            model_name=experiment_name,
+            backbone=config.backbone,
+            latent_dim=config.latent_dim,
+            embed_dim=config.embed_dim,
+            use_lstm=config.use_lstm,
+            seq_size=config.seq_size,
+            enc_channels=config.enc_channels,
+            img_size=config.img_size,
+            lstm_hidden=config.lstm_hidden,
+            lstm_dropout=config.lstm_dropout,
+            fc_hidden_dims=config.fc_hidden_dims,
+            fc_dropout=config.fc_dropout,
+            num_lstm_layers=config.num_lstm_layers,
+            masked_first=config.masked_first
+        )
+    else:
+        model, result = train_ssupervae(
+            search_hyperparameters=search_hyperparameters,
 
-        lr=config.lr,
-        beta_1=config.beta_1,
-        beta_2=config.beta_2,
-        weight_decay=config.weight_decay,
-        train_epochs=config.train_epochs,
+            train_loader=tr_data_loader,
+            val_loader=val_data_loader,
+            experiment_name=experiment_name,
+            checkpoint_path=base_dir + "playground/ssupervae/",
+            max_epochs=config.train_epochs,
 
-        save_dir=base_dir + "playground/ssupervae/",
-        model_name=experiment_name,
-        backbone=config.backbone,
-        latent_dim=config.latent_dim,
-        embed_dim=config.embed_dim,
-        use_lstm=config.use_lstm,
-        seq_size=config.seq_size,
-        enc_channels=config.enc_channels,
-        img_size=config.img_size,
-        lstm_hidden=config.lstm_hidden,
-        lstm_dropout=config.lstm_dropout,
-        fc_hidden_dims=config.fc_hidden_dims,
-        fc_dropout=config.fc_dropout,
-        num_lstm_layers=config.num_lstm_layers,
-        masked_first=config.masked_first)
+            use_seq_enc=True,
+            enc_choice=None,
+            gen_choice="vae",
+            local_disc_choice=None,
+            global_disc_choice=None,
+
+            lr=config.lr,
+            beta_1=config.beta_1,
+            beta_2=config.beta_2,
+            weight_decay=config.weight_decay,
+            train_epochs=config.train_epochs,
+
+            save_dir=base_dir + "playground/ssupervae/",
+            model_name=experiment_name,
+            backbone=config.backbone,
+            latent_dim=config.latent_dim,
+            embed_dim=config.embed_dim,
+            use_lstm=config.use_lstm,
+            seq_size=config.seq_size,
+            enc_channels=config.enc_channels,
+            img_size=config.img_size,
+            lstm_hidden=config.lstm_hidden,
+            lstm_dropout=config.lstm_dropout,
+            fc_hidden_dims=config.fc_hidden_dims,
+            fc_dropout=config.fc_dropout,
+            num_lstm_layers=config.num_lstm_layers,
+            masked_first=config.masked_first)
+            
 
 
 if __name__ == '__main__':
