@@ -174,7 +174,7 @@ def search_hyperparams(train_loader,
         metric="l1",
         mode="min",
         config=kwargs,
-        num_samples=2,
+        num_samples=10,
         name="tune_ssupervae")
 
 
@@ -299,8 +299,8 @@ def run_training(search_hyperparameters=False):
     # cont_model = "playground/ssuper_global_dcgan/ckpts/lstm_ssuper_global_dcgan_model-checkpoint-epoch99.pth"
     cont_model = None
 
-    tr_limit_size = 80
-    val_limit_size = 8
+    tr_limit_size = 10000
+    val_limit_size = 1000
     
     tr_data = GoldenPanelsDataset(
         golden_age_config.panel_path,
