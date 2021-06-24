@@ -40,6 +40,10 @@ class SSuperModel(nn.Module):
                  gen_channels=64,                  # pass integer for DCGAN
                  enc_channels=[64, 128, 256, 512, 512, 512], # encoder channels with default values of IntroVAE
                  
+                 gen_norm="batch",                 # options: ["batch", "instance"] and "layer" if DCGAN
+                 enc_norm="batch",                 # options: ["batch", "instance"]
+                 disc_norm="batch",                # options: ["batch", "instance"] and "layer" if DCGAN
+                 
                  # seq. plain enc. parameters
                  seq_size: int=3,                  # number of sequential panels if plain encoder is used
                  
@@ -98,37 +102,37 @@ class SSuperModel(nn.Module):
             self.encoder = None
         elif enc_choice == "vae":
             self.encoder = IntroVAEEncoder(
-                hdim=latent_dim, channels=enc_channels, image_size=img_size)
+                hdim=latent_dim, channels=enc_channels, image_size=img_size, normalize=enc_norm)
         else:
             raise NotImplementedError
         
         # Generator Module Declaration
         if gen_choice == "vae":
             self.generator = IntroVAEGenerator(
-                hdim=latent_dim, channels=enc_channels, image_size=img_size)
+                hdim=latent_dim, channels=enc_channels, image_size=img_size, normalize=gen_norm)
         
         elif gen_choice == "dcgan":
-            self.generator = DCGANGenerator(img_size, 3, latent_dim, gen_channels)
+            self.generator = DCGANGenerator(img_size, 3, latent_dim, gen_channels, normalize=gen_norm)
         
         # Local Discriminator Module Declaration
         if local_disc_choice is None:
             self.local_discriminator = None
         elif local_disc_choice == "dcgan":
             self.local_discriminator = DCGANDiscriminator(
-                img_size, 3, latent_dim, local_disc_channels)
+                img_size, 3, latent_dim, local_disc_channels, normalize=disc_norm)
         elif local_disc_choice == "inpainting":
             self.local_discriminator = InpaintingDiscriminator(
-                (img_size, img_size), 3, local_disc_channels)
+                (img_size, img_size), 3, local_disc_channels, normalize=disc_norm)
             
         # Global Discriminator Module Declaration
         if global_disc_choice is None:
             self.global_discriminator = None
         elif global_disc_choice == "dcgan":
             self.global_discriminator = DCGANDiscriminator(
-                panel_size, 3, latent_dim, global_disc_channels)
+                panel_size, 3, latent_dim, global_disc_channels, normalize=disc_norm)
         elif global_disc_choice == "inpainting":
             self.global_discriminator = InpaintingDiscriminator(
-                panel_size, 3, global_disc_channels)  
+                panel_size, 3, global_disc_channels, normalize=disc_norm)  
         
     def forward(self, x, f=None, **kwargs):
         func = getattr(self, f)

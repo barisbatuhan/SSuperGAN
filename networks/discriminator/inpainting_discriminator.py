@@ -12,15 +12,15 @@ import numpy as np
 
 class InpaintingDiscriminator(nn.Module):  
     
-    def __init__(self, img_size, input_dim, cnum=32):
+    def __init__(self, img_size, input_dim, cnum=32, normalize=None):
         super(InpaintingDiscriminator, self).__init__()
         layers_list = []
         
-        self.conv1 = dis_conv(input_dim, cnum, 5, 2, 2)
-        self.conv2 = dis_conv(cnum, cnum * 2, 5, 2, 2)
-        self.conv3 = dis_conv(cnum * 2, cnum * 4, 5, 2, 2)
-        self.conv4 = dis_conv(cnum * 4, cnum * 8, 5, 2, 2)   
-        self.conv5 = dis_conv(cnum * 8, cnum * 8, 5, 2, 2)
+        self.conv1 = dis_conv(input_dim, cnum, 5, 2, 2, normalize=normalize)
+        self.conv2 = dis_conv(cnum, cnum * 2, 5, 2, 2, normalize=normalize)
+        self.conv3 = dis_conv(cnum * 2, cnum * 4, 5, 2, 2, normalize=normalize)
+        self.conv4 = dis_conv(cnum * 4, cnum * 8, 5, 2, 2, normalize=normalize)   
+        self.conv5 = dis_conv(cnum * 8, cnum * 8, 5, 2, 2, normalize=normalize)
         self.fc    = nn.Sequential(nn.AdaptiveAvgPool2d((1, 1)),
                                    nn.Flatten(),
                                    nn.Linear(cnum * 8, 1))
@@ -35,10 +35,10 @@ class InpaintingDiscriminator(nn.Module):
         return x
     
 def dis_conv(input_dim, output_dim, kernel_size=5, stride=2, padding=0, rate=1,
-             activation='lrelu'):
+             activation='lrelu', normalize=None):
     return Conv2dBlock(input_dim, output_dim, kernel_size, stride,
                        conv_padding=padding, dilation=rate,
-                       activation=activation)  
+                       activation=activation, norm=normalize)  
 
 
 class Conv2dBlock(nn.Module):
@@ -61,9 +61,9 @@ class Conv2dBlock(nn.Module):
 
         # initialize normalization
         norm_dim = output_dim
-        if norm == 'bn':
+        if norm == 'batch':
             self.norm = nn.BatchNorm2d(norm_dim)
-        elif norm == 'in':
+        elif norm == 'instance':
             self.norm = nn.InstanceNorm2d(norm_dim)
         elif norm == 'none':
             self.norm = None

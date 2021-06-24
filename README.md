@@ -100,6 +100,10 @@ enc_channels:
 local_disc_channels: 64
 global_disc_channels: 64
 
+gen_norm: "batch"
+enc_norm: "batch"
+disc_norm: "batch"
+
 # Training Parameters
 batch_size: 32
 train_epochs: 200
