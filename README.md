@@ -100,6 +100,7 @@ enc_channels:
 local_disc_channels: 64
 global_disc_channels: 64
 
+# batch, instance, layer are valid options to choose
 gen_norm: "batch"
 enc_norm: "batch"
 disc_norm: "batch"
