@@ -48,7 +48,8 @@ class IntroVAEEncoder(nn.Module):
                  cdim=3,
                  hdim=512,
                  channels=[64, 128, 256, 512, 512, 512],
-                 image_size=256):
+                 image_size=256,
+                 normalize="batch"):
         super().__init__()
 
         assert (2 ** len(channels)) * 4 == image_size

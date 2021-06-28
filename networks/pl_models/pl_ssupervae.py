@@ -22,6 +22,7 @@ from ray import tune
 
 os.environ["SLURM_JOB_NAME"] = "bash"
 
+
 class SSuperVAE(SSuperModel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -36,7 +37,7 @@ class SSuperVAE(SSuperModel):
         else:
             x, y = batch, batch
         mu_z, logstd_z = self(x, f='seq_encode')
-        z = torch.distributions.Normal(mu_z, logstd_z.exp()).rsample()
+        z = self.reparameterize((mu_z, logstd_z))
         mu_x = self(z, f='generate')
         return z, y, mu_z, mu_x, logstd_z
 
@@ -151,10 +152,9 @@ def search_hyperparams(train_loader,
                        checkpoint_path,
                        max_epochs,
                        experiment_name="SSuperVAE" + get_dt_string(),
-                       search_hyperparameters=False,
                        **kwargs):
     kwargs['lr'] = tune.loguniform(1e-4, 1e-1)
-    
+
     trainable = tune.with_parameters(
         train_ssupervae_trainable,
         train_loader=train_loader,
@@ -180,11 +180,11 @@ def search_hyperparams(train_loader,
 
 def train_ssupervae_trainable(config,
                               train_loader=None,
-                    val_loader=None,
-                    checkpoint_path=None,
-                    max_epochs=None,
-                    experiment_name="SSuperVAE" + get_dt_string(),
-                    search_hyperparameters=False):
+                              val_loader=None,
+                              checkpoint_path=None,
+                              max_epochs=None,
+                              experiment_name="SSuperVAE" + get_dt_string(),
+                              search_hyperparameters=False):
     root_dir = os.path.join(checkpoint_path, experiment_name)
     os.makedirs(root_dir, exist_ok=True)
     trainer = None
@@ -233,7 +233,7 @@ def train_ssupervae_trainable(config,
         model = model.to(device)
         return model, result
 
-    
+
 def train_ssupervae(train_loader,
                     val_loader,
                     checkpoint_path,
@@ -305,7 +305,7 @@ def run_training(search_hyperparameters=False):
     else:
         tr_limit_size = -1
         val_limit_size = -1
-    
+
     tr_data = GoldenPanelsDataset(
         golden_age_config.panel_path,
         golden_age_config.sequence_path,
@@ -338,22 +338,24 @@ def run_training(search_hyperparameters=False):
     val_data_loader = DataLoader(val_data, batch_size=config.batch_size, shuffle=False, num_workers=4)
 
     experiment_name = "SSuperVAE" + get_dt_string()
-    
+
     if search_hyperparameters:
-        search_hyperparams( 
-            
-                    tr_data_loader,
-                       val_data_loader,
-                       base_dir + "playground/ssupervae/",
-                       config.train_epochs,
-                       experiment_name,
-                       search_hyperparameters,
+        search_hyperparams(
+
+            tr_data_loader,
+            val_data_loader,
+            base_dir + "playground/ssupervae/",
+            config.train_epochs,
+            experiment_name,
 
             use_seq_enc=True,
             enc_choice=None,
             gen_choice="vae",
             local_disc_choice=None,
             global_disc_choice=None,
+
+            gen_norm=config.gen_norm,
+            enc_norm=config.enc_norm,
 
             lr=config.lr,
             beta_1=config.beta_1,
@@ -393,6 +395,9 @@ def run_training(search_hyperparameters=False):
             local_disc_choice=None,
             global_disc_choice=None,
 
+            gen_norm=config.gen_norm,
+            enc_norm=config.enc_norm,
+
             lr=config.lr,
             beta_1=config.beta_1,
             beta_2=config.beta_2,
@@ -414,7 +419,6 @@ def run_training(search_hyperparameters=False):
             fc_dropout=config.fc_dropout,
             num_lstm_layers=config.num_lstm_layers,
             masked_first=config.masked_first)
-            
 
 
 if __name__ == '__main__':
