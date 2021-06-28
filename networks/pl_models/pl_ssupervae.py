@@ -299,8 +299,12 @@ def run_training(search_hyperparameters=False):
     # cont_model = "playground/ssuper_global_dcgan/ckpts/lstm_ssuper_global_dcgan_model-checkpoint-epoch99.pth"
     cont_model = None
 
-    tr_limit_size = 10000
-    val_limit_size = 1000
+    if search_hyperparameters:
+        tr_limit_size = 10000
+        val_limit_size = 1000
+    else:
+        tr_limit_size = -1
+        val_limit_size = -1
     
     tr_data = GoldenPanelsDataset(
         golden_age_config.panel_path,
@@ -414,4 +418,4 @@ def run_training(search_hyperparameters=False):
 
 
 if __name__ == '__main__':
-    run_training(search_hyperparameters=True)
+    run_training(search_hyperparameters=False)
