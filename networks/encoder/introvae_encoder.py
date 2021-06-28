@@ -4,9 +4,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class _Residual_Block(nn.Module):
-    def __init__(self, inc=64, outc=64, groups=1, scale=1.0):
+    def __init__(self, inc=64, outc=64, groups=1, scale=1.0, normalize="batch"):
         super(_Residual_Block, self).__init__()
 
+        if normalize == "batch":
+            norm = nn.BatchNorm2d
+        elif normalize == "instance":
+            norm = nn.InstanceNorm2d
+        else:
+            raise NotImplementedError
+        
         midc = int(outc * scale)
 
         if inc is not outc:
@@ -17,11 +24,11 @@ class _Residual_Block(nn.Module):
 
         self.conv1 = nn.Conv2d(in_channels=inc, out_channels=midc, kernel_size=3, stride=1, padding=1, groups=groups,
                                bias=False)
-        self.bn1 = nn.BatchNorm2d(midc)
+        self.bn1 = norm(midc)
         self.relu1 = nn.LeakyReLU(0.2, inplace=True)
         self.conv2 = nn.Conv2d(in_channels=midc, out_channels=outc, kernel_size=3, stride=1, padding=1, groups=groups,
                                bias=False)
-        self.bn2 = nn.BatchNorm2d(outc)
+        self.bn2 = norm(outc)
         self.relu2 = nn.LeakyReLU(0.2, inplace=True)
 
     def forward(self, x):
@@ -57,15 +64,15 @@ class IntroVAEEncoder(nn.Module):
 
         sz = image_size // 2
         for ch in channels[1:]:
-            self.main.add_module('res_in_{}'.format(sz), _Residual_Block(cc, ch, scale=1.0))
+            self.main.add_module('res_in_{}'.format(sz), _Residual_Block(cc, ch, scale=1.0, normalize=normalize))
             self.main.add_module('down_to_{}'.format(sz // 2), nn.AvgPool2d(2))
             cc, sz = ch, sz // 2
 
-        self.main.add_module('res_in_{}'.format(sz), _Residual_Block(cc, cc, scale=1.0))
+        self.main.add_module('res_in_{}'.format(sz), _Residual_Block(cc, cc, scale=1.0, normalize=normalize))
         self.fc = nn.Linear((cc) * 4 * 4, 2 * hdim)
 
     def forward(self, x):
         y = self.main(x).view(x.size(0), -1)
         y = self.fc(y)
-        mu, log_std = torch.chunk(y, 2, dim=1)
-        return mu, log_std 
+        mu, log_var = torch.chunk(y, 2, dim=1)
+        return mu, log_var

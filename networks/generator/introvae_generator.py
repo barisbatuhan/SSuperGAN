@@ -3,9 +3,16 @@ import torch.nn as nn
 import numpy as np
 
 class _Residual_Block(nn.Module):
-    def __init__(self, inc=64, outc=64, groups=1, scale=1.0):
+    def __init__(self, inc=64, outc=64, groups=1, scale=1.0, normalize="batch"):
         super(_Residual_Block, self).__init__()
 
+        if normalize == "batch":
+            norm = nn.BatchNorm2d
+        elif normalize == "instance":
+            norm = nn.InstanceNorm2d
+        else:
+            raise NotImplementedError
+        
         midc = int(outc * scale)
 
         if inc is not outc:
@@ -16,11 +23,11 @@ class _Residual_Block(nn.Module):
 
         self.conv1 = nn.Conv2d(in_channels=inc, out_channels=midc, kernel_size=3, stride=1, padding=1, groups=groups,
                                bias=False)
-        self.bn1 = nn.BatchNorm2d(midc)
+        self.bn1 = norm(midc)
         self.relu1 = nn.LeakyReLU(0.2, inplace=True)
         self.conv2 = nn.Conv2d(in_channels=midc, out_channels=outc, kernel_size=3, stride=1, padding=1, groups=groups,
                                bias=False)
-        self.bn2 = nn.BatchNorm2d(outc)
+        self.bn2 = norm(outc)
         self.relu2 = nn.LeakyReLU(0.2, inplace=True)
 
     def forward(self, x):
@@ -39,7 +46,9 @@ class IntroVAEGenerator(nn.Module):
                  cdim=3,
                  hdim=512,
                  channels=[64, 128, 256, 512, 512, 512],
-                 image_size=256):
+                 image_size=256,
+                 normalize="batch"
+                ):
         super(IntroVAEGenerator, self).__init__()
 
         assert (2 ** len(channels)) * 4 == image_size
@@ -53,11 +62,11 @@ class IntroVAEGenerator(nn.Module):
         sz = 4
         self.main = nn.Sequential()
         for ch in channels[::-1]:
-            self.main.add_module('res_in_{}'.format(sz), _Residual_Block(cc, ch, scale=1.0))
+            self.main.add_module('res_in_{}'.format(sz), _Residual_Block(cc, ch, scale=1.0, normalize=normalize))
             self.main.add_module('up_to_{}'.format(sz * 2), nn.Upsample(scale_factor=2, mode='nearest'))
             cc, sz = ch, sz * 2
 
-        self.main.add_module('res_in_{}'.format(sz), _Residual_Block(cc, cc, scale=1.0))
+        self.main.add_module('res_in_{}'.format(sz), _Residual_Block(cc, cc, scale=1.0, normalize=normalize))
         self.main.add_module('predict', nn.Conv2d(cc, cdim, 5, 1, 2))
 
     def forward(self, z):
