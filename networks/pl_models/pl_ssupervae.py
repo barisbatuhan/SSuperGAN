@@ -116,7 +116,8 @@ class SSuperVAE(SSuperModel):
 def lambda_lr_func(epoch):
     return (200 - epoch) / 200
 
-
+# link for checking valid search spaces
+# https://docs.ray.io/en/master/tune/key-concepts.html#search-spaces
 """
 config = {
     "layer_1": tune.choice([32, 64, 128]),
@@ -153,7 +154,15 @@ def search_hyperparams(train_loader,
                        max_epochs,
                        experiment_name="SSuperVAE" + get_dt_string(),
                        **kwargs):
-    kwargs['lr'] = tune.loguniform(1e-4, 1e-1)
+    # tune lr
+    # kwargs['lr'] = tune.loguniform(1e-4, 1e-1)
+
+    # tune normalizations
+    # kwargs['gen_norm'] = tune.choice(['batch', 'instance'])
+    # kwargs['enc_norm'] = tune.choice(['batch', 'instance'])
+
+    # tune latent_dim
+    # kwargs['latent_dim'] = tune.quniform(128, 8192, 64)
 
     trainable = tune.with_parameters(
         train_ssupervae_trainable,
