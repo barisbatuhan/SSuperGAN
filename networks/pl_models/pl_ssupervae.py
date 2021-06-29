@@ -162,7 +162,7 @@ def search_hyperparams(train_loader,
     #kwargs['enc_norm'] = tune.choice(['batch', 'instance'])
 
     # tune latent_dims
-    kwargs['latent_dim'] = tune.qrandint(128, 8192, 64)
+    # kwargs['latent_dim'] = tune.qrandint(128, 8192, 64)
 
     trainable = tune.with_parameters(
         train_ssupervae_trainable,
@@ -431,4 +431,4 @@ def run_training(search_hyperparameters=False):
 
 
 if __name__ == '__main__':
-    run_training(search_hyperparameters=True)
+    run_training(search_hyperparameters=False)
