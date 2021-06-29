@@ -49,6 +49,7 @@ class SeqVAEGANTrainer(BaseTrainer):
         self.parallel = parallel
         
         if criterion["loss_type"] == "basic":
+            self.local_gan_loss = StandardGAN(model, local=True)
             self.global_gan_loss = StandardGAN(model, local=False)
         else:
             raise NotImplementedError
@@ -146,14 +147,12 @@ class SeqVAEGANTrainer(BaseTrainer):
 
 
     def train_model(self, epoch):
-        self.model.eval()
+        self.model.train()
         
         if self.parallel:
-            self.model.module.seq_encoder.train()
-            # self.model.module.global_discriminator.train()
+            self.model.module.encoder.eval()
         else:
-            self.model.seq_encoder.train()
-            # self.model.global_discriminator.train()
+            self.model.encoder.eval()
         
         if not self.quiet:
             pbar = tqdm(total=len(self.train_loader.dataset))
@@ -179,53 +178,69 @@ class SeqVAEGANTrainer(BaseTrainer):
             out = {}
             
             # Forward Pass
-
-            with torch.no_grad():
-                mu, log_var = self.model(y, f="encode")
-            mu, log_var = mu.detach(), log_var.detach()
             
             seq_mu, seq_log_var = self.model(x, f="seq_encode")
+            y_recon = self.model(seq_mu, f="generate")
             
-#             z = self.model([seq_mu, seq_log_var], f="reparameterize")
-#             y_recon = self.model(z, f="generate")
-            
-#             # Discriminator Update
-            
+            # Local & Global Discriminator Update
 #             recon_global, gt_global = self.model(x, f="create_global_images", 
 #                                                  r_faces=y.detach(), 
 #                                                  f_faces=y_recon.detach(), 
 #                                                  mask_coordinates=coords)
             
-#             errD = self.global_gan_loss.dis_loss(gt_global.detach(), recon_global.detach())   
-#             out["GloDisc"] = errD
+            errD_local = self.local_gan_loss.dis_loss(y.detach(), y_recon.detach())
+            out["LDisc"] = errD_local
+            
+#             errD_global = self.global_gan_loss.dis_loss(gt_global.detach(), recon_global.detach())              
+#             out["GDisc"] = errD_global
 
+            self.optimizers["local_discriminator"].zero_grad()
+            if self.criterion["loss_type"] != "basic" or errD_local > -2*np.log(0.8):
+                errD_local.backward()
+                if self.grad_clip:
+                    self.model(self.grad_clip, f="grad_clip", part="local_discriminator")
+                self.optimizers["local_discriminator"].zero_grad()
+            
 #             self.optimizers["global_discriminator"].zero_grad()
-#             if self.criterion["loss_type"] != "basic" or errD > -2*np.log(0.8):
-#                 errD.backward()
+#             if self.criterion["loss_type"] != "basic" or errD_global > -2*np.log(0.8):
+#                 errD_global.backward()           
 #                 if self.grad_clip:
-#                     self.model(self.grad_clip, f="grad_clip", part="global_discriminator")
-#                 self.optimizers["global_discriminator"].zero_grad()
+#                     self.model(self.grad_clip, f="grad_clip", part="global_discriminator")           
+#                 self.optimizers["global_discriminator"].step() 
             
-#             # Generator Update    
+            # Generator & Seq. Encoder Update
             
-#             errG_global = self.global_gan_loss.gen_loss(None, recon_global)
-#             out["Gen"] = errG_global
-    
-            errRecon_mu = reconstruction_loss(mu.detach(), seq_mu)
-            errRecon_logvar = reconstruction_loss(log_var.detach(), seq_log_var)
+            with torch.no_grad():
+                mu, log_var = self.model(y, f="encode")
             
-            out["ReconMu"] = errRecon_mu
-            out["ReconVar"] = errRecon_logvar
+            errRecon_mu = reconstruction_loss(mu.detach(), seq_mu.detach())
+            errRecon_logvar = reconstruction_loss(log_var.detach(), seq_log_var.detach())
+            out["EncRecon"] = errRecon_mu + errRecon_logvar
             
-            errG = errRecon_mu + errRecon_logvar  # + errG_global
+            errRecon = reconstruction_loss(y, y_recon) * self.criterion["recon_ratio"]
+            out["Recon"] = errRecon
+            
+            errG_local = self.local_gan_loss.gen_loss(None, y_recon)
+#             errG_global = self.global_gan_loss.gen_loss(None, recon_global)  
+            
+            out["LGen"] = errG_local
+#             out["GGen"] = errG_global
+            
+            errG = errG_local # + self.criterion["gen_global_ratio"] * errG_global
+            errG += errRecon + errRecon_mu + errRecon_logvar
 
+            self.optimizers["generator"].zero_grad()
             self.optimizers["seq_encoder"].zero_grad()
-            errG.backward()
-            if self.grad_clip:
-                self.model(self.grad_clip, f="grad_clip", part="seq_encoder") 
-            self.optimizers["seq_encoder"].step()          
-            
-            self.model.zero_grad()
+            if self.criterion["loss_type"] != "basic" or errG > -2*np.log(0.8):
+                
+                errG.backward()
+                
+                if self.grad_clip:
+                    self.model(self.grad_clip, f="grad_clip", part="generator")
+                    self.model(self.grad_clip, f="grad_clip", part="seq_encoder") 
+                
+                self.optimizers["generator"].step() 
+                self.optimizers["seq_encoder"].step()     
             
             desc = f'Epoch {epoch}'
             for k, v in out.items():

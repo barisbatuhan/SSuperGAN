@@ -21,6 +21,9 @@ train_ssuper_dcgan:
 train_ssuper_global_dcgan:
 	python3 playground/ssuper_global_dcgan/ssuper_global_dcgan_play.py
 
+train_ssuper_global_stylegan2:
+	python3 playground/ssuper_global_stylegan2/ssuper_global_stylegan2_play.py
+
 train_face_cloze:
 	python3 playground/face_cloze/face_cloze_play.py
     

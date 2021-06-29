@@ -5,6 +5,11 @@ class DCGAN(SSuperModel):
         super().__init__(use_seq_enc=False, enc_choice=None, gen_choice="dcgan",
                          local_disc_choice="dcgan", global_disc_choice=None, **kwargs)
 
+class StyleGAN2(SSuperModel):
+    def __init__(self, **kwargs):
+        super().__init__(use_seq_enc=False, enc_choice=None, gen_choice="stylegan2",
+                         local_disc_choice="stylegan2", global_disc_choice=None, **kwargs)
+        
 class IntroVAE(SSuperModel):
     def __init__(self, **kwargs):
         super().__init__(use_seq_enc=False, enc_choice="vae", gen_choice="vae",
@@ -23,7 +28,7 @@ class VAEGAN(SSuperModel):
 class SeqVAEGAN(SSuperModel):
     def __init__(self, **kwargs): 
         super().__init__(use_seq_enc=True, enc_choice="vae", gen_choice="dcgan",
-                         local_disc_choice=None, global_disc_choice=None, **kwargs)
+                         local_disc_choice="dcgan", global_disc_choice="dcgan", **kwargs)
         
 class SSuperDCGAN(SSuperModel):
     def __init__(self, **kwargs):
@@ -33,8 +38,13 @@ class SSuperDCGAN(SSuperModel):
 class SSuperGlobalDCGAN(SSuperModel):
     def __init__(self, **kwargs):
         super().__init__(use_seq_enc=True, enc_choice=None, gen_choice="dcgan",
-                         local_disc_choice="dcgan", global_disc_choice="dcgan", **kwargs)
-        
+                         local_disc_choice="dcgan", global_disc_choice="dcgan", **kwargs)     
+
+class SSuperGlobalStyleGAN2(SSuperModel):
+    def __init__(self, **kwargs):
+        super().__init__(use_seq_enc=True, enc_choice=None, gen_choice="stylegan2",
+                         local_disc_choice="stylegan2", global_disc_choice="dcgan", **kwargs)    
+
 class FaceClozeModel(SSuperModel):
     def __init__(self, **kwargs):
         super().__init__(use_seq_enc=True, enc_choice="vae", gen_choice=None,

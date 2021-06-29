@@ -73,7 +73,7 @@ def train(tr_data_loader, val_data_loader, config, model_name='ssuper_global_dcg
         
         optimizerG.load_state_dict(model_dict["generator"])
         optimizerESeq.load_state_dict(model_dict["seq_encoder"])
-        optimizerE.load_state_dict(model_dict["encoder"])
+        # optimizerE.load_state_dict(model_dict["encoder"])
         cont_epoch = model_dict["epoch"] + 1
 
     else:
@@ -88,7 +88,7 @@ def train(tr_data_loader, val_data_loader, config, model_name='ssuper_global_dcg
         criterion={
             "loss_type": "basic",
             "gen_global_ratio": 0.005,
-            "recon_ratio": 0.1,
+            "recon_ratio": 1,
         },
         train_loader=tr_data_loader,
         test_loader=val_data_loader,
@@ -114,8 +114,8 @@ if __name__ == '__main__':
     
     config = read_config(Config.SSUPERGLOBALDCGAN)
     golden_age_config = read_config(Config.GOLDEN_AGE)
-    # cont_model = "playground/ssuper_global_dcgan/ckpts/lstm_ssuper_global_dcgan_model-checkpoint-epoch99.pth"
-    cont_model = None
+    cont_model = "playground/ssuper_global_dcgan/ckpts/lstm_ssuper_global_dcgan_model-checkpoint-epoch98.pth"
+    # cont_model = None
     
     tr_data = GoldenPanelsDataset(
         golden_age_config.panel_path,

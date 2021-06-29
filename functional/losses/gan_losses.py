@@ -5,6 +5,11 @@ from torch.autograd import grad
 import torch.nn.functional as F
 from torch.nn import BCEWithLogitsLoss
 
+import numpy as np
+from utils.stylegan2_utils import training_stats
+from utils.stylegan2_utils import misc
+from utils.stylegan2_utils.ops import conv2d_gradfix
+
 
 __all__ = ['StandardGAN', 'WGAN_GP', 'LogisticGANLoss']
 
@@ -311,5 +316,3 @@ class LogisticGAN(GANLoss):
         fake_scores =  self.dis(fake_samps, f="discriminate", local=self.local)
         g_loss = F.softplus(-fake_scores).mean()
         return g_loss
-
-

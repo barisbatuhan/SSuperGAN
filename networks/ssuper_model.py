@@ -17,9 +17,11 @@ from networks.encoder.introvae_encoder import IntroVAEEncoder
 
 from networks.generator.dcgan_generator import DCGANGenerator
 from networks.generator.introvae_generator import IntroVAEGenerator
+from networks.generator.stylegan2_generator import StyleGAN2Generator
 
 from networks.discriminator.dcgan_discriminator import DCGANDiscriminator
 from networks.discriminator.inpainting_discriminator import InpaintingDiscriminator
+from networks.discriminator.stylegan2_discriminator import StyleGAN2Discriminator
 
 class SSuperModel(nn.Module):
     
@@ -34,8 +36,8 @@ class SSuperModel(nn.Module):
                  use_seq_enc: bool=True,           # Set to False of you only want to run pure generation module
                  enc_choice=None,                  # options: ["vae", None]. If "vae", then gen. should be also vae, 
                                                    # "stylegan" provides the mapping module from z -> w
-                 gen_choice="dcgan",               # options: ["dcgan", "vae"]
-                 local_disc_choice="dcgan",        # options: ["dcgan", inpainting", None]
+                 gen_choice="dcgan",               # options: ["dcgan", "vae", "stylegan2"]
+                 local_disc_choice="dcgan",        # options: ["dcgan", inpainting", "stylegan2", None]
                  global_disc_choice="dcgan",       # options: ["dcgan", "inpainting", None]
                  gen_channels=64,                  # pass integer for DCGAN
                  enc_channels=[64, 128, 256, 512, 512, 512], # encoder channels with default values of IntroVAE
@@ -66,9 +68,9 @@ class SSuperModel(nn.Module):
         
         # Input correctness checks
         assert enc_choice in ["vae", None]
-        assert gen_choice in ["dcgan", "vae", None]
-        assert local_disc_choice in ["dcgan", "inpainting", None]
-        assert global_disc_choice in ["dcgan", "inpainting", None]
+        assert gen_choice in ["dcgan", "vae", "stylegan2", None]
+        assert local_disc_choice in ["dcgan", "inpainting", "stylegan2", None]
+        assert global_disc_choice in ["dcgan", "inpainting", "stylegan2", None]
         
         self.latent_dim = latent_dim
         self.gen_choice = gen_choice
@@ -114,6 +116,9 @@ class SSuperModel(nn.Module):
         elif gen_choice == "dcgan":
             self.generator = DCGANGenerator(img_size, 3, latent_dim, gen_channels, normalize=gen_norm)
         
+        elif gen_choice == "stylegan2":
+            self.generator = StyleGAN2Generator(latent_dim, latent_dim, img_size, 3)
+        
         # Local Discriminator Module Declaration
         if local_disc_choice is None:
             self.local_discriminator = None
@@ -123,6 +128,8 @@ class SSuperModel(nn.Module):
         elif local_disc_choice == "inpainting":
             self.local_discriminator = InpaintingDiscriminator(
                 (img_size, img_size), 3, local_disc_channels, normalize=disc_norm)
+        elif local_disc_choice == "stylegan2":
+            self.local_discriminator = StyleGAN2Discriminator(img_size, 3, use_sigmoid=True)
             
         # Global Discriminator Module Declaration
         if global_disc_choice is None:
