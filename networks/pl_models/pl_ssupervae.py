@@ -165,7 +165,7 @@ def search_hyperparams(train_loader,
     # kwargs['latent_dim'] = tune.qrandint(128, 8192, 64)
 
     # embed_dim: 1024
-    kwargs['embed_dim'] = tune.qrandint(270, 13500, 1000),
+    kwargs['embed_dim'] = tune.qrandint(270, 13500, 1000)
     # lstm_hidden: 1024
     kwargs['lstm_hidden'] = tune.qrandint(500, 5000, 100)
 
@@ -436,4 +436,4 @@ def run_training(search_hyperparameters=False):
 
 
 if __name__ == '__main__':
-    run_training(search_hyperparameters=False)
+    run_training(search_hyperparameters=True)
