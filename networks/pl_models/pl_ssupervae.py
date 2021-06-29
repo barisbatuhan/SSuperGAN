@@ -164,6 +164,11 @@ def search_hyperparams(train_loader,
     # tune latent_dims
     # kwargs['latent_dim'] = tune.qrandint(128, 8192, 64)
 
+    # embed_dim: 1024
+    kwargs['embed_dim'] = tune.qrandint(270, 13500, 1000),
+    # lstm_hidden: 1024
+    kwargs['lstm_hidden'] = tune.qrandint(500, 5000, 100)
+
     trainable = tune.with_parameters(
         train_ssupervae_trainable,
         train_loader=train_loader,
@@ -183,7 +188,7 @@ def search_hyperparams(train_loader,
         metric="l1",
         mode="min",
         config=kwargs,
-        num_samples=10,
+        num_samples=20,
         name="tune_ssupervae")
 
 
