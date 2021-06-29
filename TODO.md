@@ -18,13 +18,13 @@
 	- [Style-Based-GAN](https://github.com/rosinality/style-based-gan-pytorch)
 	- [In-Domain Inversion](https://github.com/genforce/idinvert_pytorch)
 - **[Gürkan]** Siyah-beyaz olarak resmi process et. Bunun için resim başta Gray sonra RGB çevrilip process edilebilir ya da EfficientNet için input olarak num_channels var ise o değiştirilebilir. Ayrıca GAN yapısının output channel size da dynamic olmalı ya da ilk channel alınmalı sadece.
-- **[Gürkan]** 1 resim ve 3 resim ile eğitimin görsel sonuç karşılaştırması yapılmalı.
+- **[+] [Gürkan]** 1 resim ve 3 resim ile eğitimin görsel sonuç karşılaştırması yapılmalı.
 - **[Herkes]** Character Identification ile ilgili labeling yapılabilir ya da MTurk için bir arayüz hazırlanabilir.
 
 ## 21.06.2021
 
-- **[Gürkan]** Grid-/RandomSearch tarzında bir yapı ile doğru hyper-parameter arama.
-- **[Gürkan]** Model yapısını PyTorch Lightning ile çevirme (başlangış SSuperVAE).
+- **[+] [Gürkan]** Grid-/RandomSearch tarzında bir yapı ile doğru hyper-parameter arama.
+- **[+] [Gürkan]** Model yapısını PyTorch Lightning ile çevirme (başlangış SSuperVAE).
 - **[+]** VAE-GAN yapısı iyice eğitilip KL loss ile düzgün çalışır hale getirilmeye çalışılacak. Sonrasında Sequential Encoder yapısı ile bu modül bağlanacak.
 - **[+]** Jigsaw model epitimini tamamla ve yardımcı olabilir mi bak. --> Köşelerebakıp objelere odaklanmıyor.
 - **[+]** Düz panel resimleri döndüren bir Dataset yapısı oluşturulacak, sequence length bir parametre olacak ona göre return edilecek.
