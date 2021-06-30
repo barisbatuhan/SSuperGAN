@@ -23,13 +23,11 @@ class StyleGAN2Generator(torch.nn.Module):
         self.num_ws = self.synthesis.num_ws
         self.mapping = MappingNetwork(z_dim=z_dim, c_dim=c_dim, w_dim=w_dim, num_ws=self.num_ws, **mapping_kwargs)
 
-    def forward(self, z, c=None, truncation_psi=1, truncation_cutoff=None, **synthesis_kwargs):
-        ws = self.mapping(z, c, truncation_psi=truncation_psi, truncation_cutoff=truncation_cutoff)
+    def forward(self, z, c=None, truncation_psi=1, truncation_cutoff=None, map_to_w=True, **synthesis_kwargs):
+        ws = self.mapping(z, c, truncation_psi=truncation_psi, preprocess=map_to_w, truncation_cutoff=truncation_cutoff)
         img = self.synthesis(ws, **synthesis_kwargs)
-        
         if self.use_tanh:
             img = torch.tanh(img)
-        
         return img
 
 #----------------------------------------------------------------------------
@@ -75,28 +73,33 @@ class MappingNetwork(torch.nn.Module):
         if num_ws is not None and w_avg_beta is not None:
             self.register_buffer('w_avg', torch.zeros([w_dim]))
 
-    def forward(self, z, c, truncation_psi=1, truncation_cutoff=None, skip_w_avg_update=False):
-        # Embed, normalize, and concat inputs.
-        x = None
-        with torch.autograd.profiler.record_function('input'):
-            if self.z_dim > 0:
-                misc.assert_shape(z, [None, self.z_dim])
-                x = normalize_2nd_moment(z.to(torch.float32))
-            if self.c_dim > 0:
-                misc.assert_shape(c, [None, self.c_dim])
-                y = normalize_2nd_moment(self.embed(c.to(torch.float32)))
-                x = torch.cat([x, y], dim=1) if x is not None else y
-
-        # Main layers.
-        for idx in range(self.num_layers):
-            layer = getattr(self, f'fc{idx}')
-            x = layer(x)
-
-        # Update moving average of W.
-        if self.w_avg_beta is not None and self.training and not skip_w_avg_update:
-            with torch.autograd.profiler.record_function('update_w_avg'):
-                self.w_avg.copy_(x.detach().mean(dim=0).lerp(self.w_avg, self.w_avg_beta))
-
+    def forward(self, z, c, truncation_psi=1, truncation_cutoff=None, preprocess=True, skip_w_avg_update=False):
+        
+        if preprocess:
+            # Embed, normalize, and concat inputs.
+            x = None
+            with torch.autograd.profiler.record_function('input'):
+                if self.z_dim > 0:
+                    misc.assert_shape(z, [None, self.z_dim])
+                    x = normalize_2nd_moment(z.to(torch.float32))
+                if self.c_dim > 0:
+                    misc.assert_shape(c, [None, self.c_dim])
+                    y = normalize_2nd_moment(self.embed(c.to(torch.float32)))
+                    x = torch.cat([x, y], dim=1) if x is not None else y
+    
+            # Main layers.
+            for idx in range(self.num_layers):
+                layer = getattr(self, f'fc{idx}')
+                x = layer(x)
+    
+            # Update moving average of W.
+            if self.w_avg_beta is not None and self.training and not skip_w_avg_update:
+                with torch.autograd.profiler.record_function('update_w_avg'):
+                    self.w_avg.copy_(x.detach().mean(dim=0).lerp(self.w_avg, self.w_avg_beta))
+        
+        else:
+            x = z
+            
         # Broadcast.
         if self.num_ws is not None:
             with torch.autograd.profiler.record_function('broadcast'):

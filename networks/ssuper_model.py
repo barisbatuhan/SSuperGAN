@@ -146,26 +146,26 @@ class SSuperModel(nn.Module):
         return func(x, **kwargs)
     
     # Returns mu, lg_std
-    def seq_encode(self, x):
-        return self.seq_encoder(x)
+    def seq_encode(self, x, **kwargs):
+        return self.seq_encoder(x, **kwargs)
     
     # Returns mu, lg_std
-    def encode(self, x):
-        return self.encoder(x)
+    def encode(self, x, **kwargs):
+        return self.encoder(x, **kwargs)
     
     # Returns the generated image in the range [-1, 1]
-    def generate(self, z, clamp=False):
-        out = self.generator(z)
+    def generate(self, z, clamp=False, **kwargs):
+        out = self.generator(z, **kwargs)
         if clamp:
             out = torch.clamp(out, min=-1, max=1)
         return out
     
     # Returns a float in the range of [0, 1] depending on the success of the discriminator
-    def discriminate(self, x, local=True):
+    def discriminate(self, x, local=True, **kwargs):
         if local:
-            return self.local_discriminator(x)
+            return self.local_discriminator(x, **kwargs)
         else:
-            return self.global_discriminator(x)
+            return self.global_discriminator(x, **kwargs)
     
     
     def reparameterize(self, data):
@@ -194,24 +194,23 @@ class SSuperModel(nn.Module):
         
     
     def create_global_images(self, panels, r_faces, f_faces, mask_coordinates):
-        # Preparing for Fine Generator
+        # Preparing for Fine Generator & Global Discriminator     
         B, S, C, W, H = panels.shape
         last_panel_gts = torch.zeros(B, C, H, W).cuda()
         panel_with_generation = torch.zeros_like(last_panel_gts).cuda()
         for i in range(len(panels)):
             last_panel = panels[i, -1, :, :, :]
-            output_merged_last_panel = deepcopy(last_panel)
             last_panel_face = r_faces[i, :, :, :]
             last_panel_output_face = f_faces[i, :, :, :]
+            output_merged_last_panel = deepcopy(last_panel)
 
-            y1, y2, x1, x2 = mask_coordinates[i]
+            y1, y2, x1, x2 = mask_coordinates[i]  
             x1, y1 = max(0, x1), max(0, y1)
             w, h = abs(x1 - x2), abs(y1 - y2)
 
             # inserting original face to last panel
             modified = last_panel_face.view(1, *last_panel_face.size())
-            interpolated_last_panel_face_batch = torch.nn.functional.interpolate(modified,
-                                                                                 size=(h, w))
+            interpolated_last_panel_face_batch = nn.functional.interpolate(modified, size=(h, w))
             interpolated_last_panel_face = interpolated_last_panel_face_batch[0,:,:,:]
             _, p_h, p_w = interpolated_last_panel_face.shape
             _, l_h, l_w = last_panel.shape
@@ -224,8 +223,7 @@ class SSuperModel(nn.Module):
 
             # inserting output face to last panel
             modified = last_panel_output_face.view(1, *last_panel_output_face.size())
-            interpolated_last_panel_face_batch = torch.nn.functional.interpolate(modified,
-                                                                                 size=(h, w))
+            interpolated_last_panel_face_batch = nn.functional.interpolate(modified, size=(h, w))
             interpolated_last_panel_face = interpolated_last_panel_face_batch[0,:,:,:]
             
             _, p_h, p_w = interpolated_last_panel_face.shape

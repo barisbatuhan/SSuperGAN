@@ -82,7 +82,7 @@ class SSuperGlobalStyleGAN2Trainer(BaseTrainer):
             
             with torch.no_grad():
                 mu_z, _ = self.model(x, f="seq_encode")
-                y_recon = self.model(mu_z, f="generate")
+                y_recon = self.model(mu_z, f="generate", map_to_w=False)
             psnrs += PSNR.__call__(y_recon, y, fit_range=True)
             l1s += torch.abs(y - y_recon).mean()
             iter_cnt += 1
@@ -173,15 +173,21 @@ class SSuperGlobalStyleGAN2Trainer(BaseTrainer):
             
             # Forward Pass
 
-            mu, log_var = self.model(x, f="seq_encode")
-            z = self.model([mu, log_var], f="reparameterize")
-            y_recon = self.model(z, f="generate")
+            w, _ = self.model(x, f="seq_encode")
+            # z = self.model([mu, log_var], f="reparameterize")
+            y_recon = self.model(w, f="generate", map_to_w=False)
             
             # Local & Global Discriminator Update
             recon_global, gt_global = self.model(x, f="create_global_images", 
                                                  r_faces=y.detach(), 
                                                  f_faces=y_recon.detach(), 
                                                  mask_coordinates=coords)
+            
+#             recon_global, gt_global = self.model.module.create_global_images(
+#                 x, 
+#                 r_faces=y.detach(), 
+#                 f_faces=y_recon.detach(), 
+#                 mask_coordinates=coords)
             
             errD_local = self.local_gan_loss.dis_loss(y.detach(), y_recon.detach())
             errD_global = self.global_gan_loss.dis_loss(gt_global.detach(), recon_global.detach())              
@@ -206,16 +212,17 @@ class SSuperGlobalStyleGAN2Trainer(BaseTrainer):
             # Generator Update
             
             errRecon = reconstruction_loss(y, y_recon) * self.criterion["recon_ratio"]
-            errKL = kl_loss(mu, log_var)
             out["Recon"] = errRecon
-            out["KL"] = errKL
+            
+            # errKL = kl_loss(mu, log_var)
+            # out["KL"] = errKL
             
             errG_local = self.local_gan_loss.gen_loss(None, y_recon)
             errG_global = self.global_gan_loss.gen_loss(None, recon_global)  
             
             out["Gen"] = errG_global + errG_local
             errG = self.criterion["gen_global_ratio"] * errG_global + errG_local
-            errG += errRecon + errKL
+            errG += errRecon # + errKL
 
             self.optimizers["generator"].zero_grad()
             self.optimizers["seq_encoder"].zero_grad()
@@ -227,6 +234,30 @@ class SSuperGlobalStyleGAN2Trainer(BaseTrainer):
                 
                 self.optimizers["generator"].step() 
                 self.optimizers["seq_encoder"].step()          
+            
+            
+            # Extra random sampling and GAN training
+            
+            z = self.model(bs, f="sample_z")
+            y_fake = self.model(z, f="generate", map_to_w=True)
+            
+            errD_fake = self.local_gan_loss.dis_loss(y.detach(), y_fake.detach())
+            out["Z_Disc"] = errD_fake
+            self.optimizers["local_discriminator"].zero_grad()
+            if self.criterion["loss_type"] != "basic" or errD_fake > -2*np.log(0.8):
+                errD_fake.backward()
+                if self.grad_clip:
+                    self.model(self.grad_clip, f="grad_clip", part="local_discriminator")
+                self.optimizers["local_discriminator"].zero_grad()
+            
+            errG_fake = self.local_gan_loss.gen_loss(None, y_fake) 
+            out["Z_Gen"] = errG_fake
+            self.optimizers["generator"].zero_grad()
+            if self.criterion["loss_type"] != "basic" or errG_fake > -np.log(0.8):
+                errG_fake.backward()
+                if self.grad_clip:
+                    self.model(self.grad_clip, f="grad_clip", part="generator")
+                self.optimizers["generator"].step()     
             
             desc = f'Epoch {epoch}'
             for k, v in out.items():
