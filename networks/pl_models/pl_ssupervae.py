@@ -46,7 +46,11 @@ class SSuperVAE(SSuperModel):
 
         psnr = PSNR.__call__(mu_x, y, fit_range=True)
         l1 = torch.abs(y - mu_x).mean()
-        out = elbo(z, y, mu_z, mu_x, logstd_z)
+
+        # Linear KL Loss Annealing
+        kl_loss_weight = self.current_epoch / self.trainer.max_epochs
+        out = elbo(z, y, mu_z, mu_x, logstd_z, kl_loss_weight=kl_loss_weight)
+        self.log("%s_kl_loss_weight" % mode, kl_loss_weight, on_step=True, on_epoch=False)
 
         self.log_dict(out, prog_bar=True)
         self.log("%s_psnr" % mode, psnr, on_step=False, on_epoch=True)
