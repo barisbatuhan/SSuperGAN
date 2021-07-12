@@ -52,6 +52,7 @@ face_train_test_ratio: 0.9
 panel_path: /datasets/COMICS/raw_panel_images/
 sequence_path: /userfiles/comics_grp/golden_age/panel_face_areas_new_90.json
 annot_path: /userfiles/comics_grp/golden_age/golden_annot_new/
+only_panels_annotation: /userfiles/comics_grp/golden_age/only_panel_data.json
 mask_val: 1
 mask_all: False
 return_mask: True
