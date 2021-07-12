@@ -37,7 +37,7 @@ def read_golden_annots(annot_dir, conf_thold, face_thold, max_classes=3959):
             elif max(x2-x1, y2-y1) < face_thold:
                 continue
             
-            if fname not in annots:
+            if fname not in annots[str(i)]:
                 annots[str(i)][fname] = []
             annots[str(i)][fname].append([x1, y1, x2, y2])
             
@@ -261,7 +261,7 @@ if __name__ == '__main__':
     # Parameters to set
     golden_dir = "/datasets/COMICS/raw_panel_images/"
     annot_dir = "/userfiles/comics_grp/golden_age/golden_annot_new/"
-    save_file = "./panel_face_areas_new_90.json"
+    save_file = "./seq_panels_faces_conf_90.json"
     extraction_method = "random"
     conf_thold = 0.9
     face_thold = 32
